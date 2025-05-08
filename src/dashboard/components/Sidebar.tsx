@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { auth, db } from '../../lib/firebase';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
 import ustpLogo from '../../assets/ustp-things-logo.png';
 import userAvatar from '../../assets/ustp thingS/Person.png';
 import heartIcon from '../../assets/ustp thingS/Heart.png';
@@ -18,6 +18,7 @@ type SidebarProps = {
 export default function Sidebar({ onVerifyClick }: SidebarProps) {
   const [isVerified, setIsVerified] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
+  const [username, setUsername] = useState<string>('Username');
   const user = auth.currentUser;
 
   useEffect(() => {
@@ -42,6 +43,18 @@ export default function Sidebar({ onVerifyClick }: SidebarProps) {
     checkVerified();
   }, [user]);
 
+  useEffect(() => {
+    const fetchUsername = async () => {
+      if (!user) return;
+      const userDoc = await getDoc(doc(db, 'users', user.uid));
+      if (userDoc.exists()) {
+        const data = userDoc.data();
+        setUsername(data.username || 'Username');
+      }
+    };
+    fetchUsername();
+  }, [user]);
+
   return (
     <aside className="h-full w-80 bg-pink-50 flex flex-col justify-between p-6 shadow-lg min-h-screen">
       <div>
@@ -49,8 +62,8 @@ export default function Sidebar({ onVerifyClick }: SidebarProps) {
         <div className="flex items-center gap-4 mb-6">
           <img src={userAvatar} alt="User avatar" className="w-14 h-14 rounded-full border-2 border-pink-200 object-cover" />
           <div>
-            <div className="font-bold text-lg text-gray-800">Username</div>
-            <div className="text-xs text-gray-500">Email or Phone</div>
+            <div className="font-bold text-lg text-gray-800">{username}</div>
+            <div className="text-xs text-gray-500">{user?.email || 'Email or Phone'}</div>
           </div>
         </div>
         {/* Verify Button */}

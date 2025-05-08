@@ -1,7 +1,8 @@
 import logo from '../../assets/ustp-things-logo.png';
 import { useState } from 'react';
-import { auth } from '../../lib/firebase';
+import { auth, db } from '../../lib/firebase';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { setDoc, doc } from 'firebase/firestore';
 import { useNavigate } from 'react-router-dom';
 
 interface SignupModalProps {
@@ -10,7 +11,7 @@ interface SignupModalProps {
 }
 
 export default function SignupModal({ isOpen, onClose }: SignupModalProps) {
-  const [name, setName] = useState('');
+  const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -26,9 +27,15 @@ export default function SignupModal({ isOpen, onClose }: SignupModalProps) {
     setSuccess('');
     setLoading(true);
     try {
-      await createUserWithEmailAndPassword(auth, email, password);
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      // Save username and email to Firestore 'users' collection
+      await setDoc(doc(db, 'users', userCredential.user.uid), {
+        username,
+        email: email.toLowerCase(),
+        createdAt: new Date(),
+      });
       setSuccess('Account created successfully!');
-      setName('');
+      setUsername('');
       setEmail('');
       setPassword('');
       navigate('/dashboard');
@@ -53,8 +60,8 @@ export default function SignupModal({ isOpen, onClose }: SignupModalProps) {
         <h2 className="text-2xl font-bold text-pink-400 mb-6 mt-2">Sign Up</h2>
         <form className="w-full flex flex-col gap-4" onSubmit={handleSubmit}>
           <div>
-            <label className="block text-left text-black font-medium mb-1">Name</label>
-            <input type="text" value={name} onChange={e => setName(e.target.value)} className="w-full px-4 py-2 rounded border border-gray-300 focus:outline-none focus:border-pink-400" required />
+            <label className="block text-left text-black font-medium mb-1">Username</label>
+            <input type="text" value={username} onChange={e => setUsername(e.target.value)} className="w-full px-4 py-2 rounded border border-gray-300 focus:outline-none focus:border-pink-400" required />
           </div>
           <div>
             <label className="block text-left text-black font-medium mb-1">Email</label>

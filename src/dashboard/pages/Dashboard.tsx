@@ -1,49 +1,35 @@
 import Sidebar from '../components/Sidebar';
 import ustpLogo from '../../assets/ustp-things-logo.png';
-import heartIcon from '../../assets/ustp thingS/Heart.png';
 import uniformImg from '../../assets/ustp thingS/Product.png';
 import xIcon from '../../assets/ustp thingS/X button.png';
 import React, { useState } from 'react';
 import { db } from '../../lib/firebase';
 import { collection, addDoc } from 'firebase/firestore';
+import MyLikes from './MyLikes';
+import RecentlyViewed from './RecentlyViewed';
 
-const likes = [
+const products = [
   {
     id: 1,
-    name: 'Uniform Set USTP (Female)',
+    name: 'Uniform Set USTP (Female) ...',
     price: '₱1,000,000',
     image: uniformImg,
   },
   {
     id: 2,
-    name: 'Genevieve Galdo',
+    name: 'Item 2 [Desc]',
     price: '₱1,000,000',
     image: 'https://static.wikia.nocookie.net/spongebob/images/7/7e/Nat_Peterson_29.png',
   },
-  {
-    id: 3,
-    name: 'Genevieve Galdo',
-    price: '₱1,000,000',
-    image: 'https://static.wikia.nocookie.net/spongebob/images/7/7e/Nat_Peterson_29.png',
-  },
-  {
-    id: 4,
-    name: 'Genevieve Galdo',
-    price: '₱1,000,000',
-    image: 'https://static.wikia.nocookie.net/spongebob/images/7/7e/Nat_Peterson_29.png',
-  },
-  {
-    id: 5,
-    name: 'Genevieve Galdo',
-    price: '₱1,000,000',
-    image: 'https://static.wikia.nocookie.net/spongebob/images/7/7e/Nat_Peterson_29.png',
-  },
-  {
-    id: 6,
-    name: 'Genevieve Galdo',
-    price: '₱1,000,000',
-    image: 'https://static.wikia.nocookie.net/spongebob/images/7/7e/Nat_Peterson_29.png',
-  },
+];
+
+const categories = [
+  'For You',
+  'Electronics',
+  'Books',
+  'Uniform',
+  'Gel pens',
+  'Graph paper',
 ];
 
 function VerificationModal({ open, onClose }: { open: boolean; onClose: () => void }) {
@@ -156,37 +142,94 @@ function VerificationModal({ open, onClose }: { open: boolean; onClose: () => vo
 
 export default function Dashboard() {
   const [showModal, setShowModal] = useState(false);
+  const [mainView, setMainView] = useState<'home' | 'likes' | 'recently' | 'purchases'>('home');
+  const [selectedCategory, setSelectedCategory] = useState('For You');
+  const [search, setSearch] = useState('');
 
-  // Pass a prop to Sidebar to trigger modal
+  // Sidebar navigation handler
+  const handleSidebarNav = (view: typeof mainView) => setMainView(view);
+
+  // Filtered products (dummy logic for now)
+  const filteredProducts = products.filter(
+    (p) =>
+      (selectedCategory === 'For You' || p.name.toLowerCase().includes(selectedCategory.toLowerCase())) &&
+      (search === '' || p.name.toLowerCase().includes(search.toLowerCase()))
+  );
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Fixed Sidebar */}
       <div className="fixed top-0 left-0 h-screen w-80 z-20">
-        <Sidebar onVerifyClick={() => setShowModal(true)} />
+        <Sidebar
+          onVerifyClick={() => setShowModal(true)}
+          // Pass navigation handlers to Sidebar (update Sidebar to use these if needed)
+          onHomeClick={() => handleSidebarNav('home')}
+          onLikesClick={() => handleSidebarNav('likes')}
+          onRecentlyClick={() => handleSidebarNav('recently')}
+          onPurchasesClick={() => handleSidebarNav('purchases')}
+        />
       </div>
       {/* Main Content with left margin */}
       <main className="ml-80 flex flex-col bg-gray-50 min-h-screen">
         {/* Header */}
-        <div className="flex items-center gap-4 px-12 py-6 border-b border-gray-200">
-          <img src={ustpLogo} alt="USTP Things Logo" className="h-12 w-auto" />
-          <h1 className="text-3xl font-bold text-pink-500 border-b-4 border-pink-200 pb-1">My Likes</h1>
+        <div className="flex items-center justify-between px-12 py-6 border-b border-gray-200">
+          <div className="flex items-center gap-4">
+            <img src={ustpLogo} alt="USTP Things Logo" className="h-12 w-auto" />
+            {mainView === 'home' && <h1 className="text-3xl font-bold text-pink-500">USTP Things</h1>}
+            {mainView === 'likes' && <h1 className="text-3xl font-bold text-pink-500 border-b-4 border-pink-200 pb-1">My Likes</h1>}
+            {mainView === 'recently' && <h1 className="text-3xl font-bold text-pink-500 border-b-4 border-pink-200 pb-1">Recently Viewed</h1>}
+            {mainView === 'purchases' && <h1 className="text-3xl font-bold text-pink-500 border-b-4 border-pink-200 pb-1">My Purchases</h1>}
+          </div>
+          {/* Search bar and cart */}
+          <div className="flex items-center gap-4">
+            <input
+              className="px-4 py-2 rounded-full border border-pink-200 focus:outline-none"
+              placeholder="Search"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+            />
+            <div className="w-8 h-8 flex items-center justify-center bg-pink-100 rounded-full">
+              🛒
+            </div>
+          </div>
         </div>
-        {/* Likes Grid */}
-        <div className="flex-1 p-10">
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
-            {likes.map((item) => (
-              <div key={item.id} className="bg-white rounded-2xl shadow p-4 flex flex-col items-center border-2 border-gray-100 hover:shadow-lg transition">
-                <img src={item.image} alt={item.name} className="w-48 h-48 object-cover rounded-xl mb-4" />
-                <div className="w-full flex flex-col gap-1">
-                  <span className="font-bold text-lg text-gray-800 truncate">{item.name}</span>
-                  <span className="text-pink-500 font-semibold text-md">{item.price}</span>
-                </div>
-                <div className="w-full flex justify-end mt-2">
-                  <img src={heartIcon} alt="Like" className="w-7 h-7" />
-                </div>
-              </div>
+        {/* Category Chips (only on Home/Product Feed) */}
+        {mainView === 'home' && (
+          <div className="flex gap-2 px-12 py-4">
+            {categories.map((cat) => (
+              <button
+                key={cat}
+                className={`px-4 py-1 rounded-full border text-sm font-semibold transition ${selectedCategory === cat ? 'bg-pink-400 text-white border-pink-400' : 'bg-white text-gray-600 border-gray-300 hover:bg-pink-100'}`}
+                onClick={() => setSelectedCategory(cat)}
+              >
+                {cat}
+              </button>
             ))}
           </div>
+        )}
+        {/* Main Content Switcher */}
+        <div className="flex-1 p-10">
+          {mainView === 'home' && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+              {filteredProducts.map((item) => (
+                <div key={item.id} className="bg-white rounded-2xl shadow p-4 flex flex-col items-center border-2 border-gray-100 hover:shadow-lg transition">
+                  <img src={item.image} alt={item.name} className="w-48 h-48 object-cover rounded-xl mb-4" />
+                  <div className="w-full flex flex-col gap-1">
+                    <span className="font-bold text-lg text-gray-800 truncate">{item.name}</span>
+                    <span className="text-pink-500 font-semibold text-md">{item.price}</span>
+                  </div>
+                  <div className="w-full flex justify-end mt-2">
+                    <button className="text-pink-400 hover:text-pink-600">
+                      <svg className="w-7 h-7" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M5 15l7-7 7 7" /></svg>
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+          {mainView === 'likes' && <MyLikes />}
+          {mainView === 'recently' && <RecentlyViewed />}
+          {/* Add more views for purchases, etc. as needed */}
         </div>
       </main>
       <VerificationModal open={showModal} onClose={() => setShowModal(false)} />

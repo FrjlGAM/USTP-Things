@@ -13,9 +13,13 @@ import settingsIcon from '../../assets/ustp thingS/Settings.png';
 // Add prop type
 type SidebarProps = {
   onVerifyClick?: () => void;
+  onHomeClick?: () => void;
+  onLikesClick?: () => void;
+  onRecentlyClick?: () => void;
+  onPurchasesClick?: () => void;
 };
 
-export default function Sidebar({ onVerifyClick }: SidebarProps) {
+export default function Sidebar({ onVerifyClick, onHomeClick, onLikesClick, onRecentlyClick, onPurchasesClick }: SidebarProps) {
   const [isVerified, setIsVerified] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
   const [username, setUsername] = useState<string>('Username');
@@ -62,7 +66,20 @@ export default function Sidebar({ onVerifyClick }: SidebarProps) {
         <div className="flex items-center gap-4 mb-6">
           <img src={userAvatar} alt="User avatar" className="w-14 h-14 rounded-full border-2 border-pink-200 object-cover" />
           <div>
-            <div className="font-bold text-lg text-gray-800">{username}</div>
+            <div className="font-bold text-lg text-gray-800 flex items-center gap-2">
+              {username}
+              {isVerified && (
+                <span
+                  title="Verified"
+                  className="inline-flex items-center px-2 py-0.5 rounded-full bg-green-200 text-green-800 text-xs font-semibold ml-1"
+                >
+                  <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                  Verified
+                </span>
+              )}
+            </div>
             <div className="text-xs text-gray-500">{user?.email || 'Email or Phone'}</div>
           </div>
         </div>
@@ -77,12 +94,13 @@ export default function Sidebar({ onVerifyClick }: SidebarProps) {
         )}
         {/* Navigation */}
         <nav className="flex flex-col gap-4">
-          <a href="#" className="flex items-center gap-2 text-pink-400 font-semibold text-lg">My Likes</a>
-          <a href="#" className="flex items-center gap-2 text-pink-400 font-semibold text-lg">Recently Viewed</a>
+          <button onClick={onHomeClick} className="flex items-center gap-2 text-pink-400 font-semibold text-lg text-left">Home</button>
+          <button onClick={onLikesClick} className="flex items-center gap-2 text-pink-400 font-semibold text-lg text-left">My Likes</button>
+          <button onClick={onRecentlyClick} className="flex items-center gap-2 text-pink-400 font-semibold text-lg text-left">Recently Viewed</button>
           <div className="mt-4 mb-2 font-bold text-pink-600 text-xl">My Purchases</div>
-          <a href="#" className="flex items-center gap-2 text-pink-400 font-semibold text-lg"><img src={locationIcon} alt="Pick Up" className="w-5 h-5" />Pick Up</a>
-          <a href="#" className="flex items-center gap-2 text-pink-400 font-semibold text-lg"><img src={starIcon} alt="To Rate" className="w-5 h-5" />To Rate</a>
-          <a href="#" className="flex items-center gap-2 text-pink-400 font-semibold text-lg"><img src={chatIcon} alt="Messages" className="w-5 h-5" />Messages</a>
+          <button onClick={onPurchasesClick} className="flex items-center gap-2 text-pink-400 font-semibold text-lg text-left"><img src={locationIcon} alt="Pick Up" className="w-5 h-5" />Pick Up</button>
+          <button className="flex items-center gap-2 text-pink-400 font-semibold text-lg text-left"><img src={starIcon} alt="To Rate" className="w-5 h-5" />To Rate</button>
+          <button className="flex items-center gap-2 text-pink-400 font-semibold text-lg text-left"><img src={chatIcon} alt="Messages" className="w-5 h-5" />Messages</button>
         </nav>
         {/* Start Selling Button */}
         <button className="w-full bg-pink-300 hover:bg-pink-400 text-white font-semibold py-2 rounded-lg shadow mt-8 mb-4 transition">Start selling now!</button>

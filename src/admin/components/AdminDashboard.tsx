@@ -3,7 +3,7 @@ import { auth, db } from '../../lib/firebase';
 import { useNavigate } from 'react-router-dom';
 import Logo from '../../landing/components/Logo';
 import userAvatar from '../../assets/ustp thingS/Person.png';
-import { collection, getDocs, deleteDoc, doc, setDoc, query, orderBy, limit, Timestamp } from 'firebase/firestore';
+import { collection, getDocs, deleteDoc, doc, setDoc, query, orderBy, limit } from 'firebase/firestore';
 
 type Transaction = {
   id: string;
@@ -16,7 +16,6 @@ type Transaction = {
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
-  const [user, setUser] = useState(auth.currentUser);
   const [tab, setTab] = useState<'dashboard' | 'account' | 'verified'>('dashboard');
   const [verifications, setVerifications] = useState<any[]>([]);
   const [loadingVerifications, setLoadingVerifications] = useState(false);
@@ -39,8 +38,6 @@ export default function AdminDashboard() {
     const unsubscribe = auth.onAuthStateChanged((user) => {
       if (!user) {
         navigate('/admin/login');
-      } else {
-        setUser(user);
       }
     });
     return () => unsubscribe();
@@ -214,7 +211,7 @@ export default function AdminDashboard() {
                   ) : transactions.length === 0 ? (
                     <tr><td colSpan={4} className="text-center py-8 text-gray-400">No transactions found.</td></tr>
                   ) : (
-                    transactions.map((tx, idx) => {
+                    transactions.map((tx) => {
                       const dateObj = tx.createdAt?.toDate ? tx.createdAt.toDate() : new Date(tx.createdAt);
                       return (
                         <tr key={tx.id} className="border-b border-pink-100 last:border-0">
@@ -256,7 +253,7 @@ export default function AdminDashboard() {
                 ) : verifications.length === 0 ? (
                   <tr><td colSpan={4} className="text-center py-8 text-gray-400">No pending accounts.</td></tr>
                 ) : (
-                  verifications.map((v, idx) => (
+                  verifications.map((v) => (
                     <tr key={v.id} className="bg-yellow-50 rounded-full my-2">
                       <td className="flex items-center gap-3 py-4 px-4 rounded-l-full">
                         <img src={userAvatar} alt="Avatar" className="w-10 h-10 rounded-full border border-pink-200" />
@@ -313,7 +310,7 @@ export default function AdminDashboard() {
                 ) : (
                   <>
                     {/* Verified Users */}
-                    {verifiedAccounts.map((v, idx) => (
+                    {verifiedAccounts.map((v) => (
                       <tr key={v.id} className="bg-yellow-50 rounded-full my-2">
                         <td className="flex items-center gap-3 py-4 px-4 rounded-l-full">
                           <img src={userAvatar} alt="Avatar" className="w-10 h-10 rounded-full border border-pink-200" />
@@ -343,7 +340,7 @@ export default function AdminDashboard() {
                       </tr>
                     ))}
                     {/* Unverified Users */}
-                    {verifications.map((v, idx) => (
+                    {verifications.map((v) => (
                       <tr key={v.id} className="bg-gray-100 rounded-full my-2">
                         <td className="flex items-center gap-3 py-4 px-4 rounded-l-full">
                           <img src={userAvatar} alt="Avatar" className="w-10 h-10 rounded-full border border-pink-200" />

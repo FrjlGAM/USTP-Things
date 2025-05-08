@@ -7,7 +7,12 @@ import starIcon from '../../assets/ustp thingS/Star.png';
 import chatIcon from '../../assets/ustp thingS/Message circle.png';
 import settingsIcon from '../../assets/ustp thingS/Settings.png';
 
-export default function Sidebar() {
+// Add prop type
+type SidebarProps = {
+  onVerifyClick?: () => void;
+};
+
+export default function Sidebar({ onVerifyClick }: SidebarProps) {
   return (
     <aside className="h-full w-80 bg-pink-50 flex flex-col justify-between p-6 shadow-lg min-h-screen">
       <div>
@@ -20,7 +25,12 @@ export default function Sidebar() {
           </div>
         </div>
         {/* Verify Button */}
-        <button className="w-full bg-pink-300 hover:bg-pink-400 text-white font-semibold py-2 rounded-lg shadow mb-8 transition">Verify Your Account</button>
+        <button
+          className="w-full bg-pink-300 hover:bg-pink-400 text-white font-semibold py-2 rounded-lg shadow mb-8 transition"
+          onClick={onVerifyClick}
+        >
+          Verify Your Account
+        </button>
         {/* Navigation */}
         <nav className="flex flex-col gap-4">
           <a href="#" className="flex items-center gap-2 text-pink-400 font-semibold text-lg">My Likes</a>

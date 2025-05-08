@@ -1,3 +1,6 @@
+import { useEffect, useState } from 'react';
+import { auth, db } from '../../lib/firebase';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 import ustpLogo from '../../assets/ustp-things-logo.png';
 import userAvatar from '../../assets/ustp thingS/Person.png';
 import heartIcon from '../../assets/ustp thingS/Heart.png';
@@ -13,6 +16,32 @@ type SidebarProps = {
 };
 
 export default function Sidebar({ onVerifyClick }: SidebarProps) {
+  const [isVerified, setIsVerified] = useState<boolean | null>(null);
+  const [loading, setLoading] = useState(true);
+  const user = auth.currentUser;
+
+  useEffect(() => {
+    const checkVerified = async () => {
+      if (!user || !user.email) {
+        setIsVerified(false);
+        setLoading(false);
+        return;
+      }
+      // Force lowercase for comparison
+      const email = user.email.toLowerCase();
+      // If you want to use UID instead, use:
+      // const q = query(collection(db, 'verifiedAccounts'), where('id', '==', user.uid));
+      const q = query(collection(db, 'verifiedAccounts'), where('email', '==', email));
+      const snapshot = await getDocs(q);
+      console.log('Checking verified for:', email);
+      console.log('Query empty:', snapshot.empty);
+      console.log('Docs found:', snapshot.docs.map(d => d.data()));
+      setIsVerified(!snapshot.empty);
+      setLoading(false);
+    };
+    checkVerified();
+  }, [user]);
+
   return (
     <aside className="h-full w-80 bg-pink-50 flex flex-col justify-between p-6 shadow-lg min-h-screen">
       <div>
@@ -25,12 +54,14 @@ export default function Sidebar({ onVerifyClick }: SidebarProps) {
           </div>
         </div>
         {/* Verify Button */}
-        <button
-          className="w-full bg-pink-300 hover:bg-pink-400 text-white font-semibold py-2 rounded-lg shadow mb-8 transition"
-          onClick={onVerifyClick}
-        >
-          Verify Your Account
-        </button>
+        {!loading && isVerified === false && (
+          <button
+            className="w-full bg-pink-300 hover:bg-pink-400 text-white font-semibold py-2 rounded-lg shadow mb-8 transition"
+            onClick={onVerifyClick}
+          >
+            Verify Your Account
+          </button>
+        )}
         {/* Navigation */}
         <nav className="flex flex-col gap-4">
           <a href="#" className="flex items-center gap-2 text-pink-400 font-semibold text-lg">My Likes</a>

@@ -196,22 +196,21 @@ export default function Dashboard() {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Fixed Sidebar */}
-      <div className="fixed top-0 left-0 h-screen w-80 z-20">
+    <div className="flex min-h-screen bg-[#f7f6fd]">
+      {/* Sidebar (unchanged) */}
+      <div className="w-80 flex-shrink-0">
         <Sidebar
           onVerifyClick={() => setShowModal(true)}
-          // Pass navigation handlers to Sidebar (update Sidebar to use these if needed)
           onHomeClick={() => handleSidebarNav('home')}
           onLikesClick={() => handleSidebarNav('likes')}
           onRecentlyClick={() => handleSidebarNav('recently')}
           onPurchasesClick={() => handleSidebarNav('purchases')}
         />
       </div>
-      {/* Main Content with left margin */}
-      <main className="ml-80 flex flex-col bg-gray-50 min-h-screen">
+      {/* Main Content */}
+      <main className="flex-1 flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between px-12 py-6 border-b border-gray-200">
+        <div className="flex items-center justify-between px-12 py-6 border-b border-gray-200 bg-white">
           <div className="flex items-center gap-4">
             <img src={ustpLogo} alt="USTP Things Logo" className="h-12 w-auto" />
             {mainView === 'home' && <h1 className="text-3xl font-bold text-pink-500">USTP Things</h1>}

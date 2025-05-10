@@ -3,7 +3,7 @@ import ustpLogo from "../../assets/ustp-things-logo.png";
 
 export default function Settings() {
   return (
-    <div style={{ minHeight: "100vh", background: "#E9E8FC" }}>
+    <div style={{ minHeight: "100vh", background: "#fff" }}>
       {/* Top bar */}
       <div
         style={{
@@ -39,7 +39,7 @@ export default function Settings() {
         </div>
       </div>
       {/* Main content */}
-      <div style={{ maxWidth: 1200, margin: "0 auto", padding: "32px 16px 0 16px" }}>
+      <div style={{ paddingTop: 32, paddingLeft: 24, paddingRight: 24 }}>
         {/* My Account */}
         <div
           style={{

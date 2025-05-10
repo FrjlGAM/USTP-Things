@@ -9,7 +9,7 @@ export default function Header() {
       <div className="flex items-center gap-[27px]">
         <div className="relative">
           <input
-            className="w-[371px] h-[41px] pl-12 pr-4 py-2 rounded-full border-2 border-[rgba(230,230,230,0.80)] focus:outline-none"
+            className="w-[371px] h-[41px] pl-12 pr-4 py-2 rounded-full border-2 border-[rgba(230,230,230,0.80)] focus:outline-none text-[rgba(248,131,121,0.80)] placeholder-[rgba(248,131,121,0.80)]"
             placeholder="Search"
             readOnly
           />

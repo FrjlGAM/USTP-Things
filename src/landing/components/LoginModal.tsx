@@ -49,23 +49,23 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
-      <div className="relative bg-white bg-opacity-70 rounded-2xl shadow-xl p-8 w-full max-w-md mx-4 flex flex-col items-center border border-pink-200 backdrop-blur-md pointer-events-auto">
+      <div className="relative bg-white bg-opacity-70 rounded-2xl shadow-xl p-8 w-full max-w-md mx-4 flex flex-col items-center border border-[#F88379] backdrop-blur-md pointer-events-auto">
         <button
-          className="absolute top-4 right-4 text-3xl text-pink-400 hover:text-pink-600 focus:outline-none"
+          className="absolute top-4 right-4 text-3xl text-[#F88379] hover:text-[#F88379]/80 focus:outline-none"
           onClick={onClose}
           aria-label="Close"
         >
           &times;
         </button>
         <img src={logo} alt="USTP Things Logo" className="w-24 mx-auto mb-2" />
-        <h2 className="text-2xl font-bold text-pink-400 mb-6 mt-2">Login</h2>
+        <h2 className="text-2xl font-bold text-[#F88379] mb-6 mt-2">Login</h2>
         <form className="w-full flex flex-col gap-4" onSubmit={handleSubmit}>
           <div>
             <label className="block text-left text-black font-medium mb-1">Email</label>
             <div className="relative">
               <input
                 type="email"
-                className="w-full px-4 py-2 rounded border border-gray-300 focus:outline-none focus:border-pink-400"
+                className="w-full px-4 py-2 rounded border border-gray-300 focus:outline-none focus:border-[#F88379]"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 required
@@ -80,7 +80,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
             <div className="relative">
               <input
                 type={showPassword ? "text" : "password"}
-                className="w-full px-4 py-2 rounded border border-gray-300 focus:outline-none focus:border-pink-400 pr-10"
+                className="w-full px-4 py-2 rounded border border-gray-300 focus:outline-none focus:border-[#F88379] pr-10"
                 value={password}
                 onChange={e => setPassword(e.target.value)}
                 required
@@ -99,12 +99,12 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
           </div>
           <div className="flex items-center justify-between text-sm mb-2">
             <label className="flex items-center gap-2">
-              <input type="checkbox" className="accent-pink-400" /> Remember me
+              <input type="checkbox" className="accent-[#F88379]" /> Remember me
             </label>
-            <a href="#" className="text-pink-400 hover:underline">Forget Password</a>
+            <a href="#" className="text-[#F88379] hover:underline">Forget Password</a>
           </div>
           {error && <div className="text-red-500 text-sm text-center">{error}</div>}
-          <button type="submit" className="w-full py-3 rounded-full bg-pink-300 text-white font-bold text-lg hover:bg-pink-400 transition disabled:opacity-60" disabled={loading}>
+          <button type="submit" className="w-full py-3 rounded-full bg-[#F88379] text-white font-bold text-lg hover:bg-[#F88379]/80 transition disabled:opacity-60" disabled={loading}>
             {loading ? 'Logging in...' : 'Login'}
           </button>
         </form>

@@ -1,7 +1,7 @@
 "use client";
 import * as React from "react";
 import { ProductImage } from "./ProductImage";
-import { ProductDetails } from "./ProductDetails";
+import  ProductDetails from "./ProductDetails";
 import { ProductDescription } from "./ProductDescription";
 
 function BuyerPostFrame() {

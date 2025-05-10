@@ -2,6 +2,8 @@ import Sidebar from '../components/Sidebar';
 import ustpLogo from '../../assets/ustp-things-logo.png';
 import uniformImg from '../../assets/ustp thingS/Product.png';
 import xIcon from '../../assets/ustp thingS/X button.png';
+import cartIcon from '../../assets/ustp thingS/Shopping cart.png';
+import searchIcon from '../../assets/ustp thingS/search.png';
 import React, { useState } from 'react';
 import { db } from '../../lib/firebase';
 import { collection, addDoc } from 'firebase/firestore';
@@ -163,8 +165,8 @@ export default function Dashboard() {
 
   return (
     <div className="flex min-h-screen bg-[#f7f6fd]">
-      {/* Sidebar (unchanged) */}
-      <div className="w-80 flex-shrink-0">
+      {/* Sidebar */}
+      <div className="w-[348px] flex-shrink-0">
         <Sidebar
           onVerifyClick={() => setShowModal(true)}
           onHomeClick={() => handleSidebarNav('home')}
@@ -176,27 +178,31 @@ export default function Dashboard() {
       {/* Main Content */}
       <main className="flex-1 flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between px-12 py-6 border-b border-gray-200 bg-white">
+        <header className="flex items-center justify-between px-8 pr-[47px] py-4 bg-white h-[70px] w-full shadow-[0_4px_4px_0_rgba(0,0,0,0.1)]">
           <div className="flex items-center gap-4">
-            <img src={ustpLogo} alt="USTP Things Logo" className="h-12 w-auto" />
-            {mainView === 'home' && <h1 className="text-3xl font-bold text-pink-500">USTP Things</h1>}
-            {mainView === 'likes' && <h1 className="text-3xl font-bold text-pink-500 pb-1">My Likes</h1>}
-            {mainView === 'recently' && <h1 className="text-3xl font-bold text-pink-500 pb-1">Recently Viewed</h1>}
-            {mainView === 'purchases' && <h1 className="text-3xl font-bold text-pink-500 pb-1">Pick Up</h1>}
+            <img src={ustpLogo} alt="USTP Things Logo" className="w-[117px] h-[63px] object-contain" />
+            {mainView === 'likes' && <h1 className="text-3xl font-bold text-[#F88379] pb-1">My Likes</h1>}
+            {mainView === 'recently' && <h1 className="text-3xl font-bold text-[#F88379] pb-1">Recently Viewed</h1>}
+            {mainView === 'purchases' && <h1 className="text-3xl font-bold text-[#F88379] pb-1">Pick Up</h1>}
           </div>
           {/* Search bar and cart */}
-          <div className="flex items-center gap-4">
-            <input
-              className="px-4 py-2 rounded-full border border-pink-200 focus:outline-none"
-              placeholder="Search"
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-            />
-            <div className="w-8 h-8 flex items-center justify-center bg-pink-100 rounded-full">
-              🛒
+          <div className="flex items-center gap-[27px]">
+            <div className="relative">
+              <input
+                className="w-[371px] h-[41px] pl-12 pr-4 py-2 rounded-full border-2 border-[rgba(230,230,230,0.80)] focus:outline-none text-[rgba(248,131,121,0.80)] placeholder-[rgba(248,131,121,0.80)]"
+                placeholder="Search"
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+              />
+              <img 
+                src={searchIcon} 
+                alt="Search" 
+                className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2" 
+              />
             </div>
+            <img src={cartIcon} alt="Shopping Cart" className="w-[30px] h-[30px]" />
           </div>
-        </div>
+        </header>
         {/* Category Chips (only on Home/Product Feed) */}
         {mainView === 'home' && !selectedProduct && (
           <div className="flex gap-2 px-12 py-4">

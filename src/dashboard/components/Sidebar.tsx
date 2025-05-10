@@ -63,7 +63,7 @@ export default function Sidebar({ onVerifyClick, onHomeClick, onLikesClick, onRe
   }, [user]);
 
   return (
-    <aside className="h-full w-80 bg-pink-50 flex flex-col justify-between p-6 shadow-lg min-h-screen">
+    <aside className="fixed h-screen w-[348px] bg-[#FFF3F2] flex flex-col justify-between p-6 overflow-hidden">
       <div>
         {/* User Info */}
         <div className="flex items-center gap-4 mb-6">

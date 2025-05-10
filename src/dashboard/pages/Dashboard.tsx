@@ -9,7 +9,7 @@ import { db } from '../../lib/firebase';
 import { collection, addDoc } from 'firebase/firestore';
 import MyLikes from './MyLikes';
 import RecentlyViewed from './RecentlyViewed';
-import ProductDetails from './ProductDetails';
+import { ProductDetails } from './ProductDetails';
 
 const products = [
   {

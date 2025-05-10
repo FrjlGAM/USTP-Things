@@ -10,7 +10,7 @@ interface ProductDetailsProps {
   onBack: () => void;
 }
 
-export default function ProductDetails({ product, onBack }: ProductDetailsProps) {
+export function ProductDetails({ product, onBack }: ProductDetailsProps) {
   return (
     <div className="max-w-xl mx-auto bg-white rounded-2xl shadow-lg p-8 relative animate-fade-in-scale">
       <button onClick={onBack} className="absolute top-4 right-4 text-gray-400 hover:text-pink-400 text-2xl font-bold">×</button>

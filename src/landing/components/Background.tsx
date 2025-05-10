@@ -4,4 +4,4 @@ export default function Background() {
       {/* Placeholder for background image or effects */}
     </div>
   );
-} 
+}

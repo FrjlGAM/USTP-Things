@@ -1,4 +1,7 @@
 import logo from '../../assets/ustp-things-logo.png';
+import eyeIcon from '../../assets/ustp thingS/Eye.png';
+import eyeOffIcon from '../../assets/ustp thingS/Eye off.png';
+import emailIcon from '../../assets/ustp thingS/Email.png';
 import { useState } from 'react';
 import { auth, db } from '../../lib/firebase';
 import { signInWithEmailAndPassword } from 'firebase/auth';
@@ -16,6 +19,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   if (!isOpen) return null;
 
@@ -66,20 +70,31 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
                 onChange={e => setEmail(e.target.value)}
                 required
               />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">✉️</span>
+              <span className="absolute right-3 top-1/2 -translate-y-1/2">
+                <img src={emailIcon} alt="Email" className="w-5 h-5" />
+              </span>
             </div>
           </div>
           <div>
             <label className="block text-left text-black font-medium mb-1">Password</label>
             <div className="relative">
               <input
-                type="password"
+                type={showPassword ? "text" : "password"}
                 className="w-full px-4 py-2 rounded border border-gray-300 focus:outline-none focus:border-pink-400 pr-10"
                 value={password}
                 onChange={e => setPassword(e.target.value)}
                 required
               />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 cursor-pointer">👁️</span>
+              <span 
+                className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer hover:opacity-80"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                <img 
+                  src={showPassword ? eyeIcon : eyeOffIcon} 
+                  alt={showPassword ? "Hide password" : "Show password"} 
+                  className="w-5 h-5"
+                />
+              </span>
             </div>
           </div>
           <div className="flex items-center justify-between text-sm mb-2">

@@ -35,6 +35,24 @@ const categories = [
   'Graph paper',
 ];
 
+const pickups = [
+  {
+    boutique: 'Galdo Boutique',
+    product: 'Uniform Set USTP (Female) – Blouse, Skirt, and Necktie',
+    image: uniformImg,
+  },
+  {
+    boutique: 'Galdo Boutique',
+    product: 'Uniform Set USTP (Female) – Blouse, Skirt, and Necktie',
+    image: uniformImg,
+  },
+  {
+    boutique: 'Galdo Boutique',
+    product: 'Uniform Set USTP (Female) – Blouse, Skirt, and Necktie',
+    image: uniformImg,
+  },
+];
+
 function VerificationModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [step, setStep] = React.useState<'select' | 'student'>('select');
   const [form, setForm] = React.useState({ name: '', id: '', email: '', agree: false });
@@ -242,7 +260,21 @@ export default function Dashboard() {
                 </div>
               ))}
             </div>
-          ) : mainView === 'likes' ? <MyLikes /> : mainView === 'recently' ? <RecentlyViewed /> : null}
+          ) : mainView === 'likes' ? <MyLikes /> : mainView === 'recently' ? <RecentlyViewed /> : mainView === 'purchases' ? (
+            <div className="p-4">
+              <div className="flex flex-col gap-6">
+                {pickups.map((item, idx) => (
+                  <div key={idx} className="bg-pink-50 rounded-xl p-6 flex items-center gap-4 shadow-sm border border-pink-100">
+                    <img src={item.image} alt="Product" className="w-14 h-14 rounded-lg object-cover border border-pink-200" />
+                    <div>
+                      <div className="font-bold text-lg text-pink-900 mb-1">{item.boutique}</div>
+                      <div className="text-gray-700 text-base">{item.product}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
           {/* Add more views for purchases, etc. as needed */}
         </div>
       </main>

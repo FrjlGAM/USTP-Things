@@ -140,14 +140,53 @@ function VerificationModal({ open, onClose }: { open: boolean; onClose: () => vo
   );
 }
 
+// ProductDetail component for showing product details
+function ProductDetail({ product, onBack }: { product: any; onBack: () => void }) {
+  return (
+    <div className="max-w-xl mx-auto bg-white rounded-2xl shadow-lg p-8 relative animate-fade-in-scale">
+      <button onClick={onBack} className="absolute top-4 right-4 text-gray-400 hover:text-pink-400 text-2xl font-bold">×</button>
+      <img src={product.image} alt={product.name} className="w-64 h-64 object-cover rounded-xl mx-auto mb-6" />
+      <h2 className="text-2xl font-bold mb-2 text-center">{product.name}</h2>
+      <div className="text-pink-500 font-semibold text-xl mb-4 text-center">{product.price}</div>
+      {/* Example product description, you can customize this per product */}
+      {product.id === 1 ? (
+        <>
+          <div className="text-gray-700 mb-4 text-center">
+            Complete USTP college uniform set for female students, includes:
+            <ul className="list-disc list-inside text-left mt-2">
+              <li>White Blouse: With USTP logo (Size: Medium)</li>
+              <li>Black Skirt: Waist - 28", Length - Knee-length</li>
+              <li>USTP Necktie</li>
+            </ul>
+          </div>
+          <div className="mb-4">
+            <div className="flex items-center gap-2 text-green-600 font-semibold mb-1">✅ Barely used and in excellent condition</div>
+            <div className="flex items-center gap-2 text-green-600 font-semibold mb-1">✅ No stains, tears, or damages</div>
+            <div className="flex items-center gap-2 text-green-600 font-semibold">✅ Ideal for students looking for an affordable and well-maintained uniform</div>
+          </div>
+        </>
+      ) : (
+        <div className="text-gray-700 mb-4 text-center">No additional details available.</div>
+      )}
+      <div className="mt-6">
+        <button className="w-full bg-pink-400 hover:bg-pink-500 text-white font-bold py-3 rounded-xl transition">Buy Now</button>
+      </div>
+    </div>
+  );
+}
+
 export default function Dashboard() {
   const [showModal, setShowModal] = useState(false);
   const [mainView, setMainView] = useState<'home' | 'likes' | 'recently' | 'purchases'>('home');
   const [selectedCategory, setSelectedCategory] = useState('For You');
   const [search, setSearch] = useState('');
+  const [selectedProduct, setSelectedProduct] = useState<any>(null);
 
   // Sidebar navigation handler
-  const handleSidebarNav = (view: typeof mainView) => setMainView(view);
+  const handleSidebarNav = (view: typeof mainView) => {
+    setMainView(view);
+    setSelectedProduct(null); // Reset product detail when navigating
+  };
 
   // Filtered products (dummy logic for now)
   const filteredProducts = products.filter(
@@ -194,7 +233,7 @@ export default function Dashboard() {
           </div>
         </div>
         {/* Category Chips (only on Home/Product Feed) */}
-        {mainView === 'home' && (
+        {mainView === 'home' && !selectedProduct && (
           <div className="flex gap-2 px-12 py-4">
             {categories.map((cat) => (
               <button
@@ -209,10 +248,16 @@ export default function Dashboard() {
         )}
         {/* Main Content Switcher */}
         <div className="flex-1 p-10">
-          {mainView === 'home' && (
+          {mainView === 'home' && selectedProduct ? (
+            <ProductDetail product={selectedProduct} onBack={() => setSelectedProduct(null)} />
+          ) : mainView === 'home' ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
               {filteredProducts.map((item) => (
-                <div key={item.id} className="bg-white rounded-2xl shadow p-4 flex flex-col items-center border-2 border-gray-100 hover:shadow-lg transition">
+                <div
+                  key={item.id}
+                  className="bg-white rounded-2xl shadow p-4 flex flex-col items-center border-2 border-gray-100 hover:shadow-lg transition cursor-pointer"
+                  onClick={() => setSelectedProduct(item)}
+                >
                   <img src={item.image} alt={item.name} className="w-48 h-48 object-cover rounded-xl mb-4" />
                   <div className="w-full flex flex-col gap-1">
                     <span className="font-bold text-lg text-gray-800 truncate">{item.name}</span>
@@ -226,9 +271,7 @@ export default function Dashboard() {
                 </div>
               ))}
             </div>
-          )}
-          {mainView === 'likes' && <MyLikes />}
-          {mainView === 'recently' && <RecentlyViewed />}
+          ) : mainView === 'likes' ? <MyLikes /> : mainView === 'recently' ? <RecentlyViewed /> : null}
           {/* Add more views for purchases, etc. as needed */}
         </div>
       </main>

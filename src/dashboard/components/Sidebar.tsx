@@ -3,10 +3,11 @@ import { auth, db } from '../../lib/firebase';
 import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
 import ustpLogo from '../../assets/ustp-things-logo.png';
 import userAvatar from '../../assets/ustp thingS/Person.png';
+import homeIcon from '../../assets/ustp thingS/Home.png';
 import heartIcon from '../../assets/ustp thingS/Heart.png';
 import clockIcon from '../../assets/ustp thingS/Clock.png';
 import locationIcon from '../../assets/ustp thingS/location_on.png';
-import starIcon from '../../assets/ustp thingS/Star.png';
+import rateIcon from '../../assets/ustp thingS/Rate.png';
 import chatIcon from '../../assets/ustp thingS/Message circle.png';
 import settingsIcon from '../../assets/ustp thingS/Settings.png';
 import { useNavigate, Routes, Route } from 'react-router-dom';
@@ -96,9 +97,15 @@ export default function Sidebar({ onVerifyClick, onHomeClick, onLikesClick, onRe
         )}
         {/* Navigation */}
         <nav className="flex flex-col gap-4">
-          <button onClick={onHomeClick} className="flex items-center gap-2 text-pink-400 font-semibold text-lg text-left">Home</button>
-          <button onClick={onLikesClick} className="flex items-center gap-2 text-pink-400 font-semibold text-lg text-left">My Likes</button>
-          <button onClick={onRecentlyClick} className="flex items-center gap-2 text-pink-400 font-semibold text-lg text-left">Recently Viewed</button>
+          <button onClick={onHomeClick} className="flex items-center gap-2 text-pink-400 font-semibold text-lg text-left">
+            <img src={homeIcon} alt="Home" className="w-5 h-5" />Home
+          </button>
+          <button onClick={onLikesClick} className="flex items-center gap-2 text-pink-400 font-semibold text-lg text-left">
+            <img src={heartIcon} alt="My Likes" className="w-5 h-5" />My Likes
+          </button>
+          <button onClick={onRecentlyClick} className="flex items-center gap-2 text-pink-400 font-semibold text-lg text-left">
+            <img src={clockIcon} alt="Recently Viewed" className="w-5 h-5" />Recently Viewed
+          </button>
           <div className="mt-4 mb-2 font-bold text-pink-600 text-xl">My Purchases</div>
           <button
             onClick={onPurchasesClick ? onPurchasesClick : () => navigate('/dashboard/pickup')}
@@ -106,7 +113,7 @@ export default function Sidebar({ onVerifyClick, onHomeClick, onLikesClick, onRe
           >
             <img src={locationIcon} alt="Pick Up" className="w-5 h-5" />Pick Up
           </button>
-          <button className="flex items-center gap-2 text-pink-400 font-semibold text-lg text-left"><img src={starIcon} alt="To Rate" className="w-5 h-5" />To Rate</button>
+          <button className="flex items-center gap-2 text-pink-400 font-semibold text-lg text-left"><img src={rateIcon} alt="To Rate" className="w-5 h-5" />To Rate</button>
           <button className="flex items-center gap-2 text-pink-400 font-semibold text-lg text-left"><img src={chatIcon} alt="Messages" className="w-5 h-5" />Messages</button>
         </nav>
         {/* Start Selling Button */}

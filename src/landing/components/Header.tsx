@@ -11,6 +11,7 @@ export default function Header() {
           <input
             className="w-[371px] h-[41px] pl-12 pr-4 py-2 rounded-full border-2 border-[rgba(230,230,230,0.80)] focus:outline-none"
             placeholder="Search"
+            readOnly
           />
           <img 
             src={searchIcon} 

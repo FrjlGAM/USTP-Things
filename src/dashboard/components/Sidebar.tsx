@@ -9,6 +9,7 @@ import locationIcon from '../../assets/ustp thingS/location_on.png';
 import starIcon from '../../assets/ustp thingS/Star.png';
 import chatIcon from '../../assets/ustp thingS/Message circle.png';
 import settingsIcon from '../../assets/ustp thingS/Settings.png';
+import { useNavigate, Routes, Route } from 'react-router-dom';
 
 // Add prop type
 type SidebarProps = {
@@ -24,6 +25,7 @@ export default function Sidebar({ onVerifyClick, onHomeClick, onLikesClick, onRe
   const [loading, setLoading] = useState(true);
   const [username, setUsername] = useState<string>('Username');
   const user = auth.currentUser;
+  const navigate = useNavigate();
 
   useEffect(() => {
     const checkVerified = async () => {
@@ -98,7 +100,12 @@ export default function Sidebar({ onVerifyClick, onHomeClick, onLikesClick, onRe
           <button onClick={onLikesClick} className="flex items-center gap-2 text-pink-400 font-semibold text-lg text-left">My Likes</button>
           <button onClick={onRecentlyClick} className="flex items-center gap-2 text-pink-400 font-semibold text-lg text-left">Recently Viewed</button>
           <div className="mt-4 mb-2 font-bold text-pink-600 text-xl">My Purchases</div>
-          <button onClick={onPurchasesClick} className="flex items-center gap-2 text-pink-400 font-semibold text-lg text-left"><img src={locationIcon} alt="Pick Up" className="w-5 h-5" />Pick Up</button>
+          <button
+            onClick={onPurchasesClick ? onPurchasesClick : () => navigate('/dashboard/pickup')}
+            className="flex items-center gap-2 text-pink-400 font-semibold text-lg text-left"
+          >
+            <img src={locationIcon} alt="Pick Up" className="w-5 h-5" />Pick Up
+          </button>
           <button className="flex items-center gap-2 text-pink-400 font-semibold text-lg text-left"><img src={starIcon} alt="To Rate" className="w-5 h-5" />To Rate</button>
           <button className="flex items-center gap-2 text-pink-400 font-semibold text-lg text-left"><img src={chatIcon} alt="Messages" className="w-5 h-5" />Messages</button>
         </nav>
@@ -107,7 +114,7 @@ export default function Sidebar({ onVerifyClick, onHomeClick, onLikesClick, onRe
       </div>
       {/* Settings */}
       <div className="flex items-center gap-2 text-gray-400 hover:text-pink-400 cursor-pointer">
-        <img src={settingsIcon} alt="Settings" className="w-5 h-5" />
+        <img src={settingsIcon} alt="Settings" className="w-5 SSh-5" />
         <span className="font-semibold">Settings</span>
       </div>
     </aside>

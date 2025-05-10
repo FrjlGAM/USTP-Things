@@ -7,6 +7,7 @@ import { db } from '../../lib/firebase';
 import { collection, addDoc } from 'firebase/firestore';
 import MyLikes from './MyLikes';
 import RecentlyViewed from './RecentlyViewed';
+import ProductDetails from './ProductDetails';
 
 const products = [
   {
@@ -141,7 +142,7 @@ function VerificationModal({ open, onClose }: { open: boolean; onClose: () => vo
 }
 
 // ProductDetail component for showing product details
-function ProductDetail({ product, onBack }: { product: any; onBack: () => void }) {
+function ProductDetails({ product, onBack }: { product: any; onBack: () => void }) {
   return (
     <div className="max-w-xl mx-auto bg-white rounded-2xl shadow-lg p-8 relative animate-fade-in-scale">
       <button onClick={onBack} className="absolute top-4 right-4 text-gray-400 hover:text-pink-400 text-2xl font-bold">×</button>
@@ -248,7 +249,7 @@ export default function Dashboard() {
         {/* Main Content Switcher */}
         <div className="flex-1 p-10">
           {mainView === 'home' && selectedProduct ? (
-            <ProductDetail product={selectedProduct} onBack={() => setSelectedProduct(null)} />
+            <ProductDetails product={selectedProduct} onBack={() => setSelectedProduct(null)} />
           ) : mainView === 'home' ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
               {filteredProducts.map((item) => (

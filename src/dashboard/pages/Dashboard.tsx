@@ -215,9 +215,9 @@ export default function Dashboard() {
           <div className="flex items-center gap-4">
             <img src={ustpLogo} alt="USTP Things Logo" className="h-12 w-auto" />
             {mainView === 'home' && <h1 className="text-3xl font-bold text-pink-500">USTP Things</h1>}
-            {mainView === 'likes' && <h1 className="text-3xl font-bold text-pink-500 border-b-4 border-pink-200 pb-1">My Likes</h1>}
-            {mainView === 'recently' && <h1 className="text-3xl font-bold text-pink-500 border-b-4 border-pink-200 pb-1">Recently Viewed</h1>}
-            {mainView === 'purchases' && <h1 className="text-3xl font-bold text-pink-500 border-b-4 border-pink-200 pb-1">My Purchases</h1>}
+            {mainView === 'likes' && <h1 className="text-3xl font-bold text-pink-500 pb-1">My Likes</h1>}
+            {mainView === 'recently' && <h1 className="text-3xl font-bold text-pink-500 pb-1">Recently Viewed</h1>}
+            {mainView === 'purchases' && <h1 className="text-3xl font-bold text-pink-500 pb-1">Pick Up</h1>}
           </div>
           {/* Search bar and cart */}
           <div className="flex items-center gap-4">

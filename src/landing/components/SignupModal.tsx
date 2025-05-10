@@ -3,6 +3,7 @@ import emailIcon from '../../assets/ustp thingS/Email.png';
 import usernameIcon from '../../assets/ustp thingS/Username.png';
 import eyeIcon from '../../assets/ustp thingS/Eye.png';
 import eyeOffIcon from '../../assets/ustp thingS/Eye off.png';
+import xButton from '../../assets/ustp thingS/X button.png';
 import { useState } from 'react';
 import { auth, db } from '../../lib/firebase';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
@@ -64,11 +65,11 @@ export default function SignupModal({ isOpen, onClose }: SignupModalProps) {
     <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
       <div className="relative bg-white bg-opacity-70 rounded-2xl shadow-xl p-8 w-full max-w-md mx-4 flex flex-col items-center border border-[#F88379] backdrop-blur-md pointer-events-auto">
         <button
-          className="absolute top-4 right-4 text-3xl text-[#F88379] hover:text-[#F88379]/80 focus:outline-none"
+          className="absolute top-4 right-4 focus:outline-none"
           onClick={onClose}
           aria-label="Close"
         >
-          &times;
+          <img src={xButton} alt="Close" className="w-8 h-8" />
         </button>
         <img src={logo} alt="USTP Things Logo" className="w-24 mx-auto mb-2" />
         <h2 className="text-2xl font-bold text-[#F88379] mb-6 mt-2">Sign Up</h2>

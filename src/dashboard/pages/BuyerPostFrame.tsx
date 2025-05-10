@@ -1,7 +1,7 @@
 "use client";
 import * as React from "react";
 import { ProductImage } from "./ProductImage";
-import  ProductDetails from "./ProductDetails";
+import { ProductDetails } from "./ProductDetails";
 import { ProductDescription } from "./ProductDescription";
 
 function BuyerPostFrame() {
@@ -21,6 +21,7 @@ function BuyerPostFrame() {
           <section className="ml-5 w-[58%] max-md:ml-0 max-md:w-full">
             <ProductDetails
               product={{
+                id: 1;
                 image: "https://via.placeholder.com/150",
                 name: "Sample Product",
                 price: "₱1,000,000",

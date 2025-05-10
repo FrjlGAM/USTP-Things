@@ -10,13 +10,19 @@ export default function Landing() {
   const [loginOpen, setLoginOpen] = useState(false);
   const [signupOpen, setSignupOpen] = useState(false);
   return (
-    <div className="flex min-h-screen relative">
-      <Sidebar onLoginClick={() => setLoginOpen(true)} onSignupClick={() => setSignupOpen(true)} />
-      <div className="flex-1 flex flex-col">
-        <Header />
-        <div className="flex-1 flex items-center justify-center relative">
-          <MainContent />
-          <Background />
+    <div className="flex h-screen overflow-hidden">
+      <div className="fixed left-0 top-0">
+        <Sidebar onLoginClick={() => setLoginOpen(true)} onSignupClick={() => setSignupOpen(true)} />
+      </div>
+      <div className="flex-1 flex flex-col ml-[348px]">
+        <div className="fixed top-0 right-0 left-[348px] z-10">
+          <Header />
+        </div>
+        <div className="flex-1 mt-16 overflow-y-auto">
+          <div className="relative min-h-[calc(100vh-4rem)]">
+            <MainContent />
+            <Background />
+          </div>
         </div>
       </div>
       <LoginModal isOpen={loginOpen} onClose={() => setLoginOpen(false)} />

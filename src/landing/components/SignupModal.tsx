@@ -1,4 +1,8 @@
 import logo from '../../assets/ustp-things-logo.png';
+import emailIcon from '../../assets/ustp thingS/Email.png';
+import usernameIcon from '../../assets/ustp thingS/Username.png';
+import eyeIcon from '../../assets/ustp thingS/Eye.png';
+import eyeOffIcon from '../../assets/ustp thingS/Eye off.png';
 import { useState } from 'react';
 import { auth, db } from '../../lib/firebase';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
@@ -14,6 +18,7 @@ export default function SignupModal({ isOpen, onClose }: SignupModalProps) {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -61,15 +66,56 @@ export default function SignupModal({ isOpen, onClose }: SignupModalProps) {
         <form className="w-full flex flex-col gap-4" onSubmit={handleSubmit}>
           <div>
             <label className="block text-left text-black font-medium mb-1">Username</label>
-            <input type="text" value={username} onChange={e => setUsername(e.target.value)} className="w-full px-4 py-2 rounded border border-gray-300 focus:outline-none focus:border-pink-400" required />
+            <div className="relative">
+              <input 
+                type="text" 
+                value={username} 
+                onChange={e => setUsername(e.target.value)} 
+                className="w-full px-4 py-2 rounded border border-gray-300 focus:outline-none focus:border-pink-400" 
+                required 
+              />
+              <span className="absolute right-3 top-1/2 -translate-y-1/2">
+                <img src={usernameIcon} alt="Username" className="w-5 h-5" />
+              </span>
+            </div>
           </div>
           <div>
             <label className="block text-left text-black font-medium mb-1">Email</label>
-            <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full px-4 py-2 rounded border border-gray-300 focus:outline-none focus:border-pink-400" required />
+            <div className="relative">
+              <input 
+                type="email" 
+                value={email} 
+                onChange={e => setEmail(e.target.value)} 
+                className="w-full px-4 py-2 rounded border border-gray-300 focus:outline-none focus:border-pink-400" 
+                required 
+              />
+              <span className="absolute right-3 top-1/2 -translate-y-1/2">
+                <img src={emailIcon} alt="Email" className="w-5 h-5" />
+              </span>
+            </div>
           </div>
           <div>
             <label className="block text-left text-black font-medium mb-1">Password</label>
-            <input type="password" value={password} onChange={e => setPassword(e.target.value)} className="w-full px-4 py-2 rounded border border-gray-300 focus:outline-none focus:border-pink-400" required />
+            <div className="relative">
+              <input 
+                type={showPassword ? "text" : "password"} 
+                value={password} 
+                onChange={e => setPassword(e.target.value)} 
+                className="w-full px-4 py-2 rounded border border-gray-300 focus:outline-none focus:border-pink-400" 
+                required 
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 focus:outline-none"
+              >
+                <img 
+                  src={showPassword ? eyeIcon : eyeOffIcon} 
+                  alt={showPassword ? "Hide password" : "Show password"} 
+                  className="w-5 h-5"
+                />
+              </button>
+            </div>
           </div>
           {error && <div className="text-red-500 text-sm text-center">{error}</div>}
           {success && <div className="text-green-600 text-sm text-center">{success}</div>}

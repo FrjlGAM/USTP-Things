@@ -113,10 +113,13 @@ export default function Sidebar({ onVerifyClick, onHomeClick, onLikesClick, onRe
         <button className="w-full bg-pink-300 hover:bg-pink-400 text-white font-semibold py-2 rounded-lg shadow mt-8 mb-4 transition">Start selling now!</button>
       </div>
       {/* Settings */}
-      <div className="flex items-center gap-2 text-gray-400 hover:text-pink-400 cursor-pointer">
-        <img src={settingsIcon} alt="Settings" className="w-5 SSh-5" />
+      <button
+        onClick={() => navigate('/dashboard/settings')}
+        className="flex items-center gap-2 text-gray-400 hover:text-pink-400 cursor-pointer mt-4"
+      >
+        <img src={settingsIcon} alt="Settings" className="w-5 h-5" />
         <span className="font-semibold">Settings</span>
-      </div>
+      </button>
     </aside>
   );
 } 

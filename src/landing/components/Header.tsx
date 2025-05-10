@@ -1,4 +1,5 @@
 import Logo from './Logo';
+import cartIcon from '../../assets/ustp thingS/Shopping cart.png';
 
 export default function Header() {
   return (
@@ -9,10 +10,7 @@ export default function Header() {
           className="px-4 py-2 rounded-full border border-pink-200 focus:outline-none"
           placeholder="Search"
         />
-        {/* Cart Icon Placeholder */}
-        <div className="w-8 h-8 flex items-center justify-center bg-pink-100 rounded-full">
-          🛒
-        </div>
+        <img src={cartIcon} alt="Shopping Cart" className="w-[30px] h-[30px]" />
       </div>
     </header>
   );

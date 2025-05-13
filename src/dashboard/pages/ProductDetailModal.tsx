@@ -16,8 +16,8 @@ const productDetails = {
 
 export default function ProductDetailModal({ product, onClose }: { product: any; onClose: () => void }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-20">
-      <div className="relative bg-white rounded-3xl shadow-2xl flex flex-col md:flex-row p-8 gap-8 min-w-[650px] max-w-3xl w-full border-4 border-pink-100 animate-fade-in-scale">
+    <div className="w-full h-full flex justify-center items-start">
+      <div className="relative bg-white rounded-3xl shadow-2xl flex flex-col md:flex-row p-8 gap-8 max-w-4xl w-full border-4 border-pink-100 mt-4">
         {/* Close Button */}
         <button onClick={onClose} className="absolute top-4 right-4 focus:outline-none">
           <img src={xIcon} alt="Close" className="w-8 h-8" />

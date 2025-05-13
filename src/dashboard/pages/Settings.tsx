@@ -1,6 +1,7 @@
-import React from "react";
+import React, { useState } from "react";
 import homeLogo from "../../assets/ustp thingS/Home.png";
 import { useNavigate } from "react-router-dom";
+import RequestAccountDeletion from "../components/RequestAccountDeletion";
 
 type SettingsProps = {
   onAccountSecurityClick: () => void;
@@ -11,6 +12,7 @@ type SettingsProps = {
 
 export default function Settings({ onAccountSecurityClick, onPrivacySettingsClick, onBlockedUsersClick, onCommunityRulesClick }: SettingsProps) {
   const navigate = useNavigate();
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   return (
     <div style={{ minHeight: "100vh", background: "#fff" }}>
@@ -194,6 +196,7 @@ export default function Settings({ onAccountSecurityClick, onPrivacySettingsClic
               cursor: "pointer",
               fontFamily: "inherit",
             }}
+            onClick={() => setShowDeleteModal(true)}
           >
             Request Account Deletion <span style={{ color: "#888" }}>&gt;</span>
           </div>
@@ -217,6 +220,9 @@ export default function Settings({ onAccountSecurityClick, onPrivacySettingsClic
           </button>
         </div>
       </div>
+      {showDeleteModal && (
+        <RequestAccountDeletion onClose={() => setShowDeleteModal(false)} />
+      )}
     </div>
   );
 }

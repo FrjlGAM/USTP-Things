@@ -4,39 +4,35 @@ import ustpLogo from "../../assets/ustp-things-logo.png";
 export default function Settings() {
   return (
     <div style={{ minHeight: "100vh", background: "#fff" }}>
-      {/* Top bar */}
+      {/* Settings Header */}
       <div
         style={{
           background: "#fff",
-          borderBottom: "3px solid #e0e0e0",
-          boxShadow: "0 2px 4px #0001",
-          padding: "0 0 0 0",
+          display: "flex",
+          alignItems: "center",
+          height: 72,
+          paddingLeft: 24,
+          paddingRight: 24,
+          gap: 18,
+          borderBottom: "1px solid #ccc",
+          boxShadow: "0 2px 4px 0 rgba(0,0,0,0.04)",
         }}
       >
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            padding: "18px 0 18px 24px",
-            gap: 16,
-          }}
-        >
-          <img
-            src={ustpLogo}
-            alt="USTP Things Logo"
-            style={{ width: 56, height: 56, marginRight: 16 }}
-          />
-          <span
-            style={{
-              fontSize: 28,
-              fontWeight: 600,
-              color: "#F48C8C",
-              fontFamily: "inherit",
-            }}
-          >
-            Settings
-          </span>
-        </div>
+        <img
+          src={ustpLogo}
+          alt="USTP Things Logo"
+          className="h-14 w-auto"
+        />
+        <div style={{
+          width: 2,
+          height: 36,
+          background: "#F48C8C",
+          marginLeft: 18,
+          marginRight: 18,
+        }} />
+        <h1 className="text-3xl font-bold" style={{ color: "#F88379" }}>
+          Settings
+        </h1>
       </div>
       {/* Main content */}
       <div style={{ paddingTop: 32, paddingLeft: 24, paddingRight: 24 }}>
@@ -195,7 +191,7 @@ export default function Settings() {
               fontWeight: 600,
               fontSize: 18,
               borderRadius: 6,
-              padding: "10px 60px",
+              padding: "10px 100px",
               background: "transparent",
               cursor: "pointer",
               fontFamily: "inherit",

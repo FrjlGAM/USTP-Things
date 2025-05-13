@@ -255,19 +255,23 @@ export default function Dashboard() {
         {/* Main Content Switcher */}
         <div className="flex-1 p-10">
           {mainView === 'home' ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
-              {filteredProducts.map((item) => (
-                <div
-                  key={item.id}
-                  className="bg-white rounded-2xl shadow p-4 flex flex-col items-center border-2 border-gray-100 hover:shadow-lg transition cursor-pointer"
-                  onClick={() => setSelectedProduct(item)}
-                >
-                  <img src={item.image} alt={item.name} className="w-48 h-48 object-cover rounded-xl mb-4" />
-                  <h3 className="text-lg font-semibold text-gray-800 mb-2">{item.name}</h3>
-                  <p className="text-[#F88379] font-bold">{item.price}</p>
-                </div>
-              ))}
-            </div>
+            selectedProduct ? (
+              <ProductDetailModal product={selectedProduct} onClose={() => setSelectedProduct(null)} />
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+                {filteredProducts.map((item) => (
+                  <div
+                    key={item.id}
+                    className="bg-white rounded-2xl shadow p-4 flex flex-col items-center border-2 border-gray-100 hover:shadow-lg transition cursor-pointer"
+                    onClick={() => setSelectedProduct(item)}
+                  >
+                    <img src={item.image} alt={item.name} className="w-48 h-48 object-cover rounded-xl mb-4" />
+                    <h3 className="text-lg font-semibold text-gray-800 mb-2">{item.name}</h3>
+                    <p className="text-[#F88379] font-bold">{item.price}</p>
+                  </div>
+                ))}
+              </div>
+            )
           ) : mainView === 'likes' ? (
             <MyLikes />
           ) : mainView === 'recently' ? (
@@ -290,9 +294,6 @@ export default function Dashboard() {
         </div>
       </main>
       <VerificationModal open={showModal} onClose={() => setShowModal(false)} />
-      {selectedProduct && (
-        <ProductDetailModal product={selectedProduct} onClose={() => setSelectedProduct(null)} />
-      )}
     </div>
   );
-} 
+}

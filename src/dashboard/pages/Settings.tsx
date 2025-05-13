@@ -1,7 +1,11 @@
 import React from "react";
 import ustpLogo from "../../assets/ustp-things-logo.png";
 
-export default function Settings() {
+type SettingsProps = {
+  onAccountSecurityClick: () => void;
+};
+
+export default function Settings({ onAccountSecurityClick }: SettingsProps) {
   return (
     <div style={{ minHeight: "100vh", background: "#fff" }}>
       {/* Settings Header */}
@@ -66,6 +70,7 @@ export default function Settings() {
               cursor: "pointer",
               fontFamily: "inherit",
             }}
+            onClick={onAccountSecurityClick}
           >
             Account & Security <span style={{ color: "#888" }}>&gt;</span>
           </div>

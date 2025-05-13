@@ -48,7 +48,7 @@ export default function MyLikes() {
           <img src={item.image} alt={item.name} className="w-48 h-48 object-cover rounded-xl mb-4" />
           <div className="w-full flex flex-col gap-1">
             <span className="font-bold text-lg text-gray-800 truncate">{item.name}</span>
-            <span className="text-pink-500 font-semibold text-md">{item.price}</span>
+            <span className="text-[#F88379] font-semibold text-md">{item.price}</span>
           </div>
           <div className="w-full flex justify-end mt-2">
             <img src={heartIcon} alt="Like" className="w-7 h-7" />

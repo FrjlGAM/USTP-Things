@@ -100,8 +100,8 @@ function VerificationModal({ open, onClose }: { open: boolean; onClose: () => vo
         <h2 className="text-3xl font-bold text-pink-400 mb-8 mt-2 text-center">Account Verification</h2>
         {step === 'select' && (
           <>
-            <button className="w-72 bg-pink-300 hover:bg-pink-400 text-white font-bold text-2xl py-4 rounded-2xl shadow mb-6 transition" onClick={() => setStep('student')}>I am a student.</button>
-            <button className="w-72 bg-pink-300 hover:bg-pink-400 text-white font-bold text-2xl py-4 rounded-2xl shadow transition">I am a company.</button>
+            <button className="w-72 bg-[#F88379] hover:bg-[#F88379]/90 text-white font-bold text-2xl py-4 rounded-2xl shadow mb-6 transition" onClick={() => setStep('student')}>I am a student.</button>
+            <button className="w-72 bg-[#F88379] hover:bg-[#F88379]/90 text-white font-bold text-2xl py-4 rounded-2xl shadow transition">I am a company.</button>
           </>
         )}
         {step === 'student' && !success && (
@@ -146,7 +146,7 @@ function VerificationModal({ open, onClose }: { open: boolean; onClose: () => vo
             </label>
             <button
               type="submit"
-              className="w-full bg-pink-300 hover:bg-pink-400 text-white font-bold text-lg py-3 rounded-2xl shadow transition disabled:opacity-50"
+              className="w-full bg-[#F88379] hover:bg-[#F88379]/90 text-white font-bold text-lg py-3 rounded-2xl shadow transition disabled:opacity-50"
               disabled={!form.name || !form.id || !form.email || !form.agree || loading}
             >
               {loading ? 'Submitting...' : 'Confirm Verification'}
@@ -227,7 +227,7 @@ export default function Dashboard() {
             {categories.map((cat) => (
               <button
                 key={cat}
-                className={`px-4 py-1 rounded-full border text-sm font-semibold transition ${selectedCategory === cat ? 'bg-pink-400 text-white border-pink-400' : 'bg-white text-gray-600 border-gray-300 hover:bg-pink-100'}`}
+                className={`px-4 py-1 rounded-full border text-sm font-semibold transition ${selectedCategory === cat ? 'bg-[#F88379] text-white border-[#F88379]' : 'bg-white text-gray-600 border-gray-300 hover:bg-pink-100'}`}
                 onClick={() => setSelectedCategory(cat)}
               >
                 {cat}
@@ -246,7 +246,7 @@ export default function Dashboard() {
                 >
                   <img src={item.image} alt={item.name} className="w-48 h-48 object-cover rounded-xl mb-4" />
                   <h3 className="text-lg font-semibold text-gray-800 mb-2">{item.name}</h3>
-                  <p className="text-pink-400 font-bold">{item.price}</p>
+                  <p className="text-[#F88379] font-bold">{item.price}</p>
                 </div>
               ))}
             </div>

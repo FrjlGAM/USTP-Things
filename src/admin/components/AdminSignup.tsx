@@ -107,7 +107,7 @@ export default function AdminSignup() {
           {success && <div className="text-green-600 text-sm text-center">{success}</div>}
           <button 
             type="submit" 
-            className="w-full py-3 rounded-full bg-pink-300 text-white font-bold text-lg hover:bg-pink-400 transition disabled:opacity-60" 
+            className="w-full py-3 rounded-full bg-[#F88379] text-white font-bold text-lg hover:bg-[#F88379]/90 transition disabled:opacity-60" 
             disabled={loading}
           >
             {loading ? 'Signing Up...' : 'Sign Up'}

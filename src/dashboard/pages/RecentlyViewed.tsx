@@ -23,7 +23,7 @@ export default function RecentlyViewed() {
           <img src={item.image} alt={item.name} className="w-48 h-48 object-cover rounded-xl mb-4" />
           <div className="w-full flex flex-col gap-1">
             <span className="font-bold text-lg text-gray-800 truncate">{item.name}</span>
-            <span className="text-pink-500 font-semibold text-md">{item.price}</span>
+            <span className="text-[#F88379] font-semibold text-md">{item.price}</span>
           </div>
         </div>
       ))}

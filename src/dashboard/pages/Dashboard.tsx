@@ -10,11 +10,10 @@ import { collection, addDoc } from 'firebase/firestore';
 import MyLikes from './MyLikes';
 import RecentlyViewed from './RecentlyViewed';
 import ProductDetail from './ProductDetail';
+import ProductCard from '../components/ProductCard';
 import { useLocation } from 'react-router-dom';
 import { MessagesContent } from './Messages';
 import { ToRateContent } from './ToRate';
-import HeartButton from '../components/HeartButton';
-
 
 const products = [
   {
@@ -276,30 +275,21 @@ export default function Dashboard() {
             selectedProduct ? (
               <ProductDetail product={selectedProduct} onClose={() => setSelectedProduct(null)} />
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+              <div className="flex flex-wrap gap-8">
                 {filteredProducts.map((item) => (
-                  <div
+                  <ProductCard
                     key={item.id}
-                    className="bg-white rounded-2xl shadow p-4 flex flex-col items-center border-2 border-gray-100 hover:shadow-lg transition cursor-pointer relative"
+                    product={item}
                     onClick={() => setSelectedProduct(item)}
-                  >
-                    <div className="absolute top-4 right-4 z-10">
-                      <HeartButton 
-                        initialLiked={item.liked}
-                        onLikeChange={(liked) => {
-                          // Update the liked state in the products array
-                          const updatedProducts = products.map(p => 
-                            p.id === item.id ? { ...p, liked } : p
-                          );
-                          // You might want to update this in your state management system
-                          console.log('Product liked:', item.id, liked);
-                        }}
-                      />
-                    </div>
-                    <img src={item.image} alt={item.name} className="w-48 h-48 object-cover rounded-xl mb-4" />
-                    <h3 className="text-lg font-semibold text-gray-800 mb-2">{item.name}</h3>
-                    <p className="text-[#F88379] font-bold">{item.price}</p>
-                  </div>
+                    onLikeChange={(liked) => {
+                      // Update the liked state in the products array
+                      const updatedProducts = products.map(p =>
+                        p.id === item.id ? { ...p, liked } : p
+                      );
+                      // You might want to update this in your state management system
+                      console.log('Product liked:', item.id, liked);
+                    }}
+                  />
                 ))}
               </div>
             )

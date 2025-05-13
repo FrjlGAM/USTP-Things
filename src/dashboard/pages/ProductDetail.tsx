@@ -54,22 +54,26 @@ export default function ProductDetail({ product, onClose }: ProductDetailProps) 
         {/* Product Details Section */}
         <div className="flex-1 flex flex-col justify-between pr-0 md:pr-6">
           <div>
-            <h2 className="text-2xl md:text-3xl font-bold mb-2 leading-tight">{product.name.replace('...', '– Blouse, Skirt, and Necktie')}</h2>
-            <div className="flex items-center gap-2 mb-2">
-              <span className="text-2xl md:text-3xl font-bold text-[#F88379]">{product.price}</span>
-              <button className="ml-2 text-xs border border-gray-300 rounded px-2 py-1 w-fit hover:bg-gray-50 transition">View Shop</button>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4 leading-tight pt-[10px]">{product.name.replace('...', '– Blouse, Skirt, and Necktie')}</h2>
+            <div className="flex items-center gap-3 mb-4">
+              <span className="text-3xl md:text-4xl font-bold text-[#F88379]">{product.price}</span>
+              <button className="ml-3 text-sm border border-gray-300 rounded px-3 py-1 w-fit hover:bg-gray-50 transition">View Shop</button>
             </div>
-            <div className="flex items-center gap-6 mb-2">
-              <span className="text-blue-400 font-bold">{productDetails.sold}</span> <span className="text-gray-500">Sold</span>
-              <span className="text-blue-400 font-bold">{productDetails.soldOut}</span> <span className="text-gray-500">Sold Out</span>
+            <div className="flex flex-col mb-4">
+              <div className="flex items-center gap-3">
+                <span className="text-lg md:text-xl text-blue-400 font-bold">{productDetails.sold}</span> <span className="text-lg md:text-xl text-gray-500">Sold</span>
+              </div>
+              <div className="flex items-center gap-3 mt-2">
+                <span className="text-lg md:text-xl text-blue-400 font-bold">{productDetails.soldOut}</span> <span className="text-lg md:text-xl text-gray-500">Sold Out</span>
+              </div>
             </div>
-            <div className="flex items-center gap-2 mb-2">
+            <div className="flex items-center gap-3 mb-3">
               <HeartButton initialLiked={product.liked} />
-              <span className="text-gray-500 text-sm">Add to Favorites</span>
+              <span className="text-base text-gray-500">Add to Favorites</span>
             </div>
-            <div className="flex items-center gap-2 mb-4">
-              <span className="text-[#F88379] text-xl">{'★'.repeat(Math.floor(productDetails.rating))}</span>
-              <span className="text-gray-600 font-semibold">{productDetails.rating.toFixed(1)}/5.0</span>
+            <div className="flex items-center gap-3 mb-8">
+              <span className="text-[#F88379] text-2xl md:text-3xl">{'★'.repeat(Math.floor(productDetails.rating))}</span>
+              <span className="text-lg md:text-xl text-gray-600 font-semibold">{productDetails.rating.toFixed(1)}/5.0</span>
             </div>
           </div>
           {/* Buy Now button only */}

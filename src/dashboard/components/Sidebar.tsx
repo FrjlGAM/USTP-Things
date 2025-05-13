@@ -25,6 +25,7 @@ export default function Sidebar({ onVerifyClick, onHomeClick, onLikesClick, onRe
   const [isVerified, setIsVerified] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
   const [username, setUsername] = useState<string>('Username');
+  const [activeButton, setActiveButton] = useState<string>('home');
   const user = auth.currentUser;
   const navigate = useNavigate();
 
@@ -89,39 +90,69 @@ export default function Sidebar({ onVerifyClick, onHomeClick, onLikesClick, onRe
         {/* Verify Button */}
         {!loading && isVerified === false && (
           <button
-            className="w-full bg-[#F88379] hover:bg-[#F88379]/90 text-white font-semibold py-2 rounded-lg shadow mb-8 transition"
-            onClick={onVerifyClick}
+            className={`w-full ${activeButton === 'verify' ? 'bg-white text-[#F88379]' : 'bg-[#F88379] text-white'} hover:bg-[#F88379]/90 font-semibold py-2 rounded-[23.08px] shadow mb-8 transition text-lg`}
+            onClick={() => {
+              setActiveButton('verify');
+              onVerifyClick?.();
+            }}
           >
             Verify Your Account
           </button>
         )}
         {/* Navigation */}
         <nav className="flex flex-col gap-4">
-          <button onClick={onHomeClick} className="flex items-center gap-2 text-[#F88379] font-semibold text-lg text-left">
+          <button 
+            onClick={() => {
+              setActiveButton('home');
+              onHomeClick?.();
+            }} 
+            className={`flex items-center gap-2 text-[#F88379] font-semibold text-lg text-left transition ${activeButton === 'home' ? 'bg-white rounded-[23.08px] px-2 py-1' : ''}`}
+          >
             <img src={homeIcon} alt="Home" className="w-5 h-5" />Home
           </button>
-          <button onClick={onLikesClick} className="flex items-center gap-2 text-[#F88379] font-semibold text-lg text-left">
+          <button 
+            onClick={() => {
+              setActiveButton('likes');
+              onLikesClick?.();
+            }} 
+            className={`flex items-center gap-2 text-[#F88379] font-semibold text-lg text-left transition ${activeButton === 'likes' ? 'bg-white rounded-[23.08px] px-2 py-1' : ''}`}
+          >
             <img src={heartIcon} alt="My Likes" className="w-5 h-5" />My Likes
           </button>
-          <button onClick={onRecentlyClick} className="flex items-center gap-2 text-[#F88379] font-semibold text-lg text-left">
+          <button 
+            onClick={() => {
+              setActiveButton('recently');
+              onRecentlyClick?.();
+            }} 
+            className={`flex items-center gap-2 text-[#F88379] font-semibold text-lg text-left transition ${activeButton === 'recently' ? 'bg-white rounded-[23.08px] px-2 py-1' : ''}`}
+          >
             <img src={clockIcon} alt="Recently Viewed" className="w-5 h-5" />Recently Viewed
           </button>
           <div className="mt-4 mb-2 font-bold text-[#F88379] text-xl flex justify-center">My Purchases</div>
           <button 
-            onClick={() => navigate('/dashboard/pickup')}
-            className="flex items-center gap-2 text-[#F88379] font-semibold text-lg text-left"
+            onClick={() => {
+              setActiveButton('pickup');
+              navigate('/dashboard/pickup');
+            }}
+            className={`flex items-center gap-2 text-[#F88379] font-semibold text-lg text-left transition ${activeButton === 'pickup' ? 'bg-white rounded-[23.08px] px-2 py-1' : ''}`}
           >
             <img src={locationIcon} alt="Pick Up" className="w-5 h-5" />Pick Up
           </button>
           <button 
-            onClick={() => navigate('/dashboard/to-rate')}
-            className="flex items-center gap-2 text-[#F88379] font-semibold text-lg text-left"
+            onClick={() => {
+              setActiveButton('rate');
+              navigate('/dashboard/to-rate');
+            }}
+            className={`flex items-center gap-2 text-[#F88379] font-semibold text-lg text-left transition ${activeButton === 'rate' ? 'bg-white rounded-[23.08px] px-2 py-1' : ''}`}
           >
             <img src={rateIcon} alt="To Rate" className="w-5 h-5" />To Rate
           </button>
           <button 
-            onClick={() => navigate('/dashboard/messages')}
-            className="flex items-center gap-2 text-[#F88379] font-semibold text-lg text-left"
+            onClick={() => {
+              setActiveButton('messages');
+              navigate('/dashboard/messages');
+            }}
+            className={`flex items-center gap-2 text-[#F88379] font-semibold text-lg text-left transition ${activeButton === 'messages' ? 'bg-white rounded-[23.08px] px-2 py-1' : ''}`}
           >
             <img src={chatIcon} alt="Messages" className="w-5 h-5" />Messages
           </button>
@@ -129,11 +160,19 @@ export default function Sidebar({ onVerifyClick, onHomeClick, onLikesClick, onRe
       </div>
       <div className="mt-auto">
         {/* Start Selling Button */}
-        <button className="w-full bg-[#F88379] hover:bg-[#F88379]/90 text-white font-semibold py-2 rounded-lg shadow mb-10 transition">Start selling now!</button>
+        <button 
+          onClick={() => setActiveButton('sell')}
+          className={`w-full ${activeButton === 'sell' ? 'bg-white text-[#F88379]' : 'bg-[#F88379] text-white'} hover:bg-[#F88379]/90 font-semibold py-2 rounded-[23.08px] shadow mb-10 transition text-lg`}
+        >
+          Start selling now!
+        </button>
         {/* Settings */}
         <button
-          onClick={() => navigate('/dashboard/settings')}
-          className="flex items-center gap-2 text-gray-400 hover:text-[#F88379] cursor-pointer"
+          onClick={() => {
+            setActiveButton('settings');
+            navigate('/dashboard/settings');
+          }}
+          className={`flex items-center gap-2 ${activeButton === 'settings' ? 'text-[#F88379] bg-white rounded-[23.08px] px-2 py-1' : 'text-gray-400 hover:text-[#F88379]'} cursor-pointer transition`}
         >
           <img src={settingsIcon} alt="Settings" className="w-5 h-5" />
           <span className="font-semibold">Settings</span>

@@ -49,9 +49,8 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
   };
 
   return (
-    <div className="absolute inset-0 z-50 flex items-center justify-center">
-      <div className="fixed inset-0 bg-black bg-opacity-50" onClick={onClose}></div>
-      <div className="relative bg-white bg-opacity-70 rounded-2xl shadow-xl p-8 w-full max-w-md mx-4 flex flex-col items-center border border-[#F88379] backdrop-blur-md">
+    <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
+      <div className="relative bg-white bg-opacity-70 rounded-2xl shadow-xl p-8 w-full max-w-md mx-4 flex flex-col items-center border border-[#F88379] backdrop-blur-md pointer-events-auto">
         <button
           className="absolute top-4 right-4 focus:outline-none"
           onClick={onClose}

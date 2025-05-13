@@ -282,4 +282,4 @@ export default function Dashboard() {
       <VerificationModal open={showModal} onClose={() => setShowModal(false)} />
     </div>
   );
-} 
+}

@@ -64,7 +64,7 @@ export default function Sidebar({ onVerifyClick, onHomeClick, onLikesClick, onRe
 
   return (
     <aside className="fixed h-screen w-[348px] bg-[#FFF3F2] flex flex-col justify-between p-6 overflow-hidden">
-      <div>
+      <div className="flex-1 overflow-y-auto">
         {/* User Info */}
         <div className="flex items-center gap-4 mb-6">
           <img src={userAvatar} alt="User avatar" className="w-14 h-14 rounded-full border-2 border-pink-200 object-cover" />
@@ -116,17 +116,19 @@ export default function Sidebar({ onVerifyClick, onHomeClick, onLikesClick, onRe
           <button className="flex items-center gap-2 text-[#F88379] font-semibold text-lg text-left"><img src={rateIcon} alt="To Rate" className="w-5 h-5" />To Rate</button>
           <button className="flex items-center gap-2 text-[#F88379] font-semibold text-lg text-left"><img src={chatIcon} alt="Messages" className="w-5 h-5" />Messages</button>
         </nav>
-        {/* Start Selling Button */}
-        <button className="w-full bg-[#F88379] hover:bg-[#F88379]/90 text-white font-semibold py-2 rounded-lg shadow mt-[140px] mb-8 transition">Start selling now!</button>
       </div>
-      {/* Settings */}
-      <button
-        onClick={() => navigate('/dashboard/settings')}
-        className="flex items-center gap-2 text-gray-400 hover:text-[#F88379] cursor-pointer mt-4"
-      >
-        <img src={settingsIcon} alt="Settings" className="w-5 h-5" />
-        <span className="font-semibold">Settings</span>
-      </button>
+      <div className="mt-auto">
+        {/* Start Selling Button */}
+        <button className="w-full bg-[#F88379] hover:bg-[#F88379]/90 text-white font-semibold py-2 rounded-lg shadow mb-10 transition">Start selling now!</button>
+        {/* Settings */}
+        <button
+          onClick={() => navigate('/dashboard/settings')}
+          className="flex items-center gap-2 text-gray-400 hover:text-[#F88379] cursor-pointer"
+        >
+          <img src={settingsIcon} alt="Settings" className="w-5 h-5" />
+          <span className="font-semibold">Settings</span>
+        </button>
+      </div>
     </aside>
   );
 } 

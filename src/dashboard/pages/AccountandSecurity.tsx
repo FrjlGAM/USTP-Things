@@ -1,7 +1,9 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import homeLogo from "../../assets/ustp thingS/Home.png";
-// import { useNavigate } from "react-router-dom"; // Uncomment if you want to use navigate(-1)
+import Username from "../components/Username"; // adjust the path if needed
+import { getDoc, doc, setDoc } from "firebase/firestore";
+import { auth, db } from "../../lib/firebase";
 
 type AccountandSecurityProps = {
   onSettingsClick: () => void;
@@ -10,6 +12,30 @@ type AccountandSecurityProps = {
 
 export default function AccountandSecurity({ onSettingsClick, onMyProfileClick }: AccountandSecurityProps) {
   const navigate = useNavigate();
+  const [showUsernameModal, setShowUsernameModal] = useState(false);
+  const [username, setUsername] = useState(""); // or fetch from Firestore if you want it to persist
+  const [loadingUsername, setLoadingUsername] = useState(true);
+
+  useEffect(() => {
+    const fetchUsername = async () => {
+      if (!auth.currentUser) return;
+      setLoadingUsername(true);
+      const userDoc = await getDoc(doc(db, "users", auth.currentUser.uid));
+      if (userDoc.exists()) {
+        setUsername(userDoc.data().username || "");
+      }
+      setLoadingUsername(false);
+    };
+    fetchUsername();
+  }, []);
+
+  const handleSaveUsername = async (newUsername: string) => {
+    if (!auth.currentUser) return;
+    await setDoc(doc(db, "users", auth.currentUser.uid), { username: newUsername }, { merge: true });
+    setUsername(newUsername);
+    setShowUsernameModal(false);
+  };
+
   return (
     <div style={{ minHeight: "100vh", background: "#fff" }}>
       {/* Header */}
@@ -104,8 +130,22 @@ export default function AccountandSecurity({ onSettingsClick, onMyProfileClick }
             padding: 0,
           }}
         >
-          <div style={{ padding: "14px 16px", display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 17, cursor: "pointer", fontFamily: "inherit" }}>
-            Username <span style={{ color: "#888" }}>&gt;</span>
+          <div
+            style={{
+              padding: "14px 16px",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              fontSize: 17,
+              fontFamily: "inherit",
+              cursor: "pointer",
+            }}
+            onClick={() => setShowUsernameModal(true)}
+          >
+            Username
+            <span style={{ color: "#888", fontSize: 15 }}>
+              {loadingUsername ? "Loading..." : username ? username : "Set now"} <span style={{ marginLeft: 8, color: "#888" }}>&gt;</span>
+            </span>
           </div>
         </div>
         <div
@@ -146,6 +186,13 @@ export default function AccountandSecurity({ onSettingsClick, onMyProfileClick }
         </div>
       </div>
       {/* No visible back button */}
+      {showUsernameModal && (
+        <Username
+          onClose={() => setShowUsernameModal(false)}
+          onSave={handleSaveUsername}
+          initialUsername={username}
+        />
+      )}
     </div>
   );
 }

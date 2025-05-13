@@ -2,20 +2,19 @@ import React, { useState } from "react";
 import ustpLogo from "../../assets/ustp-things-logo.png";
 import closeIcon from "../../assets/ustp thingS/X button.png";
 
-type NameModalProps = {
+type GenderModalProps = {
   onClose: () => void;
-  onSave: (name: string) => void;
-  initialName?: string;
+  onSave: (gender: "Female" | "Male") => void;
+  initialGender?: "Female" | "Male";
 };
 
-export default function Name({ onClose, onSave, initialName = "" }: NameModalProps) {
-  const [name, setName] = useState(initialName);
-  const [showNameModal, setShowNameModal] = useState(false);
+export default function Gender({ onClose, onSave, initialGender = "Female" }: GenderModalProps) {
+  const [gender, setGender] = useState<"Female" | "Male">(initialGender);
   const [isSaveHovered, setIsSaveHovered] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSave(name);
+    onSave(gender);
   };
 
   return (
@@ -75,31 +74,58 @@ export default function Name({ onClose, onSave, initialName = "" }: NameModalPro
             textAlign: "center",
           }}
         >
-          Name
+          Gender
         </div>
-        {/* Name Input */}
+        {/* Gender Selection */}
         <form onSubmit={handleSubmit} style={{ width: "100%", display: "flex", flexDirection: "column", alignItems: "center" }}>
-          <input
-            type="text"
-            placeholder="Enter Name"
-            value={name}
-            onChange={e => setName(e.target.value)}
+          <div
             style={{
-              width: "100%",
-              maxWidth: 300,
-              padding: "12px 16px",
-              border: "none",
-              borderBottom: "2px solid #F88379",
-              outline: "none",
-              fontSize: 16,
-              color: "#888",
+              display: "flex",
+              gap: 24,
+              background: "#FFF3F3",
+              borderRadius: 32,
+              padding: "10px 32px",
               marginBottom: 32,
-              background: "transparent",
-              textAlign: "center",
-              fontFamily: "inherit",
+              boxShadow: "0 2px 8px #0001",
             }}
-            required
-          />
+          >
+            <button
+              type="button"
+              onClick={() => setGender("Female")}
+              style={{
+                background: "none",
+                border: "none",
+                color: "#7A2E1A",
+                fontWeight: 700,
+                fontSize: 24,
+                outline: "none",
+                cursor: "pointer",
+                padding: "0 12px",
+                opacity: gender === "Female" ? 1 : 0.6,
+                boxShadow: "none",
+              }}
+            >
+              Female
+            </button>
+            <button
+              type="button"
+              onClick={() => setGender("Male")}
+              style={{
+                background: "none",
+                border: "none",
+                color: "#7A2E1A",
+                fontWeight: 700,
+                fontSize: 24,
+                outline: "none",
+                cursor: "pointer",
+                padding: "0 12px",
+                opacity: gender === "Male" ? 1 : 0.6,
+                boxShadow: "none",
+              }}
+            >
+              Male
+            </button>
+          </div>
           <button
             type="submit"
             style={{

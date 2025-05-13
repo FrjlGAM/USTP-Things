@@ -2,20 +2,19 @@ import React, { useState } from "react";
 import ustpLogo from "../../assets/ustp-things-logo.png";
 import closeIcon from "../../assets/ustp thingS/X button.png";
 
-type NameModalProps = {
+type UsernameModalProps = {
   onClose: () => void;
-  onSave: (name: string) => void;
-  initialName?: string;
+  onSave: (username: string) => void;
+  initialUsername?: string;
 };
 
-export default function Name({ onClose, onSave, initialName = "" }: NameModalProps) {
-  const [name, setName] = useState(initialName);
-  const [showNameModal, setShowNameModal] = useState(false);
+export default function Username({ onClose, onSave, initialUsername = "" }: UsernameModalProps) {
+  const [username, setUsername] = useState(initialUsername);
   const [isSaveHovered, setIsSaveHovered] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSave(name);
+    onSave(username);
   };
 
   return (
@@ -75,15 +74,15 @@ export default function Name({ onClose, onSave, initialName = "" }: NameModalPro
             textAlign: "center",
           }}
         >
-          Name
+          Username
         </div>
-        {/* Name Input */}
+        {/* Username Input */}
         <form onSubmit={handleSubmit} style={{ width: "100%", display: "flex", flexDirection: "column", alignItems: "center" }}>
           <input
             type="text"
-            placeholder="Enter Name"
-            value={name}
-            onChange={e => setName(e.target.value)}
+            placeholder="Enter Username"
+            value={username}
+            onChange={e => setUsername(e.target.value)}
             style={{
               width: "100%",
               maxWidth: 300,

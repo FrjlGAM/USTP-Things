@@ -11,7 +11,7 @@ export default function SettingsContainer() {
         <Settings onAccountSecurityClick={() => setView("account")} />
       )}
       {view === "account" && (
-        <AccountandSecurity onBack={() => setView("settings")} />
+        <AccountandSecurity onSettingsClick={() => setView("settings")} />
       )}
     </>
   );

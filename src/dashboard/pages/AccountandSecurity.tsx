@@ -3,7 +3,11 @@ import { useNavigate } from "react-router-dom";
 import ustpLogo from "../../assets/ustp-things-logo.png";
 // import { useNavigate } from "react-router-dom"; // Uncomment if you want to use navigate(-1)
 
-export default function AccountandSecurity() {
+type AccountandSecurityProps = {
+  onSettingsClick: () => void;
+};
+
+export default function AccountandSecurity({ onSettingsClick }: AccountandSecurityProps) {
   const navigate = useNavigate();
   return (
     <div style={{ minHeight: "100vh", background: "#fff" }}>
@@ -37,7 +41,7 @@ export default function AccountandSecurity() {
           <span
             className="text-3xl font-bold"
             style={{ color: "#F88379", opacity: 0.63, cursor: "pointer" }}
-            onClick={() => { window.location.href = '/dashboard/settings'; }}
+            onClick={onSettingsClick}
           >
             Settings
           </span>

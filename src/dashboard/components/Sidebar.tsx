@@ -19,9 +19,11 @@ type SidebarProps = {
   onLikesClick?: () => void;
   onRecentlyClick?: () => void;
   onPickUpClick?: () => void;
+  onRateClick?: () => void;
+  onMessageClick?: () => void;
 };
 
-export default function Sidebar({ onVerifyClick, onHomeClick, onLikesClick, onRecentlyClick, onPickUpClick }: SidebarProps) {
+export default function Sidebar({ onVerifyClick, onHomeClick, onLikesClick, onRecentlyClick, onPickUpClick, onRateClick, onMessageClick }: SidebarProps) {
   const [isVerified, setIsVerified] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
   const [username, setUsername] = useState<string>('Username');
@@ -132,7 +134,7 @@ export default function Sidebar({ onVerifyClick, onHomeClick, onLikesClick, onRe
           <button 
             onClick={() => {
               setActiveButton('pickup');
-              navigate('/dashboard/pickup');
+              onPickUpClick?.();
             }}
             className={`flex items-center gap-2 text-[#F88379] font-semibold text-lg text-left transition ${activeButton === 'pickup' ? 'bg-white rounded-[23.08px] px-2 py-1' : ''}`}
           >
@@ -141,7 +143,7 @@ export default function Sidebar({ onVerifyClick, onHomeClick, onLikesClick, onRe
           <button 
             onClick={() => {
               setActiveButton('rate');
-              navigate('/dashboard/to-rate');
+              onRateClick?.();
             }}
             className={`flex items-center gap-2 text-[#F88379] font-semibold text-lg text-left transition ${activeButton === 'rate' ? 'bg-white rounded-[23.08px] px-2 py-1' : ''}`}
           >
@@ -150,7 +152,7 @@ export default function Sidebar({ onVerifyClick, onHomeClick, onLikesClick, onRe
           <button 
             onClick={() => {
               setActiveButton('messages');
-              navigate('/dashboard/messages');
+              onMessageClick?.();
             }}
             className={`flex items-center gap-2 text-[#F88379] font-semibold text-lg text-left transition ${activeButton === 'messages' ? 'bg-white rounded-[23.08px] px-2 py-1' : ''}`}
           >

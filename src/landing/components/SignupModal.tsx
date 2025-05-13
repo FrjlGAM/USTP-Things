@@ -90,7 +90,7 @@ export default function SignupModal({ isOpen, onClose }: SignupModalProps) {
                 type="text" 
                 value={username} 
                 onChange={e => setUsername(e.target.value)} 
-                className="w-full px-4 py-2 rounded border border-gray-300 focus:outline-none focus:border-[#F88379]" 
+                className="w-full px-4 py-2 rounded border border-[#878787] focus:outline-none focus:border-[#F88379]" 
                 required 
               />
               <span className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -105,7 +105,7 @@ export default function SignupModal({ isOpen, onClose }: SignupModalProps) {
                 type="email" 
                 value={email} 
                 onChange={e => setEmail(e.target.value)} 
-                className="w-full px-4 py-2 rounded border border-gray-300 focus:outline-none focus:border-[#F88379]" 
+                className="w-full px-4 py-2 rounded border border-[#878787] focus:outline-none focus:border-[#F88379]" 
                 required 
               />
               <span className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -120,7 +120,7 @@ export default function SignupModal({ isOpen, onClose }: SignupModalProps) {
                 type={showPassword ? "text" : "password"} 
                 value={password} 
                 onChange={e => setPassword(e.target.value)} 
-                className="w-full px-4 py-2 rounded border border-gray-300 focus:outline-none focus:border-[#F88379]" 
+                className="w-full px-4 py-2 rounded border border-[#878787] focus:outline-none focus:border-[#F88379]" 
                 required 
               />
               <button
@@ -143,7 +143,7 @@ export default function SignupModal({ isOpen, onClose }: SignupModalProps) {
                 type={showConfirmPassword ? "text" : "password"} 
                 value={confirmPassword} 
                 onChange={e => setConfirmPassword(e.target.value)} 
-                className="w-full px-4 py-2 rounded border border-gray-300 focus:outline-none focus:border-[#F88379]" 
+                className="w-full px-4 py-2 rounded border border-[#878787] focus:outline-none focus:border-[#F88379]" 
                 required 
               />
               <button
@@ -167,7 +167,7 @@ export default function SignupModal({ isOpen, onClose }: SignupModalProps) {
               id="terms"
               checked={agreeToTerms}
               onChange={(e) => setAgreeToTerms(e.target.checked)}
-              className="w-4 h-4 text-[#F88379] border-gray-300 rounded focus:ring-[#F88379]"
+              className="w-4 h-4 text-[#F88379] border-[#878787] rounded focus:ring-[#F88379]"
               required
             />
             <label htmlFor="terms" className="text-sm text-gray-600">

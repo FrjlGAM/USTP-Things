@@ -37,7 +37,7 @@ export default function Pickup() {
   const navigate = useNavigate();
 
   // Sidebar navigation handler
-  const handleSidebarNav = (view: 'home' | 'likes' | 'recently' | 'pickup') => {
+  const handleSidebarNav = (view: 'home' | 'likes' | 'recently' | 'pickup' | 'rate' | 'message') => {
     switch (view) {
       case 'home':
         navigate('/dashboard');
@@ -50,6 +50,12 @@ export default function Pickup() {
         break;
       case 'pickup':
         navigate('/dashboard/pickup');
+        break;
+      case 'rate':
+        navigate('/dashboard/to-rate');
+        break;
+      case 'message':
+        navigate('/dashboard/messages');
         break;
     }
   };
@@ -64,6 +70,8 @@ export default function Pickup() {
           onLikesClick={() => handleSidebarNav('likes')}
           onRecentlyClick={() => handleSidebarNav('recently')}
           onPickUpClick={() => handleSidebarNav('pickup')}
+          onRateClick={() => handleSidebarNav('rate')}
+          onMessageClick={() => handleSidebarNav('message')}
         />
       </div>
       {/* Main Content */}

@@ -5,9 +5,10 @@ import homeLogo from "../../assets/ustp thingS/Home.png";
 
 type AccountandSecurityProps = {
   onSettingsClick: () => void;
+  onMyProfileClick: () => void;
 };
 
-export default function AccountandSecurity({ onSettingsClick }: AccountandSecurityProps) {
+export default function AccountandSecurity({ onSettingsClick, onMyProfileClick }: AccountandSecurityProps) {
   const navigate = useNavigate();
   return (
     <div style={{ minHeight: "100vh", background: "#fff" }}>
@@ -80,7 +81,18 @@ export default function AccountandSecurity({ onSettingsClick }: AccountandSecuri
             padding: 0,
           }}
         >
-          <div style={{ padding: "14px 16px", display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 17, cursor: "pointer", fontFamily: "inherit" }}>
+          <div
+            style={{
+              padding: "14px 16px",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              fontSize: 17,
+              cursor: "pointer",
+              fontFamily: "inherit",
+            }}
+            onClick={onMyProfileClick}
+          >
             My Profile <span style={{ color: "#888" }}>&gt;</span>
           </div>
         </div>

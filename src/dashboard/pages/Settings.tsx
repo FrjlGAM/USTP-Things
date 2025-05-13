@@ -5,9 +5,10 @@ import { useNavigate } from "react-router-dom";
 type SettingsProps = {
   onAccountSecurityClick: () => void;
   onPrivacySettingsClick: () => void;
+  onBlockedUsersClick: () => void;
 };
 
-export default function Settings({ onAccountSecurityClick, onPrivacySettingsClick }: SettingsProps) {
+export default function Settings({ onAccountSecurityClick, onPrivacySettingsClick, onBlockedUsersClick }: SettingsProps) {
   const navigate = useNavigate();
 
   return (
@@ -134,6 +135,7 @@ export default function Settings({ onAccountSecurityClick, onPrivacySettingsClic
               cursor: "pointer",
               fontFamily: "inherit",
             }}
+            onClick={onBlockedUsersClick}
           >
             Blocked Users <span style={{ color: "#888" }}>&gt;</span>
           </div>

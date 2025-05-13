@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import Settings from "./Settings";
 import AccountandSecurity from "./AccountandSecurity";
 import PrivacySettings from "./PrivacySettings";
+import BlockedUsers from "./BlockedUsers";
 
 export default function SettingsContainer() {
   const [view, setView] = useState("settings");
@@ -12,6 +13,7 @@ export default function SettingsContainer() {
         <Settings
           onAccountSecurityClick={() => setView("account")}
           onPrivacySettingsClick={() => setView("privacy")}
+          onBlockedUsersClick={() => setView("blocked")}
         />
       )}
       {view === "account" && (
@@ -19,6 +21,9 @@ export default function SettingsContainer() {
       )}
       {view === "privacy" && (
         <PrivacySettings onSettingsClick={() => setView("settings")} />
+      )}
+      {view === "blocked" && (
+        <BlockedUsers onSettingsClick={() => setView("settings")} />
       )}
     </>
   );

@@ -1,8 +1,12 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import homeLogo from "../../assets/ustp thingS/Home.png";
 import profilePic from "../../assets/ustp thingS/Person.png"; // Using Person.png instead of sample-profile.png
 // import editIcon from "../../assets/ustp thingS/Edit.png"; // If you want a small edit icon
+import Name from "../components/Name"; // adjust the path if needed
+import Gender from "../components/Gender"; // adjust the path if needed
+import { auth, db } from "../../lib/firebase"; // adjust path as needed
+import { doc, getDoc, setDoc } from "firebase/firestore";
 
 type MyProfileProps = {
   onSettingsClick: () => void;
@@ -11,6 +15,42 @@ type MyProfileProps = {
 
 export default function MyProfile({ onSettingsClick, setView }: MyProfileProps) {
   const navigate = useNavigate();
+  const [showNameModal, setShowNameModal] = useState(false);
+  const [name, setName] = useState(""); // user's name
+  const [loadingName, setLoadingName] = useState(true);
+  const [showGenderModal, setShowGenderModal] = useState(false);
+  const [gender, setGender] = useState<"Female" | "Male" | "">(""); // user's gender
+  const [loadingGender, setLoadingGender] = useState(true);
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (!auth.currentUser) return;
+      setLoadingName(true);
+      setLoadingGender(true);
+      const userDoc = await getDoc(doc(db, "users", auth.currentUser.uid));
+      if (userDoc.exists()) {
+        setName(userDoc.data().name || "");
+        setGender(userDoc.data().gender || "");
+      }
+      setLoadingName(false);
+      setLoadingGender(false);
+    };
+    fetchProfile();
+  }, []);
+
+  const handleSaveName = async (newName: string) => {
+    if (!auth.currentUser) return;
+    await setDoc(doc(db, "users", auth.currentUser.uid), { name: newName }, { merge: true });
+    setName(newName);
+    setShowNameModal(false);
+  };
+
+  const handleSaveGender = async (newGender: "Female" | "Male") => {
+    if (!auth.currentUser) return;
+    await setDoc(doc(db, "users", auth.currentUser.uid), { gender: newGender }, { merge: true });
+    setGender(newGender);
+    setShowGenderModal(false);
+  };
 
   return (
     <div style={{ minHeight: "100vh", background: "#fff" }}>
@@ -123,11 +163,13 @@ export default function MyProfile({ onSettingsClick, setView }: MyProfileProps) 
               fontSize: 17,
               fontFamily: "inherit",
               borderBottom: "1px solid #f5cccc",
+              cursor: "pointer",
             }}
+            onClick={() => setShowNameModal(true)}
           >
             Name
             <span style={{ color: "#888", fontSize: 15 }}>
-              Set now <span style={{ marginLeft: 8, color: "#888" }}>&gt;</span>
+              {loadingName ? "Loading..." : name ? name : "Set now"} <span style={{ marginLeft: 8, color: "#888" }}>&gt;</span>
             </span>
           </div>
           <div
@@ -138,15 +180,31 @@ export default function MyProfile({ onSettingsClick, setView }: MyProfileProps) 
               alignItems: "center",
               fontSize: 17,
               fontFamily: "inherit",
+              cursor: "pointer",
             }}
+            onClick={() => setShowGenderModal(true)}
           >
             Gender
             <span style={{ color: "#888", fontSize: 15 }}>
-              Set now <span style={{ marginLeft: 8, color: "#888" }}>&gt;</span>
+              {loadingGender ? "Loading..." : gender ? gender : "Set now"} <span style={{ marginLeft: 8, color: "#888" }}>&gt;</span>
             </span>
           </div>
         </div>
       </div>
+      {showNameModal && (
+        <Name
+          onClose={() => setShowNameModal(false)}
+          onSave={handleSaveName}
+          initialName={name}
+        />
+      )}
+      {showGenderModal && (
+        <Gender
+          onClose={() => setShowGenderModal(false)}
+          onSave={handleSaveGender}
+          initialGender={gender === "Female" || gender === "Male" ? gender : "Female"}
+        />
+      )}
     </div>
   );
 }

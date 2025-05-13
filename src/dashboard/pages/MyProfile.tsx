@@ -1,8 +1,9 @@
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import homeLogo from "../../assets/ustp thingS/Home.png";
 import profilePic from "../../assets/ustp thingS/Person.png"; // Using Person.png instead of sample-profile.png
 // import editIcon from "../../assets/ustp thingS/Edit.png"; // If you want a small edit icon
+import Name from "../components/Name"; // adjust the path if needed
 
 type MyProfileProps = {
   onSettingsClick: () => void;
@@ -11,6 +12,8 @@ type MyProfileProps = {
 
 export default function MyProfile({ onSettingsClick, setView }: MyProfileProps) {
   const navigate = useNavigate();
+  const [showNameModal, setShowNameModal] = useState(false);
+  const [name, setName] = useState(""); // or your actual user name
 
   return (
     <div style={{ minHeight: "100vh", background: "#fff" }}>
@@ -123,7 +126,9 @@ export default function MyProfile({ onSettingsClick, setView }: MyProfileProps) 
               fontSize: 17,
               fontFamily: "inherit",
               borderBottom: "1px solid #f5cccc",
+              cursor: "pointer",
             }}
+            onClick={() => setShowNameModal(true)}
           >
             Name
             <span style={{ color: "#888", fontSize: 15 }}>
@@ -147,6 +152,16 @@ export default function MyProfile({ onSettingsClick, setView }: MyProfileProps) 
           </div>
         </div>
       </div>
+      {showNameModal && (
+        <Name
+          onClose={() => setShowNameModal(false)}
+          onSave={newName => {
+            setName(newName);
+            setShowNameModal(false);
+          }}
+          initialName={name}
+        />
+      )}
     </div>
   );
 }

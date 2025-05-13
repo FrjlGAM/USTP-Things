@@ -9,6 +9,7 @@ import { db } from '../../lib/firebase';
 import { collection, addDoc } from 'firebase/firestore';
 import MyLikes from './MyLikes';
 import RecentlyViewed from './RecentlyViewed';
+import Messages from './Messages';
 
 
 const products = [
@@ -163,7 +164,7 @@ function VerificationModal({ open, onClose }: { open: boolean; onClose: () => vo
 
 export default function Dashboard() {
   const [showModal, setShowModal] = useState(false);
-  const [mainView, setMainView] = useState<'home' | 'likes' | 'recently' | 'purchases'>('home');
+  const [mainView, setMainView] = useState<'home' | 'likes' | 'recently' | 'purchases' | 'messages'>('home');
   const [selectedCategory, setSelectedCategory] = useState('For You');
   const [search, setSearch] = useState('');
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
@@ -191,6 +192,7 @@ export default function Dashboard() {
           onLikesClick={() => handleSidebarNav('likes')}
           onRecentlyClick={() => handleSidebarNav('recently')}
           onPurchasesClick={() => handleSidebarNav('purchases')}
+          onMessagesClick={() => handleSidebarNav('messages')}
         />
       </div>
       {/* Main Content */}
@@ -202,6 +204,7 @@ export default function Dashboard() {
             {mainView === 'likes' && <h1 className="text-3xl font-bold text-[#F88379] pb-1">My Likes</h1>}
             {mainView === 'recently' && <h1 className="text-3xl font-bold text-[#F88379] pb-1">Recently Viewed</h1>}
             {mainView === 'purchases' && <h1 className="text-3xl font-bold text-[#F88379] pb-1">Pick Up</h1>}
+            {mainView === 'messages' && <h1 className="text-3xl font-bold text-[#F88379] pb-1">My Messages</h1>}
           </div>
           {/* Search bar and cart */}
           <div className="flex items-center gap-[27px]">
@@ -268,6 +271,8 @@ export default function Dashboard() {
                 </div>
               ))}
             </div>
+          ) : mainView === 'messages' ? (
+            <Messages />
           ) : null}
         </div>
       </main>

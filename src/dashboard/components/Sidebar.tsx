@@ -12,16 +12,16 @@ import chatIcon from '../../assets/ustp thingS/Message circle.png';
 import settingsIcon from '../../assets/ustp thingS/Settings.png';
 import { useNavigate, Routes, Route } from 'react-router-dom';
 
-// Add prop type
 type SidebarProps = {
   onVerifyClick?: () => void;
   onHomeClick?: () => void;
   onLikesClick?: () => void;
   onRecentlyClick?: () => void;
   onPurchasesClick?: () => void;
+  onMessagesClick?: () => void;
 };
 
-export default function Sidebar({ onVerifyClick, onHomeClick, onLikesClick, onRecentlyClick, onPurchasesClick }: SidebarProps) {
+export default function Sidebar({ onVerifyClick, onHomeClick, onLikesClick, onRecentlyClick, onPurchasesClick, onMessagesClick }: SidebarProps) {
   const [isVerified, setIsVerified] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
   const [username, setUsername] = useState<string>('Username');
@@ -114,7 +114,9 @@ export default function Sidebar({ onVerifyClick, onHomeClick, onLikesClick, onRe
             <img src={locationIcon} alt="Pick Up" className="w-5 h-5" />Pick Up
           </button>
           <button className="flex items-center gap-2 text-pink-400 font-semibold text-lg text-left"><img src={rateIcon} alt="To Rate" className="w-5 h-5" />To Rate</button>
-          <button className="flex items-center gap-2 text-pink-400 font-semibold text-lg text-left"><img src={chatIcon} alt="Messages" className="w-5 h-5" />Messages</button>
+          <button className="flex items-center gap-2 text-pink-400 font-semibold text-lg text-left" onClick={onMessagesClick}>
+            <img src={chatIcon} alt="Messages" className="w-5 h-5" />Messages
+          </button>
         </nav>
         {/* Start Selling Button */}
         <button className="w-full bg-pink-300 hover:bg-pink-400 text-white font-semibold py-2 rounded-lg shadow mt-8 mb-4 transition">Start selling now!</button>

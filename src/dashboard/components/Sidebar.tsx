@@ -97,32 +97,32 @@ export default function Sidebar({ onVerifyClick, onHomeClick, onLikesClick, onRe
         )}
         {/* Navigation */}
         <nav className="flex flex-col gap-4">
-          <button onClick={onHomeClick} className="flex items-center gap-2 text-[#F88379] font-semibold text-lg text-left">
+          <button onClick={onHomeClick} className="flex items-center gap-2 text-pink-400 font-semibold text-lg text-left">
             <img src={homeIcon} alt="Home" className="w-5 h-5" />Home
           </button>
-          <button onClick={onLikesClick} className="flex items-center gap-2 text-[#F88379] font-semibold text-lg text-left">
+          <button onClick={onLikesClick} className="flex items-center gap-2 text-pink-400 font-semibold text-lg text-left">
             <img src={heartIcon} alt="My Likes" className="w-5 h-5" />My Likes
           </button>
-          <button onClick={onRecentlyClick} className="flex items-center gap-2 text-[#F88379] font-semibold text-lg text-left">
+          <button onClick={onRecentlyClick} className="flex items-center gap-2 text-pink-400 font-semibold text-lg text-left">
             <img src={clockIcon} alt="Recently Viewed" className="w-5 h-5" />Recently Viewed
           </button>
-          <div className="mt-4 mb-2 font-bold text-[#F88379] text-xl">My Purchases</div>
+          <div className="mt-4 mb-2 font-bold text-pink-600 text-xl">My Purchases</div>
           <button
             onClick={onPurchasesClick ? onPurchasesClick : () => navigate('/dashboard/pickup')}
-            className="flex items-center gap-2 text-[#F88379] font-semibold text-lg text-left"
+            className="flex items-center gap-2 text-pink-400 font-semibold text-lg text-left"
           >
             <img src={locationIcon} alt="Pick Up" className="w-5 h-5" />Pick Up
           </button>
           <button className="flex items-center gap-2 text-pink-400 font-semibold text-lg text-left"><img src={rateIcon} alt="To Rate" className="w-5 h-5" />To Rate</button>
-          <button className="flex items-center gap-2 text-pink-400 font-semibold text-lg text-left"><img src={chatIcon} alt="Messages" className="w-5 h-5" />Messages</button>
+          <button onClick={() => navigate('/dashboard/messages')} className="flex items-center gap-2 text-pink-400 font-semibold text-lg text-left"><img src={chatIcon} alt="Messages" className="w-5 h-5" />Messages</button>
         </nav>
         {/* Start Selling Button */}
-        <button className="w-full bg-[#F88379] hover:bg-[#F88379]/90 text-white font-semibold py-2 rounded-lg shadow mt-[140px] mb-8 transition">Start selling now!</button>
+        <button className="w-full bg-pink-300 hover:bg-pink-400 text-white font-semibold py-2 rounded-lg shadow mt-8 mb-4 transition">Start selling now!</button>
       </div>
       {/* Settings */}
       <button
         onClick={() => navigate('/dashboard/settings')}
-        className="flex items-center gap-2 text-gray-400 hover:text-[#F88379] cursor-pointer mt-4"
+        className="flex items-center gap-2 text-gray-400 hover:text-pink-400 cursor-pointer mt-4"
       >
         <img src={settingsIcon} alt="Settings" className="w-5 h-5" />
         <span className="font-semibold">Settings</span>

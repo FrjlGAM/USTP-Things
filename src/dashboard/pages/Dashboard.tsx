@@ -9,7 +9,6 @@ import { db } from '../../lib/firebase';
 import { collection, addDoc } from 'firebase/firestore';
 import MyLikes from './MyLikes';
 import RecentlyViewed from './RecentlyViewed';
-import Messages from './Messages';
 
 
 const products = [
@@ -101,8 +100,8 @@ function VerificationModal({ open, onClose }: { open: boolean; onClose: () => vo
         <h2 className="text-3xl font-bold text-pink-400 mb-8 mt-2 text-center">Account Verification</h2>
         {step === 'select' && (
           <>
-            <button className="w-72 bg-[#F88379] hover:bg-[#F88379]/90 text-white font-bold text-2xl py-4 rounded-2xl shadow mb-6 transition" onClick={() => setStep('student')}>I am a student.</button>
-            <button className="w-72 bg-[#F88379] hover:bg-[#F88379]/90 text-white font-bold text-2xl py-4 rounded-2xl shadow transition">I am a company.</button>
+            <button className="w-72 bg-pink-300 hover:bg-pink-400 text-white font-bold text-2xl py-4 rounded-2xl shadow mb-6 transition" onClick={() => setStep('student')}>I am a student.</button>
+            <button className="w-72 bg-pink-300 hover:bg-pink-400 text-white font-bold text-2xl py-4 rounded-2xl shadow transition">I am a company.</button>
           </>
         )}
         {step === 'student' && !success && (
@@ -147,7 +146,7 @@ function VerificationModal({ open, onClose }: { open: boolean; onClose: () => vo
             </label>
             <button
               type="submit"
-              className="w-full bg-[#F88379] hover:bg-[#F88379]/90 text-white font-bold text-lg py-3 rounded-2xl shadow transition disabled:opacity-50"
+              className="w-full bg-pink-300 hover:bg-pink-400 text-white font-bold text-lg py-3 rounded-2xl shadow transition disabled:opacity-50"
               disabled={!form.name || !form.id || !form.email || !form.agree || loading}
             >
               {loading ? 'Submitting...' : 'Confirm Verification'}
@@ -164,7 +163,7 @@ function VerificationModal({ open, onClose }: { open: boolean; onClose: () => vo
 
 export default function Dashboard() {
   const [showModal, setShowModal] = useState(false);
-  const [mainView, setMainView] = useState<'home' | 'likes' | 'recently' | 'purchases' | 'messages'>('home');
+  const [mainView, setMainView] = useState<'home' | 'likes' | 'recently' | 'purchases'>('home');
   const [selectedCategory, setSelectedCategory] = useState('For You');
   const [search, setSearch] = useState('');
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
@@ -192,7 +191,6 @@ export default function Dashboard() {
           onLikesClick={() => handleSidebarNav('likes')}
           onRecentlyClick={() => handleSidebarNav('recently')}
           onPurchasesClick={() => handleSidebarNav('purchases')}
-          onMessagesClick={() => handleSidebarNav('messages')}
         />
       </div>
       {/* Main Content */}
@@ -204,7 +202,6 @@ export default function Dashboard() {
             {mainView === 'likes' && <h1 className="text-3xl font-bold text-[#F88379] pb-1">My Likes</h1>}
             {mainView === 'recently' && <h1 className="text-3xl font-bold text-[#F88379] pb-1">Recently Viewed</h1>}
             {mainView === 'purchases' && <h1 className="text-3xl font-bold text-[#F88379] pb-1">Pick Up</h1>}
-            {mainView === 'messages' && <h1 className="text-3xl font-bold text-[#F88379] pb-1">My Messages</h1>}
           </div>
           {/* Search bar and cart */}
           <div className="flex items-center gap-[27px]">
@@ -230,7 +227,7 @@ export default function Dashboard() {
             {categories.map((cat) => (
               <button
                 key={cat}
-                className={`px-4 py-1 rounded-full border text-sm font-semibold transition ${selectedCategory === cat ? 'bg-[#F88379] text-white border-[#F88379]' : 'bg-white text-gray-600 border-gray-300 hover:bg-pink-100'}`}
+                className={`px-4 py-1 rounded-full border text-sm font-semibold transition ${selectedCategory === cat ? 'bg-pink-400 text-white border-pink-400' : 'bg-white text-gray-600 border-gray-300 hover:bg-pink-100'}`}
                 onClick={() => setSelectedCategory(cat)}
               >
                 {cat}
@@ -249,7 +246,7 @@ export default function Dashboard() {
                 >
                   <img src={item.image} alt={item.name} className="w-48 h-48 object-cover rounded-xl mb-4" />
                   <h3 className="text-lg font-semibold text-gray-800 mb-2">{item.name}</h3>
-                  <p className="text-[#F88379] font-bold">{item.price}</p>
+                  <p className="text-pink-400 font-bold">{item.price}</p>
                 </div>
               ))}
             </div>
@@ -271,8 +268,6 @@ export default function Dashboard() {
                 </div>
               ))}
             </div>
-          ) : mainView === 'messages' ? (
-            <Messages />
           ) : null}
         </div>
       </main>

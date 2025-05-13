@@ -117,7 +117,7 @@ export default function Sidebar({ onVerifyClick, onHomeClick, onLikesClick, onRe
           <button className="flex items-center gap-2 text-[#F88379] font-semibold text-lg text-left"><img src={chatIcon} alt="Messages" className="w-5 h-5" />Messages</button>
         </nav>
         {/* Start Selling Button */}
-        <button className="w-full bg-[#F88379] hover:bg-[#F88379]/90 text-white font-semibold py-2 rounded-lg shadow mt-[140px] mb-8 transition">Start selling now!</button>
+        <button className="w-full bg-[#F88379] hover:bg-[#F88379]/90 text-white font-semibold py-2 rounded-lg shadow mt-[120px] mb-8 transition">Start selling now!</button>
       </div>
       {/* Settings */}
       <button

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import homeLogo from "../../assets/ustp thingS/Home.png";
 import Username from "../components/Username"; // adjust the path if needed
+import PhoneNumber from "../components/PhoneNumber"; // adjust the path if needed
 import { getDoc, doc, setDoc } from "firebase/firestore";
 import { auth, db } from "../../lib/firebase";
 
@@ -15,6 +16,9 @@ export default function AccountandSecurity({ onSettingsClick, onMyProfileClick }
   const [showUsernameModal, setShowUsernameModal] = useState(false);
   const [username, setUsername] = useState(""); // or fetch from Firestore if you want it to persist
   const [loadingUsername, setLoadingUsername] = useState(true);
+  const [showPhoneNumberModal, setShowPhoneNumberModal] = useState(false);
+  const [phoneNumber, setPhoneNumber] = useState(""); // or fetch from Firestore if you want it to persist
+  const [loadingPhoneNumber, setLoadingPhoneNumber] = useState(true);
 
   useEffect(() => {
     const fetchUsername = async () => {
@@ -29,11 +33,31 @@ export default function AccountandSecurity({ onSettingsClick, onMyProfileClick }
     fetchUsername();
   }, []);
 
+  useEffect(() => {
+    const fetchPhoneNumber = async () => {
+      if (!auth.currentUser) return;
+      setLoadingPhoneNumber(true);
+      const userDoc = await getDoc(doc(db, "users", auth.currentUser.uid));
+      if (userDoc.exists()) {
+        setPhoneNumber(userDoc.data().phoneNumber || "");
+      }
+      setLoadingPhoneNumber(false);
+    };
+    fetchPhoneNumber();
+  }, []);
+
   const handleSaveUsername = async (newUsername: string) => {
     if (!auth.currentUser) return;
     await setDoc(doc(db, "users", auth.currentUser.uid), { username: newUsername }, { merge: true });
     setUsername(newUsername);
     setShowUsernameModal(false);
+  };
+
+  const handleSavePhoneNumber = async (newPhoneNumber: string) => {
+    if (!auth.currentUser) return;
+    await setDoc(doc(db, "users", auth.currentUser.uid), { phoneNumber: newPhoneNumber }, { merge: true });
+    setPhoneNumber(newPhoneNumber);
+    setShowPhoneNumberModal(false);
   };
 
   return (
@@ -156,8 +180,22 @@ export default function AccountandSecurity({ onSettingsClick, onMyProfileClick }
             padding: 0,
           }}
         >
-          <div style={{ padding: "14px 16px", display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 17, cursor: "pointer", fontFamily: "inherit" }}>
-            Phone <span style={{ color: "#888" }}>&gt;</span>
+          <div
+            style={{
+              padding: "14px 16px",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              fontSize: 17,
+              fontFamily: "inherit",
+              cursor: "pointer",
+            }}
+            onClick={() => setShowPhoneNumberModal(true)}
+          >
+            Phone
+            <span style={{ color: "#888", fontSize: 15 }}>
+              {loadingPhoneNumber ? "Loading..." : phoneNumber ? phoneNumber : "Set now"} <span style={{ marginLeft: 8, color: "#888" }}>&gt;</span>
+            </span>
           </div>
         </div>
         <div
@@ -191,6 +229,13 @@ export default function AccountandSecurity({ onSettingsClick, onMyProfileClick }
           onClose={() => setShowUsernameModal(false)}
           onSave={handleSaveUsername}
           initialUsername={username}
+        />
+      )}
+      {showPhoneNumberModal && (
+        <PhoneNumber
+          onClose={() => setShowPhoneNumberModal(false)}
+          onSave={handleSavePhoneNumber}
+          initialPhoneNumber={phoneNumber}
         />
       )}
     </div>

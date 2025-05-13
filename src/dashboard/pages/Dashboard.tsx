@@ -9,7 +9,7 @@ import { db } from '../../lib/firebase';
 import { collection, addDoc } from 'firebase/firestore';
 import MyLikes from './MyLikes';
 import RecentlyViewed from './RecentlyViewed';
-import { ProductDetails } from './ProductDetails';
+
 
 const products = [
   {
@@ -237,45 +237,38 @@ export default function Dashboard() {
         )}
         {/* Main Content Switcher */}
         <div className="flex-1 p-10">
-          {mainView === 'home' && selectedProduct ? (
-            <ProductDetails product={selectedProduct} onBack={() => setSelectedProduct(null)} />
-          ) : mainView === 'home' ? (
+          {mainView === 'home' ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
               {filteredProducts.map((item) => (
                 <div
                   key={item.id}
                   className="bg-white rounded-2xl shadow p-4 flex flex-col items-center border-2 border-gray-100 hover:shadow-lg transition cursor-pointer"
-                  onClick={() => setSelectedProduct(item)}
                 >
                   <img src={item.image} alt={item.name} className="w-48 h-48 object-cover rounded-xl mb-4" />
-                  <div className="w-full flex flex-col gap-1">
-                    <span className="font-bold text-lg text-gray-800 truncate">{item.name}</span>
-                    <span className="text-pink-500 font-semibold text-md">{item.price}</span>
-                  </div>
-                  <div className="w-full flex justify-end mt-2">
-                    <button className="text-pink-400 hover:text-pink-600">
-                      <svg className="w-7 h-7" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M5 15l7-7 7 7" /></svg>
-                    </button>
+                  <h3 className="text-lg font-semibold text-gray-800 mb-2">{item.name}</h3>
+                  <p className="text-pink-400 font-bold">{item.price}</p>
+                </div>
+              ))}
+            </div>
+          ) : mainView === 'likes' ? (
+            <MyLikes />
+          ) : mainView === 'recently' ? (
+            <RecentlyViewed />
+          ) : mainView === 'purchases' ? (
+            <div className="space-y-6">
+              {pickups.map((pickup, index) => (
+                <div key={index} className="bg-white rounded-2xl shadow p-6">
+                  <div className="flex items-center gap-4">
+                    <img src={pickup.image} alt={pickup.product} className="w-24 h-24 object-cover rounded-xl" />
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-800">{pickup.boutique}</h3>
+                      <p className="text-gray-600">{pickup.product}</p>
+                    </div>
                   </div>
                 </div>
               ))}
             </div>
-          ) : mainView === 'likes' ? <MyLikes /> : mainView === 'recently' ? <RecentlyViewed /> : mainView === 'purchases' ? (
-            <div className="p-4">
-              <div className="flex flex-col gap-6">
-                {pickups.map((item, idx) => (
-                  <div key={idx} className="bg-pink-50 rounded-xl p-6 flex items-center gap-4 shadow-sm border border-pink-100">
-                    <img src={item.image} alt="Product" className="w-14 h-14 rounded-lg object-cover border border-pink-200" />
-                    <div>
-                      <div className="font-bold text-lg text-pink-900 mb-1">{item.boutique}</div>
-                      <div className="text-gray-700 text-base">{item.product}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
           ) : null}
-          {/* Add more views for purchases, etc. as needed */}
         </div>
       </main>
       <VerificationModal open={showModal} onClose={() => setShowModal(false)} />

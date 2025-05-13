@@ -6,9 +6,10 @@ type SettingsProps = {
   onAccountSecurityClick: () => void;
   onPrivacySettingsClick: () => void;
   onBlockedUsersClick: () => void;
+  onCommunityRulesClick: () => void;
 };
 
-export default function Settings({ onAccountSecurityClick, onPrivacySettingsClick, onBlockedUsersClick }: SettingsProps) {
+export default function Settings({ onAccountSecurityClick, onPrivacySettingsClick, onBlockedUsersClick, onCommunityRulesClick }: SettingsProps) {
   const navigate = useNavigate();
 
   return (
@@ -170,6 +171,7 @@ export default function Settings({ onAccountSecurityClick, onPrivacySettingsClic
               cursor: "pointer",
               fontFamily: "inherit",
             }}
+            onClick={onCommunityRulesClick}
           >
             Community Rules <span style={{ color: "#888" }}>&gt;</span>
           </div>

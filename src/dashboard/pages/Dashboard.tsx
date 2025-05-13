@@ -11,6 +11,8 @@ import MyLikes from './MyLikes';
 import RecentlyViewed from './RecentlyViewed';
 import ProductDetailModal from './ProductDetailModal';
 import { useLocation } from 'react-router-dom';
+import { MessagesContent } from './Messages';
+import { ToRateContent } from './ToRate';
 
 
 const products = [
@@ -94,16 +96,16 @@ function VerificationModal({ open, onClose }: { open: boolean; onClose: () => vo
       {/* Blurred background overlay */}
       <div className="absolute inset-0 bg-white/40 backdrop-blur transition-all duration-300" />
       {/* Modal with animation */}
-      <div className="relative bg-white rounded-3xl shadow-2xl px-12 py-10 flex flex-col items-center min-w-[400px] min-h-[350px] border-4 border-pink-100 animate-fade-in-scale">
+      <div className="relative bg-white rounded-3xl shadow-2xl px-12 py-10 flex flex-col items-center min-w-[400px] min-h-[450px] border-4 border-[#ECB3A8] animate-fade-in-scale">
         <button onClick={onClose} className="absolute top-4 right-4 focus:outline-none">
           <img src={xIcon} alt="Close" className="w-8 h-8" />
         </button>
         <img src={ustpLogo} alt="USTP Things Logo" className="h-20 mb-2" />
-        <h2 className="text-3xl font-bold text-pink-400 mb-8 mt-2 text-center">Account Verification</h2>
+        <h2 className="text-3xl font-bold text-[#F88379] mb-8 mt-2 text-center">Account Verification</h2>
         {step === 'select' && (
           <>
-            <button className="w-72 bg-[#F88379] hover:bg-[#F88379]/90 text-white font-bold text-2xl py-4 rounded-2xl shadow mb-6 transition" onClick={() => setStep('student')}>I am a student.</button>
-            <button className="w-72 bg-[#F88379] hover:bg-[#F88379]/90 text-white font-bold text-2xl py-4 rounded-2xl shadow transition">I am a company.</button>
+            <button className="w-64 bg-[#F88379] hover:bg-[#F88379]/90 text-white font-bold text-xl py-3 rounded-[23.08px] shadow mb-8 transition mt-8" onClick={() => setStep('student')}>I am a student.</button>
+            <button className="w-64 bg-[#F88379] hover:bg-[#F88379]/90 text-white font-bold text-xl py-3 rounded-[23.08px] shadow transition">I am a company.</button>
           </>
         )}
         {step === 'student' && !success && (
@@ -165,7 +167,7 @@ function VerificationModal({ open, onClose }: { open: boolean; onClose: () => vo
 
 export default function Dashboard() {
   const [showModal, setShowModal] = useState(false);
-  const [mainView, setMainView] = useState<'home' | 'likes' | 'recently' | 'pickup'>('home');
+  const [mainView, setMainView] = useState<'home' | 'likes' | 'recently' | 'pickup' | 'rate' | 'message'>('home');
   const [selectedCategory, setSelectedCategory] = useState('For You');
   const [search, setSearch] = useState('');
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
@@ -178,6 +180,12 @@ export default function Dashboard() {
       setMainView('likes');
     } else if (path === '/dashboard/recently-viewed') {
       setMainView('recently');
+    } else if (path === '/dashboard/pickup') {
+      setMainView('pickup');
+    } else if (path === '/dashboard/rate') {
+      setMainView('rate');
+    } else if (path === '/dashboard/message') {
+      setMainView('message');
     } else if (path === '/dashboard') {
       setMainView('home');
     }
@@ -206,20 +214,24 @@ export default function Dashboard() {
           onLikesClick={() => handleSidebarNav('likes')}
           onRecentlyClick={() => handleSidebarNav('recently')}
           onPickUpClick={() => handleSidebarNav('pickup')}
+          onRateClick={() => handleSidebarNav('rate')}
+          onMessageClick={() => handleSidebarNav('message')}
         />
       </div>
       {/* Main Content */}
       <main className="flex-1 flex flex-col">
         {/* Header */}
-        <header className="flex items-center justify-between px-8 pr-[47px] py-4 bg-white h-[70px] w-full shadow-[0_4px_4px_0_rgba(0,0,0,0.1)]">
+        <header className="fixed top-0 right-0 left-[348px] z-10 flex items-center justify-between px-8 pr-[47px] py-4 bg-white h-[70px] shadow-[0_4px_4px_0_rgba(0,0,0,0.1)]">
           <div className="flex items-center gap-4">
             <img src={ustpLogo} alt="USTP Things Logo" className="w-[117px] h-[63px] object-contain" />
             {mainView === 'likes' && <h1 className="text-3xl font-bold text-[#F88379] pb-1">My Likes</h1>}
             {mainView === 'recently' && <h1 className="text-3xl font-bold text-[#F88379] pb-1">Recently Viewed</h1>}
             {mainView === 'pickup' && <h1 className="text-3xl font-bold text-[#F88379] pb-1">Pick Up</h1>}
+            {mainView === 'rate' && <h1 className="text-3xl font-bold text-[#F88379] pb-1">Rate</h1>}
+            {mainView === 'message' && <h1 className="text-3xl font-bold text-[#F88379] pb-1">Messages</h1>}
           </div>
-          {/* Search bar and cart - only show when not in Pick Up view */}
-          {mainView !== 'pickup' && (
+          {/* Search bar and cart - only show on Home view */}
+          {mainView === 'home' && (
             <div className="flex items-center gap-[27px]">
               <div className="relative">
                 <input
@@ -240,7 +252,7 @@ export default function Dashboard() {
         </header>
         {/* Category Chips (only on Home/Product Feed) */}
         {mainView === 'home' && !selectedProduct && (
-          <div className="flex gap-2 px-12 py-4">
+          <div className="flex gap-2 px-10 py-2 mt-[80px]">
             {categories.map((cat) => (
               <button
                 key={cat}
@@ -253,7 +265,7 @@ export default function Dashboard() {
           </div>
         )}
         {/* Main Content Switcher */}
-        <div className="flex-1 p-10">
+        <div className={`flex-1 px-10 pt-4 pb-10 ${mainView === 'home' ? 'mt-1' : 'mt-[70px]'}`}>
           {mainView === 'home' ? (
             selectedProduct ? (
               <ProductDetailModal product={selectedProduct} onClose={() => setSelectedProduct(null)} />
@@ -290,6 +302,10 @@ export default function Dashboard() {
                 </div>
               ))}
             </div>
+          ) : mainView === 'rate' ? (
+            <ToRateContent />
+          ) : mainView === 'message' ? (
+            <MessagesContent />
           ) : null}
         </div>
       </main>

@@ -30,12 +30,35 @@ const messages = [
   },
 ];
 
+// Content component without header and sidebar
+export function MessagesContent() {
+  return (
+    <div className="space-y-6">
+      {messages.map((message) => (
+        <div key={message.id} className="bg-white rounded-2xl shadow p-6">
+          <div className="flex items-center gap-4">
+            <img src={message.avatar} alt={message.sender} className="w-16 h-16 rounded-full object-cover" />
+            <div className="flex-1">
+              <div className="flex justify-between items-start">
+                <h3 className="text-lg font-semibold text-gray-800">{message.sender}</h3>
+                <span className="text-sm text-gray-500">{message.time}</span>
+              </div>
+              <p className="text-gray-600 mt-1">{message.lastMessage}</p>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// Full page component with header and sidebar
 export default function Messages() {
   const [showModal, setShowModal] = useState(false);
   const navigate = useNavigate();
 
   // Sidebar navigation handler
-  const handleSidebarNav = (view: 'home' | 'likes' | 'recently' | 'pickup') => {
+  const handleSidebarNav = (view: 'home' | 'likes' | 'recently' | 'pickup' | 'rate' | 'message') => {
     switch (view) {
       case 'home':
         navigate('/dashboard');
@@ -48,6 +71,12 @@ export default function Messages() {
         break;
       case 'pickup':
         navigate('/dashboard/pickup');
+        break;
+      case 'rate':
+        navigate('/dashboard/to-rate');
+        break;
+      case 'message':
+        navigate('/dashboard/messages');
         break;
     }
   };
@@ -62,6 +91,8 @@ export default function Messages() {
           onLikesClick={() => handleSidebarNav('likes')}
           onRecentlyClick={() => handleSidebarNav('recently')}
           onPickUpClick={() => handleSidebarNav('pickup')}
+          onRateClick={() => handleSidebarNav('rate')}
+          onMessageClick={() => handleSidebarNav('message')}
         />
       </div>
       {/* Main Content */}
@@ -73,25 +104,7 @@ export default function Messages() {
             <h1 className="text-3xl font-bold text-[#F88379] pb-1">Messages</h1>
           </div>
         </header>
-        {/* Messages List */}
-        <div className="flex-1 p-10">
-          <div className="space-y-6">
-            {messages.map((message) => (
-              <div key={message.id} className="bg-white rounded-2xl shadow p-6">
-                <div className="flex items-center gap-4">
-                  <img src={message.avatar} alt={message.sender} className="w-16 h-16 rounded-full object-cover" />
-                  <div className="flex-1">
-                    <div className="flex justify-between items-start">
-                      <h3 className="text-lg font-semibold text-gray-800">{message.sender}</h3>
-                      <span className="text-sm text-gray-500">{message.time}</span>
-                    </div>
-                    <p className="text-gray-600 mt-1">{message.lastMessage}</p>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+        <MessagesContent />
       </main>
     </div>
   );

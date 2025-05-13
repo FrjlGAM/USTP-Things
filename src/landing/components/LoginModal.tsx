@@ -66,7 +66,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
             <div className="relative">
               <input
                 type="email"
-                className="w-full px-4 py-2 rounded border border-gray-300 focus:outline-none focus:border-[#F88379]"
+                className="w-full px-4 py-2 rounded border border-[#878787] focus:outline-none focus:border-[#F88379]"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 required
@@ -81,7 +81,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
             <div className="relative">
               <input
                 type={showPassword ? "text" : "password"}
-                className="w-full px-4 py-2 rounded border border-gray-300 focus:outline-none focus:border-[#F88379] pr-10"
+                className="w-full px-4 py-2 rounded border border-[#878787] focus:outline-none focus:border-[#F88379] pr-10"
                 value={password}
                 onChange={e => setPassword(e.target.value)}
                 required

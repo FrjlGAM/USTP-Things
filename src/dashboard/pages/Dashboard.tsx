@@ -9,6 +9,7 @@ import { db } from '../../lib/firebase';
 import { collection, addDoc } from 'firebase/firestore';
 import MyLikes from './MyLikes';
 import RecentlyViewed from './RecentlyViewed';
+import ProductDetailModal from './ProductDetailModal';
 
 
 const products = [
@@ -203,23 +204,25 @@ export default function Dashboard() {
             {mainView === 'recently' && <h1 className="text-3xl font-bold text-[#F88379] pb-1">Recently Viewed</h1>}
             {mainView === 'purchases' && <h1 className="text-3xl font-bold text-[#F88379] pb-1">Pick Up</h1>}
           </div>
-          {/* Search bar and cart */}
-          <div className="flex items-center gap-[27px]">
-            <div className="relative">
-              <input
-                className="w-[371px] h-[41px] pl-12 pr-4 py-2 rounded-full border-2 border-[rgba(230,230,230,0.80)] focus:outline-none text-[rgba(248,131,121,0.80)] placeholder-[rgba(248,131,121,0.80)]"
-                placeholder="Search"
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-              />
-              <img 
-                src={searchIcon} 
-                alt="Search" 
-                className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2" 
-              />
+          {/* Search bar and cart - only show when not in Pick Up view */}
+          {mainView !== 'purchases' && (
+            <div className="flex items-center gap-[27px]">
+              <div className="relative">
+                <input
+                  className="w-[371px] h-[41px] pl-12 pr-4 py-2 rounded-full border-2 border-[rgba(230,230,230,0.80)] focus:outline-none text-[rgba(248,131,121,0.80)] placeholder-[rgba(248,131,121,0.80)]"
+                  placeholder="Search"
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                />
+                <img 
+                  src={searchIcon} 
+                  alt="Search" 
+                  className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2" 
+                />
+              </div>
+              <img src={cartIcon} alt="Shopping Cart" className="w-[30px] h-[30px]" />
             </div>
-            <img src={cartIcon} alt="Shopping Cart" className="w-[30px] h-[30px]" />
-          </div>
+          )}
         </header>
         {/* Category Chips (only on Home/Product Feed) */}
         {mainView === 'home' && !selectedProduct && (
@@ -238,18 +241,23 @@ export default function Dashboard() {
         {/* Main Content Switcher */}
         <div className="flex-1 p-10">
           {mainView === 'home' ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
-              {filteredProducts.map((item) => (
-                <div
-                  key={item.id}
-                  className="bg-white rounded-2xl shadow p-4 flex flex-col items-center border-2 border-gray-100 hover:shadow-lg transition cursor-pointer"
-                >
-                  <img src={item.image} alt={item.name} className="w-48 h-48 object-cover rounded-xl mb-4" />
-                  <h3 className="text-lg font-semibold text-gray-800 mb-2">{item.name}</h3>
-                  <p className="text-[#F88379] font-bold">{item.price}</p>
-                </div>
-              ))}
-            </div>
+            selectedProduct ? (
+              <ProductDetailModal product={selectedProduct} onClose={() => setSelectedProduct(null)} />
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+                {filteredProducts.map((item) => (
+                  <div
+                    key={item.id}
+                    className="bg-white rounded-2xl shadow p-4 flex flex-col items-center border-2 border-gray-100 hover:shadow-lg transition cursor-pointer"
+                    onClick={() => setSelectedProduct(item)}
+                  >
+                    <img src={item.image} alt={item.name} className="w-48 h-48 object-cover rounded-xl mb-4" />
+                    <h3 className="text-lg font-semibold text-gray-800 mb-2">{item.name}</h3>
+                    <p className="text-[#F88379] font-bold">{item.price}</p>
+                  </div>
+                ))}
+              </div>
+            )
           ) : mainView === 'likes' ? (
             <MyLikes />
           ) : mainView === 'recently' ? (

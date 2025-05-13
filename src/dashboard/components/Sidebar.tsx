@@ -113,8 +113,18 @@ export default function Sidebar({ onVerifyClick, onHomeClick, onLikesClick, onRe
           >
             <img src={locationIcon} alt="Pick Up" className="w-5 h-5" />Pick Up
           </button>
-          <button className="flex items-center gap-2 text-[#F88379] font-semibold text-lg text-left"><img src={rateIcon} alt="To Rate" className="w-5 h-5" />To Rate</button>
-          <button className="flex items-center gap-2 text-[#F88379] font-semibold text-lg text-left"><img src={chatIcon} alt="Messages" className="w-5 h-5" />Messages</button>
+          <button 
+            onClick={() => navigate('/dashboard/to-rate')}
+            className="flex items-center gap-2 text-[#F88379] font-semibold text-lg text-left"
+          >
+            <img src={rateIcon} alt="To Rate" className="w-5 h-5" />To Rate
+          </button>
+          <button 
+            onClick={() => navigate('/dashboard/messages')}
+            className="flex items-center gap-2 text-[#F88379] font-semibold text-lg text-left"
+          >
+            <img src={chatIcon} alt="Messages" className="w-5 h-5" />Messages
+          </button>
         </nav>
       </div>
       <div className="mt-auto">

@@ -34,8 +34,21 @@ export default function Messages() {
   const navigate = useNavigate();
 
   // Sidebar navigation handler
-  const handleSidebarNav = (view: 'home' | 'likes' | 'recently' | 'purchases') => {
-    navigate('/dashboard');
+  const handleSidebarNav = (view: 'home' | 'likes' | 'recently' | 'pickup') => {
+    switch (view) {
+      case 'home':
+        navigate('/dashboard');
+        break;
+      case 'likes':
+        navigate('/dashboard/likes');
+        break;
+      case 'recently':
+        navigate('/dashboard/recently-viewed');
+        break;
+      case 'pickup':
+        navigate('/dashboard/pickup');
+        break;
+    }
   };
 
   return (
@@ -47,7 +60,7 @@ export default function Messages() {
           onHomeClick={() => handleSidebarNav('home')}
           onLikesClick={() => handleSidebarNav('likes')}
           onRecentlyClick={() => handleSidebarNav('recently')}
-          onPurchasesClick={() => handleSidebarNav('purchases')}
+          onPickUpClick={() => handleSidebarNav('pickup')}
         />
       </div>
       {/* Main Content */}

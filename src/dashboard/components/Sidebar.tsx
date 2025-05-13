@@ -18,10 +18,10 @@ type SidebarProps = {
   onHomeClick?: () => void;
   onLikesClick?: () => void;
   onRecentlyClick?: () => void;
-  onPurchasesClick?: () => void;
+  onPickUpClick?: () => void;
 };
 
-export default function Sidebar({ onVerifyClick, onHomeClick, onLikesClick, onRecentlyClick, onPurchasesClick }: SidebarProps) {
+export default function Sidebar({ onVerifyClick, onHomeClick, onLikesClick, onRecentlyClick, onPickUpClick }: SidebarProps) {
   const [isVerified, setIsVerified] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
   const [username, setUsername] = useState<string>('Username');
@@ -107,8 +107,8 @@ export default function Sidebar({ onVerifyClick, onHomeClick, onLikesClick, onRe
             <img src={clockIcon} alt="Recently Viewed" className="w-5 h-5" />Recently Viewed
           </button>
           <div className="mt-4 mb-2 font-bold text-[#F88379] text-xl flex justify-center">My Purchases</div>
-          <button
-            onClick={onPurchasesClick ? onPurchasesClick : () => navigate('/dashboard/pickup')}
+          <button 
+            onClick={() => navigate('/dashboard/pickup')}
             className="flex items-center gap-2 text-[#F88379] font-semibold text-lg text-left"
           >
             <img src={locationIcon} alt="Pick Up" className="w-5 h-5" />Pick Up

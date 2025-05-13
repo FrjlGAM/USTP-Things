@@ -4,12 +4,13 @@ import uniformImg from '../../assets/ustp thingS/Product.png';
 import xIcon from '../../assets/ustp thingS/X button.png';
 import cartIcon from '../../assets/ustp thingS/Shopping cart.png';
 import searchIcon from '../../assets/ustp thingS/search.png';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { db } from '../../lib/firebase';
 import { collection, addDoc } from 'firebase/firestore';
 import MyLikes from './MyLikes';
 import RecentlyViewed from './RecentlyViewed';
 import ProductDetailModal from './ProductDetailModal';
+import { useLocation } from 'react-router-dom';
 
 
 const products = [
@@ -164,10 +165,23 @@ function VerificationModal({ open, onClose }: { open: boolean; onClose: () => vo
 
 export default function Dashboard() {
   const [showModal, setShowModal] = useState(false);
-  const [mainView, setMainView] = useState<'home' | 'likes' | 'recently' | 'purchases'>('home');
+  const [mainView, setMainView] = useState<'home' | 'likes' | 'recently' | 'pickup'>('home');
   const [selectedCategory, setSelectedCategory] = useState('For You');
   const [search, setSearch] = useState('');
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
+  const location = useLocation();
+
+  useEffect(() => {
+    // Update view based on current route
+    const path = location.pathname;
+    if (path === '/dashboard/likes') {
+      setMainView('likes');
+    } else if (path === '/dashboard/recently-viewed') {
+      setMainView('recently');
+    } else if (path === '/dashboard') {
+      setMainView('home');
+    }
+  }, [location]);
 
   // Sidebar navigation handler
   const handleSidebarNav = (view: typeof mainView) => {
@@ -191,7 +205,7 @@ export default function Dashboard() {
           onHomeClick={() => handleSidebarNav('home')}
           onLikesClick={() => handleSidebarNav('likes')}
           onRecentlyClick={() => handleSidebarNav('recently')}
-          onPurchasesClick={() => handleSidebarNav('purchases')}
+          onPickUpClick={() => handleSidebarNav('pickup')}
         />
       </div>
       {/* Main Content */}
@@ -202,10 +216,10 @@ export default function Dashboard() {
             <img src={ustpLogo} alt="USTP Things Logo" className="w-[117px] h-[63px] object-contain" />
             {mainView === 'likes' && <h1 className="text-3xl font-bold text-[#F88379] pb-1">My Likes</h1>}
             {mainView === 'recently' && <h1 className="text-3xl font-bold text-[#F88379] pb-1">Recently Viewed</h1>}
-            {mainView === 'purchases' && <h1 className="text-3xl font-bold text-[#F88379] pb-1">Pick Up</h1>}
+            {mainView === 'pickup' && <h1 className="text-3xl font-bold text-[#F88379] pb-1">Pick Up</h1>}
           </div>
           {/* Search bar and cart - only show when not in Pick Up view */}
-          {mainView !== 'purchases' && (
+          {mainView !== 'pickup' && (
             <div className="flex items-center gap-[27px]">
               <div className="relative">
                 <input
@@ -258,7 +272,7 @@ export default function Dashboard() {
             <MyLikes />
           ) : mainView === 'recently' ? (
             <RecentlyViewed />
-          ) : mainView === 'purchases' ? (
+          ) : mainView === 'pickup' ? (
             <div className="space-y-6">
               {pickups.map((pickup, index) => (
                 <div key={index} className="bg-white rounded-2xl shadow p-6">

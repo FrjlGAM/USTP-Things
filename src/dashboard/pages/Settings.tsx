@@ -1,7 +1,7 @@
 import React from "react";
 import ustpLogo from "../../assets/ustp-things-logo.png";
 
-export default function Settings() {
+export default function Settings(props) {
   return (
     <div style={{ minHeight: "100vh", background: "#fff" }}>
       {/* Settings Header */}
@@ -66,6 +66,7 @@ export default function Settings() {
               cursor: "pointer",
               fontFamily: "inherit",
             }}
+            onClick={props.onAccountSecurityClick}
           >
             Account & Security <span style={{ color: "#888" }}>&gt;</span>
           </div>

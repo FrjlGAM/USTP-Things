@@ -4,7 +4,7 @@ import Dashboard from '../dashboard/pages/Dashboard';
 import AdminLogin from '../admin/components/AdminLogin';
 import AdminSignup from '../admin/components/AdminSignup';
 import AdminDashboard from '../admin/components/AdminDashboard';
-import Settings from '../dashboard/pages/Settings';
+import SettingsContainer from '../dashboard/pages/SettingsContainer';
 
 function App() {
   return (
@@ -14,7 +14,7 @@ function App() {
       <Route path="/admin/login" element={<AdminLogin />} />
       <Route path="/admin/signup" element={<AdminSignup />} />
       <Route path="/admin/dashboard" element={<AdminDashboard />} />
-      <Route path="/dashboard/settings" element={<Settings />} />
+      <Route path="/dashboard/settings" element={<SettingsContainer />} />
     </Routes>
   );
 }

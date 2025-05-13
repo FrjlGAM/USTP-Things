@@ -9,6 +9,7 @@ import { auth, db } from '../../lib/firebase';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { setDoc, doc } from 'firebase/firestore';
 import { useNavigate } from 'react-router-dom';
+import TermsModal from './TermsModal';
 
 interface SignupModalProps {
   isOpen: boolean;
@@ -25,6 +26,8 @@ export default function SignupModal({ isOpen, onClose }: SignupModalProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [agreeToTerms, setAgreeToTerms] = useState(false);
+  const [isTermsModalOpen, setIsTermsModalOpen] = useState(false);
   const navigate = useNavigate();
 
   if (!isOpen) return null;
@@ -33,6 +36,11 @@ export default function SignupModal({ isOpen, onClose }: SignupModalProps) {
     e.preventDefault();
     setError('');
     setSuccess('');
+
+    if (!agreeToTerms) {
+      setError('Please agree to the terms and conditions');
+      return;
+    }
 
     if (password !== confirmPassword) {
       setError('Passwords do not match');
@@ -53,6 +61,7 @@ export default function SignupModal({ isOpen, onClose }: SignupModalProps) {
       setEmail('');
       setPassword('');
       setConfirmPassword('');
+      setAgreeToTerms(false);
       navigate('/dashboard');
     } catch (err: any) {
       setError(err.message || 'Failed to sign up.');
@@ -62,8 +71,8 @@ export default function SignupModal({ isOpen, onClose }: SignupModalProps) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
-      <div className="relative bg-white bg-opacity-70 rounded-2xl shadow-xl p-8 w-full max-w-md mx-4 flex flex-col items-center border border-[#F88379] backdrop-blur-md pointer-events-auto">
+    <div className="absolute inset-0 z-50 flex items-center justify-center pointer-events-none">
+      <div className="relative bg-white/30 backdrop-blur-xl rounded-2xl shadow-xl p-8 w-full max-w-md mx-4 flex flex-col items-center border border-[#F88379] pointer-events-auto">
         <button
           className="absolute top-4 right-4 focus:outline-none"
           onClick={onClose}
@@ -152,9 +161,30 @@ export default function SignupModal({ isOpen, onClose }: SignupModalProps) {
           </div>
           {error && <div className="text-red-500 text-sm text-center">{error}</div>}
           {success && <div className="text-green-600 text-sm text-center">{success}</div>}
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="terms"
+              checked={agreeToTerms}
+              onChange={(e) => setAgreeToTerms(e.target.checked)}
+              className="w-4 h-4 text-[#F88379] border-gray-300 rounded focus:ring-[#F88379]"
+              required
+            />
+            <label htmlFor="terms" className="text-sm text-gray-600">
+              I agree to the{' '}
+              <button
+                type="button"
+                onClick={() => setIsTermsModalOpen(true)}
+                className="text-[#F88379] hover:underline focus:outline-none"
+              >
+                terms and conditions
+              </button>
+            </label>
+          </div>
           <button type="submit" className="w-full py-3 rounded-full bg-[#F88379] text-white font-bold text-lg hover:bg-[#F88379]/80 transition disabled:opacity-60" disabled={loading}>{loading ? 'Signing Up...' : 'Sign Up'}</button>
         </form>
       </div>
+      <TermsModal isOpen={isTermsModalOpen} onClose={() => setIsTermsModalOpen(false)} />
     </div>
   );
 } 

@@ -7,12 +7,24 @@ import LoginModal from '../components/LoginModal';
 import SignupModal from '../components/SignupModal';
 
 export default function Landing() {
-  const [loginOpen, setLoginOpen] = useState(false);
-  const [signupOpen, setSignupOpen] = useState(false);
+  const [activeModal, setActiveModal] = useState<'login' | 'signup' | null>(null);
+
+  const handleLoginClick = () => {
+    setActiveModal('login');
+  };
+
+  const handleSignupClick = () => {
+    setActiveModal('signup');
+  };
+
+  const handleCloseModal = () => {
+    setActiveModal(null);
+  };
+
   return (
     <div className="flex h-screen overflow-hidden">
       <div className="fixed left-0 top-0">
-        <Sidebar onLoginClick={() => setLoginOpen(true)} onSignupClick={() => setSignupOpen(true)} />
+        <Sidebar onLoginClick={handleLoginClick} onSignupClick={handleSignupClick} />
       </div>
       <div className="flex-1 flex flex-col ml-[348px]">
         <div className="fixed top-0 right-0 left-[348px] z-10">
@@ -22,11 +34,11 @@ export default function Landing() {
           <div className="relative min-h-[calc(100vh-4rem)]">
             <MainContent />
             <Background />
+            <LoginModal isOpen={activeModal === 'login'} onClose={handleCloseModal} />
+            <SignupModal isOpen={activeModal === 'signup'} onClose={handleCloseModal} />
           </div>
         </div>
       </div>
-      <LoginModal isOpen={loginOpen} onClose={() => setLoginOpen(false)} />
-      <SignupModal isOpen={signupOpen} onClose={() => setSignupOpen(false)} />
     </div>
   );
 }

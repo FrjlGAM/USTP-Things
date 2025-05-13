@@ -9,6 +9,7 @@ import { db } from '../../lib/firebase';
 import { collection, addDoc } from 'firebase/firestore';
 import MyLikes from './MyLikes';
 import RecentlyViewed from './RecentlyViewed';
+import ProductDetailModal from './ProductDetailModal';
 
 
 const products = [
@@ -243,6 +244,7 @@ export default function Dashboard() {
                 <div
                   key={item.id}
                   className="bg-white rounded-2xl shadow p-4 flex flex-col items-center border-2 border-gray-100 hover:shadow-lg transition cursor-pointer"
+                  onClick={() => setSelectedProduct(item)}
                 >
                   <img src={item.image} alt={item.name} className="w-48 h-48 object-cover rounded-xl mb-4" />
                   <h3 className="text-lg font-semibold text-gray-800 mb-2">{item.name}</h3>
@@ -272,6 +274,9 @@ export default function Dashboard() {
         </div>
       </main>
       <VerificationModal open={showModal} onClose={() => setShowModal(false)} />
+      {selectedProduct && (
+        <ProductDetailModal product={selectedProduct} onClose={() => setSelectedProduct(null)} />
+      )}
     </div>
   );
 } 

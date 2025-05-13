@@ -9,10 +9,11 @@ import { db } from '../../lib/firebase';
 import { collection, addDoc } from 'firebase/firestore';
 import MyLikes from './MyLikes';
 import RecentlyViewed from './RecentlyViewed';
-import ProductDetailModal from './ProductDetailModal';
+import ProductDetail from './ProductDetail';
 import { useLocation } from 'react-router-dom';
 import { MessagesContent } from './Messages';
 import { ToRateContent } from './ToRate';
+import HeartButton from '../components/HeartButton';
 
 
 const products = [
@@ -21,12 +22,14 @@ const products = [
     name: 'Uniform Set USTP (Female) ...',
     price: '₱1,000,000',
     image: uniformImg,
+    liked: false,
   },
   {
     id: 2,
     name: 'Item 2 [Desc]',
     price: '₱1,000,000',
     image: 'https://static.wikia.nocookie.net/spongebob/images/7/7e/Nat_Peterson_29.png',
+    liked: false,
   },
 ];
 
@@ -167,7 +170,7 @@ function VerificationModal({ open, onClose }: { open: boolean; onClose: () => vo
 
 export default function Dashboard() {
   const [showModal, setShowModal] = useState(false);
-  const [mainView, setMainView] = useState<'home' | 'likes' | 'recently' | 'pickup' | 'rate' | 'message'>('home');
+  const [mainView, setMainView] = useState<'home' | 'likes' | 'recently' | 'pickup' | 'rate' | 'message' | 'product'>('home');
   const [selectedCategory, setSelectedCategory] = useState('For You');
   const [search, setSearch] = useState('');
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
@@ -186,6 +189,8 @@ export default function Dashboard() {
       setMainView('rate');
     } else if (path === '/dashboard/message') {
       setMainView('message');
+    } else if (path.startsWith('/dashboard/product/')) {
+      setMainView('product');
     } else if (path === '/dashboard') {
       setMainView('home');
     }
@@ -229,6 +234,7 @@ export default function Dashboard() {
             {mainView === 'pickup' && <h1 className="text-3xl font-bold text-[#F88379] pb-1">Pick Up</h1>}
             {mainView === 'rate' && <h1 className="text-3xl font-bold text-[#F88379] pb-1">Rate</h1>}
             {mainView === 'message' && <h1 className="text-3xl font-bold text-[#F88379] pb-1">Messages</h1>}
+            {mainView === 'product' && <h1 className="text-3xl font-bold text-[#F88379] pb-1">Product Details</h1>}
           </div>
           {/* Search bar and cart - only show on Home view */}
           {mainView === 'home' && (
@@ -268,15 +274,28 @@ export default function Dashboard() {
         <div className={`flex-1 px-10 pt-4 pb-10 ${mainView === 'home' ? 'mt-1' : 'mt-[70px]'}`}>
           {mainView === 'home' ? (
             selectedProduct ? (
-              <ProductDetailModal product={selectedProduct} onClose={() => setSelectedProduct(null)} />
+              <ProductDetail product={selectedProduct} onClose={() => setSelectedProduct(null)} />
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
                 {filteredProducts.map((item) => (
                   <div
                     key={item.id}
-                    className="bg-white rounded-2xl shadow p-4 flex flex-col items-center border-2 border-gray-100 hover:shadow-lg transition cursor-pointer"
+                    className="bg-white rounded-2xl shadow p-4 flex flex-col items-center border-2 border-gray-100 hover:shadow-lg transition cursor-pointer relative"
                     onClick={() => setSelectedProduct(item)}
                   >
+                    <div className="absolute top-4 right-4 z-10">
+                      <HeartButton 
+                        initialLiked={item.liked}
+                        onLikeChange={(liked) => {
+                          // Update the liked state in the products array
+                          const updatedProducts = products.map(p => 
+                            p.id === item.id ? { ...p, liked } : p
+                          );
+                          // You might want to update this in your state management system
+                          console.log('Product liked:', item.id, liked);
+                        }}
+                      />
+                    </div>
                     <img src={item.image} alt={item.name} className="w-48 h-48 object-cover rounded-xl mb-4" />
                     <h3 className="text-lg font-semibold text-gray-800 mb-2">{item.name}</h3>
                     <p className="text-[#F88379] font-bold">{item.price}</p>

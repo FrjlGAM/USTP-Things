@@ -36,7 +36,7 @@ export default function Pickup() {
           <div className="p-8">
             <div className="flex flex-col gap-6">
               {pickups.map((item, idx) => (
-                <div key={idx} className="bg-pink-50 rounded-xl p-6 flex items-center gap-4 shadow-sm border border-pink-100">
+                <div key={idx} className="bg-pink-50 rounded-xl p-4 flex items-center gap-4 shadow-sm border border-pink-100">
                   <img src={item.image} alt="Product" className="w-14 h-14 rounded-lg object-cover border border-pink-200" />
                   <div>
                     <div className="font-bold text-lg text-pink-900 underline underline-offset-2 mb-1">{item.boutique}</div>

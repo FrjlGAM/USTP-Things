@@ -1,11 +1,15 @@
 import React from "react";
-import ustpLogo from "../../assets/ustp-things-logo.png";
+import homeLogo from "../../assets/ustp thingS/Home.png";
+import { useNavigate } from "react-router-dom";
 
 type SettingsProps = {
   onAccountSecurityClick: () => void;
+  onPrivacySettingsClick: () => void;
 };
 
-export default function Settings({ onAccountSecurityClick }: SettingsProps) {
+export default function Settings({ onAccountSecurityClick, onPrivacySettingsClick }: SettingsProps) {
+  const navigate = useNavigate();
+
   return (
     <div style={{ minHeight: "100vh", background: "#fff" }}>
       {/* Settings Header */}
@@ -15,7 +19,7 @@ export default function Settings({ onAccountSecurityClick }: SettingsProps) {
           display: "flex",
           alignItems: "center",
           height: 72,
-          paddingLeft: 24,
+          paddingLeft: 55,
           paddingRight: 24,
           gap: 18,
           borderBottom: "1px solid #ccc",
@@ -23,9 +27,11 @@ export default function Settings({ onAccountSecurityClick }: SettingsProps) {
         }}
       >
         <img
-          src={ustpLogo}
-          alt="USTP Things Logo"
-          className="h-14 w-auto"
+          src={homeLogo}
+          alt="Home Icon"
+          className="h-7 w-auto"
+          style={{ cursor: "pointer" }}
+          onClick={() => navigate('/dashboard')}
         />
         <div style={{
           width: 2,
@@ -105,6 +111,7 @@ export default function Settings({ onAccountSecurityClick }: SettingsProps) {
               cursor: "pointer",
               fontFamily: "inherit",
             }}
+            onClick={onPrivacySettingsClick}
           >
             Privacy Settings <span style={{ color: "#888" }}>&gt;</span>
           </div>

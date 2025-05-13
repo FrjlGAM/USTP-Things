@@ -1,6 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import ustpLogo from "../../assets/ustp-things-logo.png";
+import homeLogo from "../../assets/ustp thingS/Home.png";
 // import { useNavigate } from "react-router-dom"; // Uncomment if you want to use navigate(-1)
 
 type AccountandSecurityProps = {
@@ -18,7 +18,7 @@ export default function AccountandSecurity({ onSettingsClick }: AccountandSecuri
           display: "flex",
           alignItems: "center",
           height: 72,
-          paddingLeft: 24,
+          paddingLeft: 55,
           paddingRight: 24,
           gap: 18,
           borderBottom: "1px solid #ccc",
@@ -26,9 +26,11 @@ export default function AccountandSecurity({ onSettingsClick }: AccountandSecuri
         }}
       >
         <img
-          src={ustpLogo}
-          alt="USTP Things Logo"
-          className="h-14 w-auto"
+          src={homeLogo}
+          alt="Home Icon"
+          className="h-7 w-auto"
+          style={{ cursor: "pointer" }}
+          onClick={() => navigate('/dashboard')}
         />
         <div style={{
           width: 2,

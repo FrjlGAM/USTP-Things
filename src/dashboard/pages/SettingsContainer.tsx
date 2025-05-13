@@ -4,6 +4,7 @@ import AccountandSecurity from "./AccountandSecurity";
 import PrivacySettings from "./PrivacySettings";
 import BlockedUsers from "./BlockedUsers";
 import MyProfile from "./MyProfile";
+import CommunityRules from "./CommunityRules";
 
 export default function SettingsContainer() {
   const [view, setView] = useState("settings");
@@ -15,6 +16,7 @@ export default function SettingsContainer() {
           onAccountSecurityClick={() => setView("account")}
           onPrivacySettingsClick={() => setView("privacy")}
           onBlockedUsersClick={() => setView("blocked")}
+          onCommunityRulesClick={() => setView("communityRules")}
         />
       )}
       {view === "account" && (
@@ -34,6 +36,9 @@ export default function SettingsContainer() {
           onSettingsClick={() => setView("settings")} 
           setView={setView}
         />
+      )}
+      {view === "communityRules" && (
+        <CommunityRules onSettingsClick={() => setView("settings")} />
       )}
     </>
   );

@@ -89,7 +89,7 @@ export default function Sidebar({ onVerifyClick, onHomeClick, onLikesClick, onRe
         {/* Verify Button */}
         {!loading && isVerified === false && (
           <button
-            className="w-full bg-pink-300 hover:bg-pink-400 text-white font-semibold py-2 rounded-lg shadow mb-8 transition"
+            className="w-full bg-[#F88379] hover:bg-[#F88379]/90 text-white font-semibold py-2 rounded-lg shadow mb-8 transition"
             onClick={onVerifyClick}
           >
             Verify Your Account

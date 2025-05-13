@@ -203,23 +203,25 @@ export default function Dashboard() {
             {mainView === 'recently' && <h1 className="text-3xl font-bold text-[#F88379] pb-1">Recently Viewed</h1>}
             {mainView === 'purchases' && <h1 className="text-3xl font-bold text-[#F88379] pb-1">Pick Up</h1>}
           </div>
-          {/* Search bar and cart */}
-          <div className="flex items-center gap-[27px]">
-            <div className="relative">
-              <input
-                className="w-[371px] h-[41px] pl-12 pr-4 py-2 rounded-full border-2 border-[rgba(230,230,230,0.80)] focus:outline-none text-[rgba(248,131,121,0.80)] placeholder-[rgba(248,131,121,0.80)]"
-                placeholder="Search"
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-              />
-              <img 
-                src={searchIcon} 
-                alt="Search" 
-                className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2" 
-              />
+          {/* Search bar and cart - only show when not in Pick Up view */}
+          {mainView !== 'purchases' && (
+            <div className="flex items-center gap-[27px]">
+              <div className="relative">
+                <input
+                  className="w-[371px] h-[41px] pl-12 pr-4 py-2 rounded-full border-2 border-[rgba(230,230,230,0.80)] focus:outline-none text-[rgba(248,131,121,0.80)] placeholder-[rgba(248,131,121,0.80)]"
+                  placeholder="Search"
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                />
+                <img 
+                  src={searchIcon} 
+                  alt="Search" 
+                  className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2" 
+                />
+              </div>
+              <img src={cartIcon} alt="Shopping Cart" className="w-[30px] h-[30px]" />
             </div>
-            <img src={cartIcon} alt="Shopping Cart" className="w-[30px] h-[30px]" />
-          </div>
+          )}
         </header>
         {/* Category Chips (only on Home/Product Feed) */}
         {mainView === 'home' && !selectedProduct && (

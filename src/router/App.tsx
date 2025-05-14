@@ -11,6 +11,8 @@ import Orders from '../dashboard/pages/Orders';
 import CheckOut from '../dashboard/pages/CheckOut';
 import { useLocation, Navigate } from 'react-router-dom';
 import SellerPage from '../dashboard/pages/SellerPage';
+import TransactionHistory from '../dashboard/pages/TransactionHistory';
+import Earnings from '../dashboard/pages/Earnings';
 
 // Wrapper component to handle checkout route with product data
 function CheckOutWrapper() {
@@ -37,6 +39,8 @@ function App() {
       <Route path="/dashboard/settings" element={<SettingsContainer />} />
       <Route path="/dashboard/checkout" element={<CheckOutWrapper />} />
       <Route path="/dashboard/seller" element={<SellerPage />} />
+      <Route path="/dashboard/transaction-history" element={<TransactionHistory />} />
+      <Route path="/dashboard/earnings" element={<Earnings />} />
       <Route path="/admin/login" element={<AdminLogin />} />
       <Route path="/admin/signup" element={<AdminSignup />} />
       <Route path="/admin/dashboard" element={<AdminDashboard />} />

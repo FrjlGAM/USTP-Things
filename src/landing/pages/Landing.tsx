@@ -32,10 +32,12 @@ export default function Landing() {
         </div>
         <div className="flex-1 mt-16 overflow-y-auto">
           <div className="relative min-h-[calc(100vh-4rem)]">
-            <MainContent />
-            <Background />
-            <LoginModal isOpen={activeModal === 'login'} onClose={handleCloseModal} />
-            <SignupModal isOpen={activeModal === 'signup'} onClose={handleCloseModal} />
+            <div className="fade-in">
+              <MainContent />
+              <Background />
+              <LoginModal isOpen={activeModal === 'login'} onClose={handleCloseModal} />
+              <SignupModal isOpen={activeModal === 'signup'} onClose={handleCloseModal} />
+            </div>
           </div>
         </div>
       </div>

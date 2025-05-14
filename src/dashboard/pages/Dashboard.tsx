@@ -290,6 +290,18 @@ export default function Dashboard() {
 
   useEffect(() => {
     const path = location.pathname;
+    // Check if user is trying to access restricted pages through URL
+    if (!isVerified && (
+      path === '/dashboard/cart' ||
+      path === '/dashboard/pickup' ||
+      path === '/dashboard/rate' ||
+      path === '/dashboard/message'
+    )) {
+      setShowModal(true);
+      setMainView('home');
+      return;
+    }
+
     if (path === '/dashboard/likes') {
       setMainView('likes');
     } else if (path === '/dashboard/recently-viewed') {
@@ -307,16 +319,25 @@ export default function Dashboard() {
     } else if (path === '/dashboard') {
       setMainView('home');
     }
-  }, [location]);
+  }, [location, isVerified]);
 
   // Sidebar navigation handler
   const handleSidebarNav = (view: typeof mainView) => {
+    // Check if user is trying to access restricted pages
+    if (!isVerified && ['cart', 'pickup', 'rate', 'message'].includes(view)) {
+      setShowModal(true);
+      return;
+    }
     setMainView(view);
     setSelectedProduct(null);
   };
 
   // Cart icon click handler
   const handleCartClick = () => {
+    if (!isVerified) {
+      setShowModal(true);
+      return;
+    }
     setMainView('cart');
   };
 

@@ -134,6 +134,7 @@ export default function Sidebar({
           <button 
             onClick={() => {
               setActiveButton('home');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
               onHomeClick?.();
             }} 
             className={`flex items-center gap-2 text-[#F88379] font-semibold text-lg text-left transition ${activeButton === 'home' ? 'bg-white rounded-[23.08px] px-2 py-1' : ''}`}
@@ -143,6 +144,7 @@ export default function Sidebar({
           <button 
             onClick={() => {
               setActiveButton('likes');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
               onLikesClick?.();
             }} 
             className={`flex items-center gap-2 text-[#F88379] font-semibold text-lg text-left transition ${activeButton === 'likes' ? 'bg-white rounded-[23.08px] px-2 py-1' : ''}`}
@@ -152,6 +154,7 @@ export default function Sidebar({
           <button 
             onClick={() => {
               setActiveButton('recently');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
               onRecentlyClick?.();
             }} 
             className={`flex items-center gap-2 text-[#F88379] font-semibold text-lg text-left transition ${activeButton === 'recently' ? 'bg-white rounded-[23.08px] px-2 py-1' : ''}`}

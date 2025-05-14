@@ -4,7 +4,11 @@ import ProductDetail from './ProductDetail';
 import { db, auth } from '../../lib/firebase';
 import { doc, getDoc, setDoc, arrayRemove } from 'firebase/firestore';
 
-export default function MyCart() {
+interface MyCartProps {
+  onProductClick?: (product: any) => void;
+}
+
+export default function MyCart({ onProductClick }: MyCartProps) {
   const [products, setProducts] = useState<any[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [isVerified, setIsVerified] = useState(false);
@@ -104,7 +108,7 @@ export default function MyCart() {
         <ProductCard
           key={product.id}
           product={product}
-          onClick={() => handleProductView(product)}
+          onClick={() => onProductClick?.(product)}
           onLikeChange={(liked) => {
             if (!liked) {
               handleRemoveFromCart(product);

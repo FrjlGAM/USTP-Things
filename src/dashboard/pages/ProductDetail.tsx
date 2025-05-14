@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import HeartButton from '../components/HeartButton';
 import cartIcon from '../../assets/ustp thingS/Shopping cart.png';
@@ -128,7 +128,7 @@ export default function ProductDetail({
   };
 
   return (
-    <div className="w-full bg-white rounded-2xl shadow p-4 md:pl-10 md:pr-16 md:py-10 relative">
+    <div className="w-full bg-white p-4 md:pl-10 md:pr-16 md:py-10 relative">
       {/* X Button */}
       {onClose && (
         <button
@@ -157,7 +157,7 @@ export default function ProductDetail({
               title={!isVerified ? "Account verification required to add items to cart" : ""}
             >
               <img 
-                src={isInCart ? greenCartIcon : cartIcon} 
+                src={!isVerified ? cartIcon : (isInCart ? greenCartIcon : cartIcon)} 
                 alt="Add to Cart" 
                 className={isInCart ? "w-8 h-7" : "w-6 h-6"}
                 style={!isVerified ? { opacity: 0.5 } : undefined}

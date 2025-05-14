@@ -13,6 +13,14 @@ const messages = [
     lastMessage: 'Your order is ready for pickup!',
     time: '10:30 AM',
     avatar: userAvatar,
+    product: {
+      id: '1',
+      name: 'Uniform Set USTP (Female)',
+      price: '₱1,000',
+      image: userAvatar,
+      description: 'Complete USTP uniform set for female students',
+      category: 'Uniform'
+    }
   },
   {
     id: 2,
@@ -20,6 +28,14 @@ const messages = [
     lastMessage: 'Thank you for your purchase!',
     time: 'Yesterday',
     avatar: userAvatar,
+    product: {
+      id: '2',
+      name: 'USTP Notebook',
+      price: '₱50',
+      image: userAvatar,
+      description: 'Official USTP notebook',
+      category: 'School Supplies'
+    }
   },
   {
     id: 3,
@@ -27,15 +43,47 @@ const messages = [
     lastMessage: 'Your items are in stock now.',
     time: '2 days ago',
     avatar: userAvatar,
+    product: {
+      id: '3',
+      name: 'USTP ID Lace',
+      price: '₱30',
+      image: userAvatar,
+      description: 'Official USTP ID lace',
+      category: 'Accessories'
+    }
   },
 ];
 
+interface Message {
+  id: number;
+  sender: string;
+  lastMessage: string;
+  time: string;
+  avatar: string;
+  product: {
+    id: string;
+    name: string;
+    price: string;
+    image: string;
+    description: string;
+    category: string;
+  };
+}
+
+interface MessagesContentProps {
+  onProductClick?: (product: any) => void;
+}
+
 // Content component without header and sidebar
-export function MessagesContent() {
+export function MessagesContent({ onProductClick }: MessagesContentProps) {
   return (
-    <div className="space-y-6">
-      {messages.map((message) => (
-        <div key={message.id} className="bg-white rounded-2xl shadow p-6">
+    <div className="space-y-4">
+      {messages.map((message: Message) => (
+        <div 
+          key={message.id} 
+          className="bg-white rounded-xl p-4 shadow cursor-pointer hover:shadow-md transition"
+          onClick={() => onProductClick?.(message.product)}
+        >
           <div className="flex items-center gap-4">
             <img src={message.avatar} alt={message.sender} className="w-16 h-16 rounded-full object-cover" />
             <div className="flex-1">

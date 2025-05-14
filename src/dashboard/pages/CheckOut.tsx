@@ -73,129 +73,127 @@ export default function CheckOut({ product, onClose }: CheckOutProps) {
 
       {/* Main Content */}
       <main className="flex-1 p-10">
-        <div className="w-full bg-white rounded-2xl shadow p-8">
-          <form onSubmit={handleSubmit}>
-            {/* Products Ordered Section */}
-            <div className="bg-[#FF9B8B] text-white p-4 rounded-t-2xl flex justify-between items-center">
-              <h2 className="font-semibold text-lg">Products Ordered</h2>
-              <span>{product.sellerId}</span>
+        <form onSubmit={handleSubmit}>
+          {/* Products Ordered Section */}
+          <div className="bg-[#FF9B8B] text-white p-4 rounded-t-2xl flex justify-between items-center">
+            <h2 className="font-semibold text-lg">Products Ordered</h2>
+            <span>{product.sellerId}</span>
+          </div>
+          
+          <div className="bg-white p-6 border-x border-b rounded-b-2xl mb-6">
+            <div className="flex items-center gap-4">
+              <img src={product.image} alt={product.name} className="w-16 h-16 object-cover rounded" />
+              <div className="flex-1">
+                <h3 className="font-semibold">{product.name}</h3>
+                <div className="flex justify-between items-center mt-2">
+                  <span className="text-gray-600">Price</span>
+                  <span className="font-semibold">{product.price}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600">Quantity</span>
+                  <span>1</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600">Subtotal</span>
+                  <span className="font-semibold">{product.price}</span>
+                </div>
+              </div>
             </div>
-            
-            <div className="bg-white p-6 border-x border-b rounded-b-2xl mb-6">
-              <div className="flex items-center gap-4">
-                <img src={product.image} alt={product.name} className="w-16 h-16 object-cover rounded" />
+          </div>
+
+          {/* Pick Up Section */}
+          <div className="bg-white p-6 rounded-2xl mb-6">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-6 h-6 bg-[#FF9B8B] rounded-full flex items-center justify-center text-white">
+                <span>📍</span>
+              </div>
+              <h2 className="font-semibold text-lg">Pick Up</h2>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-gray-600 mb-1">School Location:</label>
+                <select 
+                  className="w-full p-2 border rounded-lg bg-white"
+                  value={schoolLocation}
+                  onChange={(e) => setSchoolLocation(e.target.value)}
+                  required
+                >
+                  <option value="">Select location</option>
+                  <option value="Main Campus">Main Campus</option>
+                  <option value="CDO Campus">CDO Campus</option>
+                </select>
+              </div>
+
+              <div className="flex gap-4">
                 <div className="flex-1">
-                  <h3 className="font-semibold">{product.name}</h3>
-                  <div className="flex justify-between items-center mt-2">
-                    <span className="text-gray-600">Price</span>
-                    <span className="font-semibold">{product.price}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-600">Quantity</span>
-                    <span>1</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-600">Subtotal</span>
-                    <span className="font-semibold">{product.price}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Pick Up Section */}
-            <div className="bg-[#f7f6fd] p-6 rounded-2xl mb-6">
-              <div className="flex items-center gap-2 mb-4">
-                <div className="w-6 h-6 bg-[#FF9B8B] rounded-full flex items-center justify-center text-white">
-                  <span>📍</span>
-                </div>
-                <h2 className="font-semibold text-lg">Pick Up</h2>
-              </div>
-
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-gray-600 mb-1">School Location:</label>
-                  <select 
+                  <label className="block text-gray-600 mb-1">Date:</label>
+                  <input 
+                    type="date" 
                     className="w-full p-2 border rounded-lg bg-white"
-                    value={schoolLocation}
-                    onChange={(e) => setSchoolLocation(e.target.value)}
+                    value={pickupDate}
+                    onChange={(e) => setPickupDate(e.target.value)}
                     required
-                  >
-                    <option value="">Select location</option>
-                    <option value="Main Campus">Main Campus</option>
-                    <option value="CDO Campus">CDO Campus</option>
-                  </select>
+                  />
                 </div>
-
-                <div className="flex gap-4">
-                  <div className="flex-1">
-                    <label className="block text-gray-600 mb-1">Date:</label>
-                    <input 
-                      type="date" 
-                      className="w-full p-2 border rounded-lg bg-white"
-                      value={pickupDate}
-                      onChange={(e) => setPickupDate(e.target.value)}
-                      required
-                    />
-                  </div>
-                  <div className="flex-1">
-                    <label className="block text-gray-600 mb-1">Time:</label>
-                    <input 
-                      type="time" 
-                      className="w-full p-2 border rounded-lg bg-white"
-                      value={pickupTime}
-                      onChange={(e) => setPickupTime(e.target.value)}
-                      required
-                    />
-                  </div>
+                <div className="flex-1">
+                  <label className="block text-gray-600 mb-1">Time:</label>
+                  <input 
+                    type="time" 
+                    className="w-full p-2 border rounded-lg bg-white"
+                    value={pickupTime}
+                    onChange={(e) => setPickupTime(e.target.value)}
+                    required
+                  />
                 </div>
               </div>
             </div>
+          </div>
 
-            {/* Payment Method Section */}
-            <div className="bg-[#f7f6fd] p-6 rounded-2xl mb-6">
-              <h2 className="font-semibold text-lg mb-4">Payment Method</h2>
-              <select 
-                className="w-full p-2 border rounded-lg bg-white"
-                value={paymentMethod}
-                onChange={(e) => setPaymentMethod(e.target.value)}
-                required
-              >
-                <option value="">Choose Payment Method</option>
-                <option value="Cash">Cash on Pickup</option>
-                <option value="GCash">GCash</option>
-              </select>
+          {/* Payment Method Section */}
+          <div className="bg-white p-6 rounded-2xl mb-6">
+            <h2 className="font-semibold text-lg mb-4">Payment Method</h2>
+            <select 
+              className="w-full p-2 border rounded-lg bg-white"
+              value={paymentMethod}
+              onChange={(e) => setPaymentMethod(e.target.value)}
+              required
+            >
+              <option value="">Choose Payment Method</option>
+              <option value="Cash">Cash on Pickup</option>
+              <option value="GCash">GCash</option>
+            </select>
 
-              <div className="mt-6 space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Item Subtotal</span>
-                  <span>{product.price}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Total Payment</span>
-                  <span className="text-xl font-bold text-[#F88379]">{product.price}</span>
-                </div>
+            <div className="mt-6 space-y-2">
+              <div className="flex justify-between">
+                <span className="text-gray-600">Item Subtotal</span>
+                <span>{product.price}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Total Payment</span>
+                <span className="text-xl font-bold text-[#F88379]">{product.price}</span>
               </div>
             </div>
+          </div>
 
-            {/* Buttons */}
-            <div className="flex justify-end gap-4">
-              <button
-                type="button"
-                onClick={handleCancel}
-                className="px-8 py-3 rounded-xl border-2 border-[#F88379] text-[#F88379] font-bold text-lg hover:bg-[#F88379] hover:text-white transition"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={loading}
-                className="bg-[#F88379] hover:bg-[#F88379]/90 text-white font-bold py-3 px-8 rounded-xl shadow transition text-lg disabled:opacity-50"
-              >
-                {loading ? 'Processing...' : 'Place Order'}
-              </button>
-            </div>
-          </form>
-        </div>
+          {/* Buttons */}
+          <div className="flex justify-end gap-4">
+            <button
+              type="button"
+              onClick={handleCancel}
+              className="px-8 py-3 rounded-xl border-2 border-[#F88379] text-[#F88379] font-bold text-lg hover:bg-[#F88379] hover:text-white transition"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="bg-[#F88379] hover:bg-[#F88379]/90 text-white font-bold py-3 px-8 rounded-xl shadow transition text-lg disabled:opacity-50"
+            >
+              {loading ? 'Processing...' : 'Place Order'}
+            </button>
+          </div>
+        </form>
       </main>
     </div>
   );

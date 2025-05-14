@@ -309,6 +309,8 @@ export default function Dashboard() {
     }
     setMainView(view);
     setSelectedProduct(null);
+    // Scroll to top when changing views
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   // Cart icon click handler
@@ -396,8 +398,22 @@ export default function Dashboard() {
     }
   };
 
+  // Add effect to handle body overflow
+  useEffect(() => {
+    if (selectedProduct) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'auto';
+    }
+    
+    // Cleanup
+    return () => {
+      document.body.style.overflow = 'auto';
+    };
+  }, [selectedProduct]);
+
   return (
-    <div className="flex min-h-screen bg-[#f7f6fd]">
+    <div className={`flex min-h-screen bg-[#f7f6fd] ${selectedProduct ? 'overflow-hidden' : ''}`}>
       {/* Sidebar */}
       <div className="w-[348px] flex-shrink-0">
         <Sidebar
@@ -419,10 +435,10 @@ export default function Dashboard() {
         />
       </div>
       {/* Main Content */}
-      <main className="flex-1 flex flex-col">
+      <main className="flex-1 flex flex-col relative">
         {/* Header */}
         {!selectedProduct && (
-          <header className="fixed top-0 right-0 left-[348px] z-10 flex items-center justify-between px-8 pr-[47px] py-4 bg-white h-[70px] shadow-[0_4px_4px_0_rgba(0,0,0,0.1)]">
+          <header className="flex items-center justify-between px-8 pr-[47px] py-4 bg-white h-[70px] shadow-[0_4px_4px_0_rgba(0,0,0,0.1)]">
             <div className="flex items-center gap-4">
               <img src={ustpLogo} alt="USTP Things Logo" className="w-[117px] h-[63px] object-contain" />
               {mainView === 'likes' && <h1 className="text-3xl font-bold text-[#F88379] pb-1">My Likes</h1>}
@@ -458,7 +474,7 @@ export default function Dashboard() {
         )}
         {/* Category Chips (only on Home/Product Feed) */}
         {mainView === 'home' && !selectedProduct && (
-          <div className="flex gap-2 px-10 py-2 mt-[80px]">
+          <div className="flex gap-2 px-10 py-2">
             {categories.map((cat) => (
               <button
                 key={cat}
@@ -471,38 +487,22 @@ export default function Dashboard() {
           </div>
         )}
         {/* Main Content Switcher */}
-        <div className={`flex-1 px-10 pt-4 pb-10 ${mainView === 'home' && !selectedProduct ? 'mt-1' : selectedProduct ? 'mt-0' : 'mt-[70px]'}`}>
+        <div className={`flex-1 px-10 pt-4 pb-10`}>
           {mainView === 'home' ? (
-            selectedProduct ? (
-              <ProductDetail 
-                product={selectedProduct} 
-                onClose={() => setSelectedProduct(null)} 
-                onAddToCart={() => {
-                  if (!isVerified) {
-                    setShowModal(true);
-                    return;
-                  }
-                  handleAddToCart(selectedProduct);
-                }}
-                isVerified={isVerified}
-                onVerifyClick={() => setShowModal(true)}
-              />
-            ) : (
-              <div className="flex flex-wrap gap-8">
-                {filteredProducts.map((item) => (
-                  <ProductCard
-                    key={item.id}
-                    product={item}
-                    onClick={() => handleProductView(item)}
-                    onLikeChange={(liked) => handleLikeChange(item, liked)}
-                  />
-                ))}
-              </div>
-            )
+            <div className="flex flex-wrap gap-8">
+              {filteredProducts.map((item) => (
+                <ProductCard
+                  key={item.id}
+                  product={item}
+                  onClick={() => handleProductView(item)}
+                  onLikeChange={(liked) => handleLikeChange(item, liked)}
+                />
+              ))}
+            </div>
           ) : mainView === 'likes' ? (
-            <MyLikes />
+            <MyLikes onProductClick={handleProductView} />
           ) : mainView === 'recently' ? (
-            <RecentlyViewed />
+            <RecentlyViewed onProductClick={handleProductView} />
           ) : mainView === 'pickup' ? (
             <div className="space-y-6">
               {pickups.map((pickup, index) => (
@@ -518,14 +518,34 @@ export default function Dashboard() {
               ))}
             </div>
           ) : mainView === 'cart' ? (
-            <MyCart />
+            <MyCart onProductClick={handleProductView} />
           ) : mainView === 'rate' ? (
-            <ToRateContent />
+            <ToRateContent onProductClick={handleProductView} />
           ) : mainView === 'message' ? (
-            <MessagesContent />
+            <MessagesContent onProductClick={handleProductView} />
           ) : null}
         </div>
       </main>
+
+      {/* Product Detail Overlay */}
+      {selectedProduct && (
+        <div className="fixed inset-0 left-[348px] top-0 z-50 bg-white overflow-y-auto">
+          <ProductDetail 
+            product={selectedProduct} 
+            onClose={() => setSelectedProduct(null)} 
+            onAddToCart={() => {
+              if (!isVerified) {
+                setShowModal(true);
+                return;
+              }
+              handleAddToCart(selectedProduct);
+            }}
+            isVerified={isVerified}
+            onVerifyClick={() => setShowModal(true)}
+          />
+        </div>
+      )}
+
       <VerificationModal
         open={showModal}
         onClose={() => setShowModal(false)}

@@ -29,8 +29,12 @@ const itemsToRate = [
   },
 ];
 
+interface ToRateContentProps {
+  onProductClick?: (product: any) => void;
+}
+
 // Content component without header and sidebar
-export function ToRateContent() {
+export function ToRateContent({ onProductClick }: ToRateContentProps) {
   return (
     <div className="space-y-6">
       {itemsToRate.map((item) => (
@@ -43,7 +47,7 @@ export function ToRateContent() {
                 <span className="text-sm text-gray-500">{item.purchaseDate}</span>
               </div>
               <p className="text-gray-600 mt-1">{item.product}</p>
-              <button className="mt-4 bg-[#F88379] hover:bg-[#F88379]/90 text-white font-semibold py-2 px-6 rounded-lg shadow transition">
+              <button className="mt-4 bg-[#F88379] hover:bg-[#F88379]/90 text-white font-semibold py-2 px-6 rounded-lg shadow transition" onClick={() => onProductClick?.(item)}>
                 Rate Now
               </button>
             </div>

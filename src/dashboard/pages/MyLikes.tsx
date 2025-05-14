@@ -4,7 +4,11 @@ import ProductDetail from './ProductDetail';
 import { db, auth } from '../../lib/firebase';
 import { doc, getDoc, setDoc, arrayRemove } from 'firebase/firestore';
 
-export default function MyLikes() {
+interface MyLikesProps {
+  onProductClick?: (product: any) => void;
+}
+
+export default function MyLikes({ onProductClick }: MyLikesProps) {
   const [products, setProducts] = useState<any[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
 
@@ -79,7 +83,7 @@ export default function MyLikes() {
         <ProductCard
           key={product.id}
           product={product}
-          onClick={() => handleProductView(product)}
+          onClick={() => onProductClick?.(product)}
           onLikeChange={(liked) => {
             if (!liked) {
               handleUnlike(product);

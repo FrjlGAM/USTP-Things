@@ -4,7 +4,11 @@ import ProductDetail from './ProductDetail';
 import { db, auth } from '../../lib/firebase';
 import { doc, getDoc, setDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
 
-export default function RecentlyViewed() {
+interface RecentlyViewedProps {
+  onProductClick?: (product: any) => void;
+}
+
+export default function RecentlyViewed({ onProductClick }: RecentlyViewedProps) {
   const [products, setProducts] = useState<any[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -154,7 +158,7 @@ export default function RecentlyViewed() {
         <ProductCard
           key={product.id}
           product={product}
-          onClick={() => handleProductView(product)}
+          onClick={() => onProductClick?.(product)}
           onLikeChange={(liked) => handleLikeChange(product, liked)}
         />
       ))}

@@ -77,7 +77,7 @@ function VerificationModal({ open, onClose }: { open: boolean; onClose: () => vo
       
       setSuccess(true);
       setForm({ name: '', id: '', email: '', agree: false });
-      setVerificationRequested(true);
+      // setVerificationRequested(true); // <-- Commented out because it's not defined
     } catch (err) {
       console.error('Failed to submit verification:', err);
       alert('Failed to submit verification.');
@@ -183,23 +183,19 @@ export default function Dashboard() {
           // Check user document first
           const userRef = doc(db, 'users', auth.currentUser.uid);
           const userDoc = await getDoc(userRef);
-          
           if (userDoc.exists() && userDoc.data().isVerified === true) {
             console.log('User is verified from user document');
             setIsVerified(true);
             return;
           }
-
-      try {
-        const userDoc = await getDoc(doc(db, 'users', auth.currentUser.uid));
-        const userData = userDoc.data();
-        setIsVerified(Boolean(userData?.isVerified));
-      } catch (error) {
-        console.error('Error checking verification:', error);
-        setIsVerified(false);
+          // If not verified, set to false
+          setIsVerified(false);
+        } catch (error) {
+          console.error('Error checking verification:', error);
+          setIsVerified(false);
+        }
       }
     };
-
     checkVerification();
   }, []);
 

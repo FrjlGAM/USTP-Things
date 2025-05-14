@@ -16,13 +16,10 @@ const StartSellingModal: React.FC<Props> = ({ open, onClose }) => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {/* Blurred background */}
-      <div
-        className="absolute inset-0 bg-black bg-opacity-30 backdrop-blur-sm"
-        onClick={onClose}
-      />
+      {/* Blurred background overlay */}
+      <div className="absolute inset-0 bg-white/40 backdrop-blur transition-all duration-300" />
       {/* Modal content */}
-      <div className="relative z-10 bg-white rounded-2xl shadow-lg p-8 w-full max-w-md flex flex-col items-center border-2 border-[#F88379]">
+      <div className="relative bg-white rounded-3xl shadow-2xl px-12 py-10 flex flex-col items-center min-w-[400px] min-h-[250px] border-4 border-[#ECB3A8] animate-fade-in-scale">
         {/* Close button */}
         <button
           className="absolute top-4 right-4 text-2xl text-[#F88379] hover:text-red-400"

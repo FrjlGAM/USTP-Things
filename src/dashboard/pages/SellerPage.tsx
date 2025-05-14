@@ -4,13 +4,13 @@ import profilePic from "../../assets/ustp thingS/Person.png";
 import productIcon from "../../assets/ustp thingS/Product.png";
 import ordersIcon from "../../assets/ustp thingS/Shopping cart.png";
 import messagesIcon from "../../assets/ustp thingS/Message circle.png";
-import countIcon from "../../assets/ustp thingS/Stack.png";
+import productCountIcon from "../../assets/ustp thingS/productCount.png";
 import earningsIcon from "../../assets/ustp thingS/Earnings.png";
 import followersIcon from "../../assets/ustp thingS/Followers.png";
-import historyIcon from "../../assets/ustp thingS/History.png";
-import ratingIcon from "../../assets/ustp thingS/Rate.png";
-import dateIcon from "../../assets/ustp thingS/Date.png";
-import leftArrow from "../../assets/ustp thingS/Left Arrow.png";
+import transactionHistoryIcon from "../../assets/ustp thingS/TransactionHistory.png";
+import ratingIcon from "../../assets/ustp thingS/Rating.png";
+import dateIcon from "../../assets/ustp thingS/DateJoined.png";
+import LeftArrow from "../../assets/ustp thingS/LeftArrow.png";
 
 const products = [
   {
@@ -35,7 +35,7 @@ const SellerPage: React.FC = () => {
       {/* Top bar with back button */}
       <div className="flex items-center p-4">
         <button onClick={() => navigate(-1)}>
-          <img src={leftArrow} alt="Back" className="w-8 h-8" />
+          <img src={LeftArrow} alt="Back" className="w-8 h-8" />
         </button>
       </div>
       {/* Profile and stats */}
@@ -58,7 +58,7 @@ const SellerPage: React.FC = () => {
         {/* Stats */}
         <div className="flex flex-wrap justify-center gap-8 mt-6 md:mt-0">
           <div className="flex flex-col items-center text-[#F88379] font-semibold">
-            <img src={countIcon} alt="Product Count" className="w-6 h-6 mb-1" />
+            <img src={productCountIcon} alt="Product Count" className="w-6 h-6 mb-1" />
             Product Count
           </div>
           <div className="flex flex-col items-center text-[#F88379] font-semibold">
@@ -74,7 +74,7 @@ const SellerPage: React.FC = () => {
             Earnings
           </div>
           <div className="flex flex-col items-center text-[#F88379] font-semibold">
-            <img src={historyIcon} alt="Transaction History" className="w-6 h-6 mb-1" />
+            <img src={transactionHistoryIcon} alt="Transaction History" className="w-6 h-6 mb-1" />
             Transaction History
           </div>
           <div className="flex flex-col items-center text-[#F88379] font-semibold">

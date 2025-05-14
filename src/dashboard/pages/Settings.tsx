@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import homeLogo from "../../assets/ustp thingS/Home.png";
 import { useNavigate } from "react-router-dom";
 import RequestAccountDeletion from "../components/RequestAccountDeletion";
+import { signOut } from "firebase/auth";
+import { auth } from "../../lib/firebase";
 
 type SettingsProps = {
   onAccountSecurityClick: () => void;
@@ -13,6 +15,7 @@ type SettingsProps = {
 export default function Settings({ onAccountSecurityClick, onPrivacySettingsClick, onBlockedUsersClick, onCommunityRulesClick }: SettingsProps) {
   const navigate = useNavigate();
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
 
   return (
     <div style={{ minHeight: "100vh", background: "#fff" }}>
@@ -212,11 +215,48 @@ export default function Settings({ onAccountSecurityClick, onPrivacySettingsClic
               borderRadius: 6,
               padding: "10px 100px",
               background: "transparent",
-              cursor: "pointer",
+              cursor: loggingOut ? "not-allowed" : "pointer",
               fontFamily: "inherit",
+              transition: "background 0.2s, color 0.2s",
+              opacity: loggingOut ? 0.6 : 1,
+            }}
+            disabled={loggingOut}
+            onClick={async () => {
+              setLoggingOut(true);
+              await signOut(auth);
+              setTimeout(() => {
+                navigate("/");
+              }, 800);
+            }}
+            onMouseOver={e => {
+              if (!loggingOut) {
+                e.currentTarget.style.background = "#F48C8C";
+                e.currentTarget.style.color = "#fff";
+              }
+            }}
+            onMouseOut={e => {
+              if (!loggingOut) {
+                e.currentTarget.style.background = "transparent";
+                e.currentTarget.style.color = "#F48C8C";
+              }
             }}
           >
-            Logout
+            {loggingOut ? (
+              <span>
+                <span className="loader" style={{
+                  display: "inline-block",
+                  width: 18,
+                  height: 18,
+                  border: "3px solid #fff",
+                  borderTop: "3px solid #F48C8C",
+                  borderRadius: "50%",
+                  animation: "spin 1s linear infinite",
+                  marginRight: 10,
+                  verticalAlign: "middle"
+                }} />
+                Logging out...
+              </span>
+            ) : "Logout"}
           </button>
         </div>
       </div>

@@ -64,11 +64,11 @@ export default function MyProfile({ onSettingsClick, setView }: MyProfileProps) 
     try {
       const formData = new FormData();
       formData.append('file', file);
-      formData.append('upload_preset', 'ml_default'); // replace with your upload preset
-      formData.append('cloud_name', 'your_cloud_name'); // replace with your cloud name
+      formData.append('upload_preset', 'profile_picture'); // your unsigned preset name
 
+      // Use your actual Cloudinary cloud name here
       const response = await fetch(
-        `https://api.cloudinary.com/v1_1/your_cloud_name/image/upload`,
+        'https://api.cloudinary.com/v1_1/dr7t6evpc/image/upload',
         {
           method: 'POST',
           body: formData,
@@ -76,8 +76,11 @@ export default function MyProfile({ onSettingsClick, setView }: MyProfileProps) 
       );
 
       const data = await response.json();
+      if (!data.secure_url) {
+        throw new Error("No secure_url returned from Cloudinary");
+      }
       const url = data.secure_url;
-      
+
       setProfileImage(url);
       await setDoc(doc(db, "users", auth.currentUser.uid), { profileImage: url }, { merge: true });
       alert("Profile image updated!");
@@ -168,6 +171,8 @@ export default function MyProfile({ onSettingsClick, setView }: MyProfileProps) 
                 objectFit: "cover",
                 border: "3px solid #fff",
                 boxShadow: "0 2px 8px #0001",
+                filter: uploading ? "blur(3px) brightness(0.8)" : "none",
+                transition: "filter 0.2s",
               }}
             />
             <input
@@ -183,10 +188,36 @@ export default function MyProfile({ onSettingsClick, setView }: MyProfileProps) 
               style={{
                 position: "absolute",
                 right: 0,
-                bottom: 0
+                bottom: 0,
+                cursor: uploading ? "not-allowed" : "pointer",
+                opacity: uploading ? 0.5 : 1,
+                pointerEvents: uploading ? "none" : "auto",
               }}
-              onClick={() => fileInputRef.current?.click()}
+              onClick={() => !uploading && fileInputRef.current?.click()}
             />
+            {uploading && (
+              <div
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  width: 70,
+                  height: 70,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  background: "rgba(255,255,255,0.3)",
+                  borderRadius: "50%",
+                  zIndex: 2,
+                  fontWeight: "bold",
+                  color: "#F88379",
+                  fontSize: 14,
+                  backdropFilter: "blur(2px)",
+                }}
+              >
+                Uploading...
+              </div>
+            )}
           </div>
         </div>
         {/* Profile fields */}
@@ -241,6 +272,64 @@ export default function MyProfile({ onSettingsClick, setView }: MyProfileProps) 
           onSave={handleSaveGender}
           initialGender={gender === "Female" || gender === "Male" ? gender : "Female"}
         />
+      )}
+
+      {uploading && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100vw",
+            height: "100vh",
+            zIndex: 9999,
+            background: "rgba(255,255,255,0.3)",
+            backdropFilter: "blur(6px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <div
+            style={{
+              background: "rgba(255,255,255,0.85)",
+              padding: "32px 48px",
+              borderRadius: 16,
+              boxShadow: "0 2px 16px #0002",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              fontWeight: "bold",
+              color: "#F88379",
+              fontSize: 20,
+            }}
+          >
+            <svg
+              width="48"
+              height="48"
+              viewBox="0 0 38 38"
+              xmlns="http://www.w3.org/2000/svg"
+              stroke="#F88379"
+              style={{ marginBottom: 16 }}
+            >
+              <g fill="none" fillRule="evenodd">
+                <g transform="translate(1 1)" strokeWidth="3">
+                  <circle strokeOpacity=".3" cx="18" cy="18" r="18"/>
+                  <path d="M36 18c0-9.94-8.06-18-18-18">
+                    <animateTransform
+                      attributeName="transform"
+                      type="rotate"
+                      from="0 18 18"
+                      to="360 18 18"
+                      dur="1s"
+                      repeatCount="indefinite"/>
+                  </path>
+                </g>
+              </g>
+            </svg>
+            Uploading profile image...
+          </div>
+        </div>
       )}
     </div>
   );

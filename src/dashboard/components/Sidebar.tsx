@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { auth, db } from '../../lib/firebase';
-import { collection, query, where, getDocs, doc, getDoc, setDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
 import ustpLogo from '../../assets/ustp-things-logo.png';
 import userAvatar from '../../assets/ustp thingS/Person.png';
 import homeIcon from '../../assets/ustp thingS/Home.png';
@@ -39,6 +39,7 @@ export default function Sidebar({
   const [isVerified, setIsVerified] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
   const [username, setUsername] = useState<string>('Username');
+  const [profileImage, setProfileImage] = useState<string | null>(null);
   const [activeButton, setActiveButton] = useState<string>('home');
   const user = auth.currentUser;
   const navigate = useNavigate();
@@ -67,16 +68,20 @@ export default function Sidebar({
   }, [user]);
 
   useEffect(() => {
-    const fetchUsername = async () => {
-      if (!user) return;
-      const userDoc = await getDoc(doc(db, 'users', user.uid));
+    if (!auth.currentUser) return;
+    const userRef = doc(db, 'users', auth.currentUser.uid);
+
+    // Listen for real-time updates
+    const unsubscribe = onSnapshot(userRef, (userDoc) => {
       if (userDoc.exists()) {
         const data = userDoc.data();
         setUsername(data.username || 'Username');
+        setProfileImage(data.profileImage || null);
       }
-    };
-    fetchUsername();
-  }, [user]);
+    });
+
+    return () => unsubscribe();
+  }, [auth.currentUser]);
 
   const handleRestrictedButtonClick = (buttonName: string, onClick?: () => void) => {
     if (!isVerified) {
@@ -93,7 +98,11 @@ export default function Sidebar({
       <div className="flex-1 overflow-y-auto">
         {/* User Info */}
         <div className="flex items-center gap-4 mb-6">
-          <img src={userAvatar} alt="User avatar" className="w-14 h-14 rounded-full border-2 border-pink-200 object-cover" />
+          <img
+            src={profileImage || userAvatar}
+            alt="User avatar"
+            className="w-14 h-14 rounded-full border-2 border-pink-200 object-cover"
+          />
           <div>
             <div className="font-bold text-lg text-gray-800 flex items-center gap-2">
               {username}

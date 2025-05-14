@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { db, auth } from '../../lib/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import Sidebar from '../components/Sidebar';
-import xIcon from '../../assets/ustp thingS/X button.png';
 
 interface CheckOutProps {
   product: {
@@ -24,8 +23,8 @@ export default function CheckOut({ product, onClose }: CheckOutProps) {
   const [pickupTime, setPickupTime] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('');
 
-  const handleClose = () => {
-    navigate('/dashboard');
+  const handleCancel = () => {
+    navigate(-1);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -74,15 +73,7 @@ export default function CheckOut({ product, onClose }: CheckOutProps) {
 
       {/* Main Content */}
       <main className="flex-1 p-10">
-        <div className="w-full bg-white rounded-2xl shadow p-8 relative">
-          {/* X Button */}
-          <button
-            onClick={handleClose}
-            className="absolute top-6 right-6 z-10 p-2 rounded-full hover:bg-gray-100 transition bg-white shadow-md"
-          >
-            <img src={xIcon} alt="Close" className="w-6 h-6" />
-          </button>
-
+        <div className="w-full bg-white rounded-2xl shadow p-8">
           <form onSubmit={handleSubmit}>
             {/* Products Ordered Section */}
             <div className="bg-[#FF9B8B] text-white p-4 rounded-t-2xl flex justify-between items-center">
@@ -186,8 +177,15 @@ export default function CheckOut({ product, onClose }: CheckOutProps) {
               </div>
             </div>
 
-            {/* Place Order Button */}
-            <div className="flex justify-end">
+            {/* Buttons */}
+            <div className="flex justify-end gap-4">
+              <button
+                type="button"
+                onClick={handleCancel}
+                className="px-8 py-3 rounded-xl border-2 border-[#F88379] text-[#F88379] font-bold text-lg hover:bg-[#F88379] hover:text-white transition"
+              >
+                Cancel
+              </button>
               <button
                 type="submit"
                 disabled={loading}

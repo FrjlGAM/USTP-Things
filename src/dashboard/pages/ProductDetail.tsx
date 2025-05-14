@@ -2,7 +2,10 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import HeartButton from '../components/HeartButton';
 import cartIcon from '../../assets/ustp thingS/Shopping cart.png';
+import greenCartIcon from '../../assets/ustp thingS/Shopping green.png';
 import xIcon from '../../assets/ustp thingS/X button.png';
+import { db, auth } from '../../lib/firebase';
+import { doc, getDoc, setDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
 
 const productDetails = {
   description: [
@@ -42,7 +45,23 @@ export default function ProductDetail({
   onVerifyClick
 }: ProductDetailProps) {
   const [isLiked, setIsLiked] = useState(false);
+  const [isInCart, setIsInCart] = useState(false);
   const navigate = useNavigate();
+
+  // Check if product is in cart
+  useEffect(() => {
+    const checkCartStatus = async () => {
+      if (auth.currentUser) {
+        const userRef = doc(db, 'users', auth.currentUser.uid);
+        const userDoc = await getDoc(userRef);
+        if (userDoc.exists()) {
+          const cartProducts = userDoc.data().cartProducts || [];
+          setIsInCart(cartProducts.includes(product.id));
+        }
+      }
+    };
+    checkCartStatus();
+  }, [product.id]);
 
   // Load liked state from localStorage
   useEffect(() => {
@@ -76,7 +95,36 @@ export default function ProductDetail({
   };
 
   const handleBuyNow = () => {
+    if (!isVerified && onVerifyClick) {
+      onVerifyClick();
+      return;
+    }
     navigate('/dashboard/checkout', { state: { product } });
+  };
+
+  const handleAddToCart = async () => {
+    if (!auth.currentUser) return;
+    
+    if (!isVerified && onVerifyClick) {
+      onVerifyClick();
+      return;
+    }
+
+    const userRef = doc(db, 'users', auth.currentUser.uid);
+    
+    if (isInCart) {
+      // Remove from cart
+      await setDoc(userRef, {
+        cartProducts: arrayRemove(product.id)
+      }, { merge: true });
+      setIsInCart(false);
+    } else {
+      // Add to cart
+      await setDoc(userRef, {
+        cartProducts: arrayUnion(product.id)
+      }, { merge: true });
+      setIsInCart(true);
+    }
   };
 
   return (
@@ -98,11 +146,28 @@ export default function ProductDetail({
           </div>
           {onAddToCart && (
             <button 
-              onClick={onAddToCart}
-              className="flex items-center justify-center gap-2 w-full bg-[#FFB085] hover:bg-[#F88379] text-white font-bold py-3 rounded-xl shadow transition text-lg mt-2"
+              onClick={handleAddToCart}
+              className={`flex items-center justify-center gap-2 w-full font-bold py-3 rounded-xl shadow transition text-lg mt-2 ${
+                !isVerified
+                ? 'bg-gray-100 text-gray-500 cursor-help border border-gray-300'
+                : isInCart 
+                  ? 'bg-white text-green-500 border border-green-500 shadow-md hover:shadow-lg' 
+                  : 'bg-white text-[#F88379] border border-[#F88379] hover:shadow-lg'
+              }`}
+              title={!isVerified ? "Account verification required to add items to cart" : ""}
             >
-              <img src={cartIcon} alt="Add to Cart" className="w-6 h-6" />
-              Add to Cart
+              <img 
+                src={isInCart ? greenCartIcon : cartIcon} 
+                alt="Add to Cart" 
+                className={isInCart ? "w-8 h-7" : "w-6 h-6"}
+                style={!isVerified ? { opacity: 0.5 } : undefined}
+              />
+              {!isVerified 
+                ? 'Verify Account to Add to Cart'
+                : isInCart 
+                  ? 'Added to Cart' 
+                  : 'Add to Cart'
+              }
             </button>
           )}
         </div>
@@ -135,9 +200,14 @@ export default function ProductDetail({
           <div className="flex mt-2">
             <button 
               onClick={handleBuyNow}
-              className="flex-1 bg-[#F88379] hover:bg-[#F88379]/90 text-white font-bold py-3 rounded-xl shadow transition text-lg"
+              className={`flex-1 font-bold py-3 rounded-xl shadow transition text-lg ${
+                isVerified 
+                ? 'bg-[#F88379] hover:bg-[#F88379]/90 text-white' 
+                : 'bg-gray-100 text-gray-500 cursor-help'
+              }`}
+              title={!isVerified ? "Account verification required to purchase" : ""}
             >
-              Buy Now
+              {isVerified ? 'Buy Now' : 'Verify Account to Buy'}
             </button>
           </div>
         </div>

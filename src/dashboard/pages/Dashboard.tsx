@@ -63,22 +63,18 @@ function VerificationModal({ open, onClose }: { open: boolean; onClose: () => vo
       if (!auth.currentUser) {
         throw new Error('No user logged in');
       }
-      await addDoc(collection(db, 'verifications'), {
-        userId: auth.currentUser.uid,
-        name: form.name,
-        studentId: form.id,
-        email: form.email,
-        agreed: form.agree,
-        type: 'student',
-        status: 'pending',
-        createdAt: new Date(),
-      });
+      
       // Update user document with verification request
       const userRef = doc(db, 'users', auth.currentUser.uid);
       await setDoc(userRef, {
         verificationRequested: true,
-        verificationRequestedAt: new Date()
+        verificationRequestedAt: new Date(),
+        name: form.name,
+        studentId: form.id,
+        studentEmail: form.email,
+        type: 'student'
       }, { merge: true });
+      
       setSuccess(true);
       setForm({ name: '', id: '', email: '', agree: false });
     } catch (err) {
@@ -179,40 +175,21 @@ export default function Dashboard() {
   // Check if user is verified
   useEffect(() => {
     const checkVerification = async () => {
-      if (auth.currentUser) {
-        try {
-          // Check user document first
-          const userRef = doc(db, 'users', auth.currentUser.uid);
-          const userDoc = await getDoc(userRef);
-          
-          if (userDoc.exists() && userDoc.data().isVerified === true) {
-            console.log('User is verified from user document');
-            setIsVerified(true);
-            return;
-          }
+      if (!auth.currentUser) {
+        setIsVerified(false);
+        return;
+      }
 
-          // If not verified in user document, check verifiedAccounts
-          const verifiedAccountRef = doc(db, 'verifiedAccounts', auth.currentUser.uid);
-          const verifiedAccountDoc = await getDoc(verifiedAccountRef);
-          
-          if (verifiedAccountDoc.exists() && verifiedAccountDoc.data().status === 'verified') {
-            console.log('User is verified from verifiedAccounts');
-            setIsVerified(true);
-            // Update user document to reflect verified status
-            await setDoc(userRef, {
-              isVerified: true,
-              verifiedAt: verifiedAccountDoc.data().verifiedAt || new Date()
-            }, { merge: true });
-          } else {
-            console.log('User is not verified');
-            setIsVerified(false);
-          }
-        } catch (error) {
-          console.error('Error checking verification status:', error);
-          setIsVerified(false);
-        }
+      try {
+        const userDoc = await getDoc(doc(db, 'users', auth.currentUser.uid));
+        const userData = userDoc.data();
+        setIsVerified(Boolean(userData?.isVerified));
+      } catch (error) {
+        console.error('Error checking verification:', error);
+        setIsVerified(false);
       }
     };
+
     checkVerification();
   }, []);
 

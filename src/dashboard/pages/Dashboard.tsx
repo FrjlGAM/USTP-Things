@@ -81,6 +81,7 @@ function VerificationModal({ open, onClose }: { open: boolean; onClose: () => vo
       }, { merge: true });
       setSuccess(true);
       setForm({ name: '', id: '', email: '', agree: false });
+      setVerificationRequested(true);
     } catch (err) {
       console.error('Failed to submit verification:', err);
       alert('Failed to submit verification.');
@@ -175,6 +176,7 @@ export default function Dashboard() {
   const [isVerified, setIsVerified] = useState(false);
   const [showStartSellingModal, setShowStartSellingModal] = useState(false);
   const location = useLocation();
+  const [verificationRequested, setVerificationRequested] = useState(false);
 
   // Check if user is verified
   useEffect(() => {
@@ -185,10 +187,14 @@ export default function Dashboard() {
           const userRef = doc(db, 'users', auth.currentUser.uid);
           const userDoc = await getDoc(userRef);
           
-          if (userDoc.exists() && userDoc.data().isVerified === true) {
-            console.log('User is verified from user document');
-            setIsVerified(true);
-            return;
+          if (userDoc.exists()) {
+            const data = userDoc.data();
+            if (data.isVerified === true) {
+              setIsVerified(true);
+              setVerificationRequested(false);
+              return;
+            }
+            setVerificationRequested(!!data.verificationRequested);
           }
 
           // If not verified in user document, check verifiedAccounts
@@ -431,6 +437,7 @@ export default function Dashboard() {
               alert("You must be verified to start selling!");
             }
           }}
+          verificationRequested={verificationRequested}
         />
       </div>
       {/* Main Content */}

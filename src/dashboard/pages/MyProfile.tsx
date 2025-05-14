@@ -8,7 +8,6 @@ import Name from "../components/Name"; // adjust the path if needed
 import Gender from "../components/Gender"; // adjust the path if needed
 import { auth, db } from "../../lib/firebase"; // adjust path as needed
 import { doc, getDoc, setDoc } from "firebase/firestore";
-import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
 type MyProfileProps = {
   onSettingsClick: () => void;
@@ -63,10 +62,22 @@ export default function MyProfile({ onSettingsClick, setView }: MyProfileProps) 
     const file = e.target.files[0];
     setUploading(true);
     try {
-      const storage = getStorage();
-      const storageRef = ref(storage, `profileImages/${auth.currentUser.uid}`);
-      await uploadBytes(storageRef, file);
-      const url = await getDownloadURL(storageRef);
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('upload_preset', 'ml_default'); // replace with your upload preset
+      formData.append('cloud_name', 'your_cloud_name'); // replace with your cloud name
+
+      const response = await fetch(
+        `https://api.cloudinary.com/v1_1/your_cloud_name/image/upload`,
+        {
+          method: 'POST',
+          body: formData,
+        }
+      );
+
+      const data = await response.json();
+      const url = data.secure_url;
+      
       setProfileImage(url);
       await setDoc(doc(db, "users", auth.currentUser.uid), { profileImage: url }, { merge: true });
       alert("Profile image updated!");

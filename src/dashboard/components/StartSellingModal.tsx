@@ -1,6 +1,7 @@
 import React from "react";
 import ustpLogo from "../../assets/ustp-things-logo.png";
 import xIcon from "../../assets/ustp thingS/X button.png";
+import { useNavigate } from 'react-router-dom';
 
 type Props = {
   open: boolean;
@@ -8,7 +9,9 @@ type Props = {
   onStartSelling: () => void;
 };
 
-const StartSellingModal: React.FC<Props> = ({ open, onClose, onStartSelling }) => {
+const StartSellingModal: React.FC<Props> = ({ open, onClose }) => {
+  const navigate = useNavigate();
+
   if (!open) return null;
 
   return (
@@ -36,7 +39,10 @@ const StartSellingModal: React.FC<Props> = ({ open, onClose, onStartSelling }) =
         </p>
         <button
           className="bg-[#F88379] text-white font-semibold px-8 py-2 rounded-full shadow hover:bg-[#f88379cc] transition"
-          onClick={onStartSelling}
+          onClick={() => {
+            onClose();
+            navigate('/dashboard/seller');
+          }}
         >
           Start Selling
         </button>

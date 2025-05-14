@@ -11,7 +11,7 @@ import MyLikes from './MyLikes';
 import RecentlyViewed from './RecentlyViewed';
 import MyCart from './MyCart';
 import StartSellingModal from '../components/StartSellingModal';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import ProductCard from '../components/ProductCard';
 import ProductDetail from './ProductDetail';
 import { MessagesContent } from './Messages';
@@ -77,6 +77,7 @@ function VerificationModal({ open, onClose }: { open: boolean; onClose: () => vo
       
       setSuccess(true);
       setForm({ name: '', id: '', email: '', agree: false });
+      setVerificationRequested(true);
     } catch (err) {
       console.error('Failed to submit verification:', err);
       alert('Failed to submit verification.');
@@ -171,14 +172,23 @@ export default function Dashboard() {
   const [isVerified, setIsVerified] = useState(false);
   const [showStartSellingModal, setShowStartSellingModal] = useState(false);
   const location = useLocation();
+  const [verificationRequested, setVerificationRequested] = useState(false);
+  const navigate = useNavigate();
 
   // Check if user is verified
   useEffect(() => {
     const checkVerification = async () => {
-      if (!auth.currentUser) {
-        setIsVerified(false);
-        return;
-      }
+      if (auth.currentUser) {
+        try {
+          // Check user document first
+          const userRef = doc(db, 'users', auth.currentUser.uid);
+          const userDoc = await getDoc(userRef);
+          
+          if (userDoc.exists() && userDoc.data().isVerified === true) {
+            console.log('User is verified from user document');
+            setIsVerified(true);
+            return;
+          }
 
       try {
         const userDoc = await getDoc(doc(db, 'users', auth.currentUser.uid));
@@ -405,9 +415,10 @@ export default function Dashboard() {
             if (isVerified) {
               setShowStartSellingModal(true);
             } else {
-              alert("You must be verified to start selling!");
+              alert("Verify muna bago benta :P!");
             }
           }}
+          verificationRequested={verificationRequested}
         />
       </div>
       {/* Main Content */}
@@ -524,7 +535,7 @@ export default function Dashboard() {
         onClose={() => setShowStartSellingModal(false)}
         onStartSelling={() => {
           setShowStartSellingModal(false);
-          // Add your logic here for what happens after clicking "Start Selling"
+          navigate('/dashboard/seller');
         }}
       />
     </div>

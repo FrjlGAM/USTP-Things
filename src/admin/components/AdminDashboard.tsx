@@ -168,13 +168,13 @@ export default function AdminDashboard() {
       <nav className="bg-white rounded-xl shadow flex items-center px-8 py-3 mb-6 border border-pink-100">
         <Logo />
         <div className="flex-1 flex justify-center gap-12">
-          <button className={`text-lg font-semibold pb-1 px-2 ${tab === 'dashboard' ? 'text-pink-400 border-b-2 border-pink-300' : 'text-gray-500 hover:text-pink-400'}`} onClick={() => setTab('dashboard')}>Dashboard</button>
-          <button className={`text-lg font-semibold pb-1 px-2 ${tab === 'account' ? 'text-pink-400 border-b-2 border-pink-300' : 'text-gray-500 hover:text-pink-400'}`} onClick={() => setTab('account')}>Account Confirmation</button>
-          <button className={`text-lg font-semibold pb-1 px-2 ${tab === 'verified' ? 'text-pink-400 border-b-2 border-pink-300' : 'text-gray-500 hover:text-pink-400'}`} onClick={() => setTab('verified')}>Verified Accounts</button>
+          <button className={`text-lg font-semibold pb-1 px-2 ${tab === 'dashboard' ? '' : 'hover:text-[#F88379]'}`} style={tab === 'dashboard' ? { color: '#F88379', borderBottom: '2px solid #F88379' } : { color: '#888' }} onClick={() => setTab('dashboard')}>Dashboard</button>
+          <button className={`text-lg font-semibold pb-1 px-2 ${tab === 'account' ? '' : 'hover:text-[#F88379]'}`} style={tab === 'account' ? { color: '#F88379', borderBottom: '2px solid #F88379' } : { color: '#888' }} onClick={() => setTab('account')}>Account Confirmation</button>
+          <button className={`text-lg font-semibold pb-1 px-2 ${tab === 'verified' ? '' : 'hover:text-[#F88379]'}`} style={tab === 'verified' ? { color: '#F88379', borderBottom: '2px solid #F88379' } : { color: '#888' }} onClick={() => setTab('verified')}>Verified Accounts</button>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-pink-400 text-2xl"><svg width="28" height="28" fill="none" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" fill="currentColor"/></svg></span>
-          <button onClick={handleLogout} className="text-pink-400 font-semibold hover:underline text-lg">Logout</button>
+          <span className="text-2xl" style={{color: '#F88379'}}><svg width="28" height="28" fill="none" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" fill="currentColor"/></svg></span>
+          <button onClick={handleLogout} className="font-semibold hover:underline text-lg" style={{color: '#F88379'}}>Logout</button>
         </div>
       </nav>
 
@@ -187,7 +187,7 @@ export default function AdminDashboard() {
               <span className="text-gray-500 font-medium mb-1">Total Sales</span>
               <span className="text-2xl font-bold text-gray-700">₱{totalSales.toLocaleString()}</span>
             </div>
-            <div className="bg-white rounded-xl border-2 border-pink-300 p-6 flex flex-col items-start">
+            <div className="bg-white rounded-xl border-2 p-6 flex flex-col items-start" style={{borderColor: '#F88379'}}>
               <span className="text-gray-500 font-medium mb-1">Total Users</span>
               <span className="text-2xl font-bold text-gray-700">{totalUsers.toLocaleString()}</span>
             </div>
@@ -263,10 +263,10 @@ export default function AdminDashboard() {
             <table className="min-w-full">
               <thead>
                 <tr className="text-left text-gray-700 text-base">
-                  <th className="py-2 px-4 font-semibold bg-pink-200 rounded-l-full">Username</th>
-                  <th className="py-2 px-4 font-semibold bg-pink-200">ID Number and Email</th>
-                  <th className="py-2 px-4 font-semibold bg-pink-200">Date Applied</th>
-                  <th className="py-2 px-4 font-semibold bg-pink-200 rounded-r-full">Confirm</th>
+                  <th className="py-2 px-4 font-semibold" style={{background: '#F88379', color: 'white', borderTopLeftRadius: '9999px'}}>Username</th>
+                  <th className="py-2 px-4 font-semibold" style={{background: '#F88379', color: 'white'}}>ID Number and Email</th>
+                  <th className="py-2 px-4 font-semibold" style={{background: '#F88379', color: 'white'}}>Date Applied</th>
+                  <th className="py-2 px-4 font-semibold" style={{background: '#F88379', color: 'white', borderTopRightRadius: '9999px'}}>Confirm</th>
                 </tr>
               </thead>
               <tbody>
@@ -317,11 +317,11 @@ export default function AdminDashboard() {
             <table className="min-w-full">
               <thead>
                 <tr className="text-left text-gray-700 text-base">
-                  <th className="py-2 px-4 font-semibold bg-pink-200 rounded-l-full">Username</th>
-                  <th className="py-2 px-4 font-semibold bg-pink-200">ID Number and Email</th>
-                  <th className="py-2 px-4 font-semibold bg-pink-200">Date</th>
-                  <th className="py-2 px-4 font-semibold bg-pink-200">Status</th>
-                  <th className="py-2 px-4 font-semibold bg-pink-200 rounded-r-full">Email</th>
+                  <th className="py-2 px-4 font-semibold" style={{background: '#F88379', color: 'white', borderTopLeftRadius: '9999px'}}>Username</th>
+                  <th className="py-2 px-4 font-semibold" style={{background: '#F88379', color: 'white'}}>ID Number and Email</th>
+                  <th className="py-2 px-4 font-semibold" style={{background: '#F88379', color: 'white'}}>Date</th>
+                  <th className="py-2 px-4 font-semibold" style={{background: '#F88379', color: 'white'}}>Status</th>
+                  <th className="py-2 px-4 font-semibold" style={{background: '#F88379', color: 'white', borderTopRightRadius: '9999px'}}>Email</th>
                 </tr>
               </thead>
               <tbody>
@@ -355,36 +355,6 @@ export default function AdminDashboard() {
                         </td>
                         <td className="py-4 px-4">
                           <span className="bg-green-200 text-green-800 px-3 py-1 rounded-full text-xs font-bold">Verified</span>
-                        </td>
-                        <td className="py-4 px-4 rounded-r-full">
-                          <div className="text-gray-700">{v.email}</div>
-                        </td>
-                      </tr>
-                    ))}
-                    {/* Unverified Users */}
-                    {verifications.map((v) => (
-                      <tr key={v.id} className="bg-gray-100 rounded-full my-2">
-                        <td className="flex items-center gap-3 py-4 px-4 rounded-l-full">
-                          <img src={userAvatar} alt="Avatar" className="w-10 h-10 rounded-full border border-pink-200" />
-                          <span className="font-semibold text-gray-800">{v.name || 'Unknown'}</span>
-                        </td>
-                        <td className="py-4 px-4">
-                          <div className="font-medium text-gray-700">{v.studentId || 'N/A'}</div>
-                          <div className="text-gray-500 text-sm">{v.email}</div>
-                        </td>
-                        <td className="py-4 px-4">
-                          {(() => {
-                            const dateObj = v.createdAt?.toDate ? v.createdAt.toDate() : new Date(v.createdAt);
-                            return (
-                              <>
-                                <div>{!isNaN(dateObj) ? dateObj.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' }) : 'N/A'}</div>
-                                <div className="text-xs text-gray-500">{!isNaN(dateObj) ? dateObj.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' }) : ''}</div>
-                              </>
-                            );
-                          })()}
-                        </td>
-                        <td className="py-4 px-4">
-                          <span className="bg-yellow-200 text-yellow-800 px-3 py-1 rounded-full text-xs font-bold">Unverified</span>
                         </td>
                         <td className="py-4 px-4 rounded-r-full">
                           <div className="text-gray-700">{v.email}</div>

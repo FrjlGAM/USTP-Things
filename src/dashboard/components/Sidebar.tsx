@@ -22,6 +22,7 @@ type SidebarProps = {
   onRateClick?: () => void;
   onMessageClick?: () => void;
   onStartSellingClick?: () => void;
+  verificationRequested?: boolean;
 };
 
 export default function Sidebar({ 
@@ -32,7 +33,8 @@ export default function Sidebar({
   onPickUpClick, 
   onRateClick, 
   onMessageClick, 
-  onStartSellingClick
+  onStartSellingClick,
+  verificationRequested
 }: SidebarProps) {
   const [isVerified, setIsVerified] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
@@ -111,7 +113,7 @@ export default function Sidebar({
           </div>
         </div>
         {/* Verify Button - Only show if not verified and not loading */}
-        {!loading && isVerified === false && (
+        {!loading && isVerified === false && !verificationRequested && (
           <button
             className={`w-full ${activeButton === 'verify' ? 'bg-white text-[#F88379]' : 'bg-[#F88379] text-white'} hover:bg-[#F88379]/90 font-semibold py-2 rounded-[23.08px] shadow mb-8 transition text-lg`}
             onClick={() => {
@@ -121,6 +123,11 @@ export default function Sidebar({
           >
             Verify Your Account
           </button>
+        )}
+        {!loading && isVerified === false && verificationRequested && (
+          <div className="w-full bg-yellow-100 text-yellow-700 font-semibold py-2 rounded-[23.08px] shadow mb-8 text-center text-lg">
+            Verification pending...
+          </div>
         )}
         {/* Navigation */}
         <nav className="flex flex-col gap-4">

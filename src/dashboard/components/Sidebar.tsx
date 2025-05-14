@@ -52,35 +52,11 @@ export default function Sidebar({
       }
 
       try {
-        // Check user document first
-        const userRef = doc(db, 'users', user.uid);
-        const userDoc = await getDoc(userRef);
-        
-        if (userDoc.exists() && userDoc.data().isVerified === true) {
-          console.log('User is verified from user document');
-          setIsVerified(true);
-          setLoading(false);
-          return;
-        }
-
-        // If not verified in user document, check verifiedAccounts
-        const verifiedAccountRef = doc(db, 'verifiedAccounts', user.uid);
-        const verifiedAccountDoc = await getDoc(verifiedAccountRef);
-        
-        if (verifiedAccountDoc.exists() && verifiedAccountDoc.data().status === 'verified') {
-          console.log('User is verified from verifiedAccounts');
-          setIsVerified(true);
-          // Update user document to reflect verified status
-          await setDoc(userRef, {
-            isVerified: true,
-            verifiedAt: verifiedAccountDoc.data().verifiedAt || new Date()
-          }, { merge: true });
-        } else {
-          console.log('User is not verified');
-          setIsVerified(false);
-        }
+        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        const userData = userDoc.data();
+        setIsVerified(Boolean(userData?.isVerified));
       } catch (error) {
-        console.error('Error checking verification status:', error);
+        console.error('Error checking verification:', error);
         setIsVerified(false);
       } finally {
         setLoading(false);

@@ -11,7 +11,7 @@ import MyLikes from './MyLikes';
 import RecentlyViewed from './RecentlyViewed';
 import MyCart from './MyCart';
 import StartSellingModal from '../components/StartSellingModal';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import ProductCard from '../components/ProductCard';
 import ProductDetail from './ProductDetail';
 import { MessagesContent } from './Messages';
@@ -63,22 +63,18 @@ function VerificationModal({ open, onClose }: { open: boolean; onClose: () => vo
       if (!auth.currentUser) {
         throw new Error('No user logged in');
       }
-      await addDoc(collection(db, 'verifications'), {
-        userId: auth.currentUser.uid,
-        name: form.name,
-        studentId: form.id,
-        email: form.email,
-        agreed: form.agree,
-        type: 'student',
-        status: 'pending',
-        createdAt: new Date(),
-      });
+      
       // Update user document with verification request
       const userRef = doc(db, 'users', auth.currentUser.uid);
       await setDoc(userRef, {
         verificationRequested: true,
-        verificationRequestedAt: new Date()
+        verificationRequestedAt: new Date(),
+        name: form.name,
+        studentId: form.id,
+        studentEmail: form.email,
+        type: 'student'
       }, { merge: true });
+      
       setSuccess(true);
       setForm({ name: '', id: '', email: '', agree: false });
       setVerificationRequested(true);
@@ -177,6 +173,7 @@ export default function Dashboard() {
   const [showStartSellingModal, setShowStartSellingModal] = useState(false);
   const location = useLocation();
   const [verificationRequested, setVerificationRequested] = useState(false);
+  const navigate = useNavigate();
 
   // Check if user is verified
   useEffect(() => {
@@ -187,38 +184,22 @@ export default function Dashboard() {
           const userRef = doc(db, 'users', auth.currentUser.uid);
           const userDoc = await getDoc(userRef);
           
-          if (userDoc.exists()) {
-            const data = userDoc.data();
-            if (data.isVerified === true) {
-              setIsVerified(true);
-              setVerificationRequested(false);
-              return;
-            }
-            setVerificationRequested(!!data.verificationRequested);
+          if (userDoc.exists() && userDoc.data().isVerified === true) {
+            console.log('User is verified from user document');
+            setIsVerified(true);
+            return;
           }
 
-          // If not verified in user document, check verifiedAccounts
-          const verifiedAccountRef = doc(db, 'verifiedAccounts', auth.currentUser.uid);
-          const verifiedAccountDoc = await getDoc(verifiedAccountRef);
-          
-          if (verifiedAccountDoc.exists() && verifiedAccountDoc.data().status === 'verified') {
-            console.log('User is verified from verifiedAccounts');
-            setIsVerified(true);
-            // Update user document to reflect verified status
-            await setDoc(userRef, {
-              isVerified: true,
-              verifiedAt: verifiedAccountDoc.data().verifiedAt || new Date()
-            }, { merge: true });
-          } else {
-            console.log('User is not verified');
-            setIsVerified(false);
-          }
-        } catch (error) {
-          console.error('Error checking verification status:', error);
-          setIsVerified(false);
-        }
+      try {
+        const userDoc = await getDoc(doc(db, 'users', auth.currentUser.uid));
+        const userData = userDoc.data();
+        setIsVerified(Boolean(userData?.isVerified));
+      } catch (error) {
+        console.error('Error checking verification:', error);
+        setIsVerified(false);
       }
     };
+
     checkVerification();
   }, []);
 
@@ -434,7 +415,7 @@ export default function Dashboard() {
             if (isVerified) {
               setShowStartSellingModal(true);
             } else {
-              alert("You must be verified to start selling!");
+              alert("Verify muna bago benta :P!");
             }
           }}
           verificationRequested={verificationRequested}
@@ -554,7 +535,7 @@ export default function Dashboard() {
         onClose={() => setShowStartSellingModal(false)}
         onStartSelling={() => {
           setShowStartSellingModal(false);
-          // Add your logic here for what happens after clicking "Start Selling"
+          navigate('/dashboard/seller');
         }}
       />
     </div>

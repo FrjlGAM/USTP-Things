@@ -10,6 +10,7 @@ import ToRate from '../dashboard/pages/ToRate';
 import Pickup from '../dashboard/pages/Pickup';
 import CheckOut from '../dashboard/pages/CheckOut';
 import { useLocation, Navigate } from 'react-router-dom';
+import SellerPage from '../dashboard/pages/SellerPage';
 
 // Wrapper component to handle checkout route with product data
 function CheckOutWrapper() {
@@ -38,6 +39,7 @@ function App() {
       <Route path="/dashboard/messages" element={<Messages />} />
       <Route path="/dashboard/to-rate" element={<ToRate />} />
       <Route path="/dashboard/pickup" element={<Pickup />} />
+      <Route path="/dashboard/seller" element={<SellerPage />} />
     </Routes>
   );
 }

@@ -21,9 +21,10 @@ type SidebarProps = {
   onPickUpClick?: () => void;
   onRateClick?: () => void;
   onMessageClick?: () => void;
+  onStartSellingClick?: () => void;
 };
 
-export default function Sidebar({ onVerifyClick, onHomeClick, onLikesClick, onRecentlyClick, onPickUpClick, onRateClick, onMessageClick }: SidebarProps) {
+export default function Sidebar({ onVerifyClick, onHomeClick, onLikesClick, onRecentlyClick, onPickUpClick, onRateClick, onMessageClick, onStartSellingClick }: SidebarProps) {
   const [isVerified, setIsVerified] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
   const [username, setUsername] = useState<string>('Username');
@@ -163,7 +164,7 @@ export default function Sidebar({ onVerifyClick, onHomeClick, onLikesClick, onRe
       <div className="mt-auto">
         {/* Start Selling Button */}
         <button 
-          onClick={() => setActiveButton('sell')}
+          onClick={onStartSellingClick}
           className={`w-full ${activeButton === 'sell' ? 'bg-white text-[#F88379]' : 'bg-[#F88379] text-white'} hover:bg-[#F88379]/90 font-semibold py-2 rounded-[23.08px] shadow mb-10 transition text-lg`}
         >
           Start selling now!

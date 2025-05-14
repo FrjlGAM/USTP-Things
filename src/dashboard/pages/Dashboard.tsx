@@ -7,14 +7,29 @@ import searchIcon from '../../assets/ustp thingS/search.png';
 import React, { useState, useEffect } from 'react';
 import { db, auth } from '../../lib/firebase';
 import { collection, addDoc, getDocs, doc, setDoc, arrayUnion, arrayRemove, getDoc, query, where } from 'firebase/firestore';
+import { collection, addDoc, getDocs, doc, setDoc, arrayUnion, arrayRemove, getDoc, query, where } from 'firebase/firestore';
 import MyLikes from './MyLikes';
 import RecentlyViewed from './RecentlyViewed';
-import ProductDetail from './ProductDetail';
-import ProductCard from '../components/ProductCard';
+// import MyCart from './MyCart'; // Commented out since module not found
+import StartSellingModal from '../components/StartSellingModal';
 import { useLocation } from 'react-router-dom';
-import { MessagesContent } from './Messages';
-import { ToRateContent } from './ToRate';
-import MyCart from './MyCart';
+import ProductCard from '../components/ProductCard';
+import ProductDetail from './ProductDetail';
+
+const products = [
+  {
+    id: 1,
+    name: 'Uniform Set USTP (Female) ...',
+    price: '₱1,000,000',
+    image: uniformImg,
+  },
+  {
+    id: 2,
+    name: 'Item 2 [Desc]',
+    price: '₱1,000,000',
+    image: 'https://static.wikia.nocookie.net/spongebob/images/7/7e/Nat_Peterson_29.png',
+  },
+];
 
 const categories = [
   'For You',
@@ -172,61 +187,12 @@ export default function Dashboard() {
   const [selectedCategory, setSelectedCategory] = useState('For You');
   const [search, setSearch] = useState('');
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
+  const [cartItems, setCartItems] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
   const [isVerified, setIsVerified] = useState(false);
   const location = useLocation();
-
-  // Check if user is verified
-  useEffect(() => {
-    const checkVerification = async () => {
-      if (auth.currentUser) {
-        try {
-          // First check if user has a document in verifiedAccounts
-          const verifiedAccountRef = doc(db, 'verifiedAccounts', auth.currentUser.uid);
-          const verifiedAccountDoc = await getDoc(verifiedAccountRef);
-          
-          if (verifiedAccountDoc.exists()) {
-            // User is verified by admin
-            setIsVerified(true);
-            
-            // Update user document to reflect verified status
-            const userRef = doc(db, 'users', auth.currentUser.uid);
-            await setDoc(userRef, {
-              isVerified: true,
-              verifiedAt: verifiedAccountDoc.data().verifiedAt || new Date()
-            }, { merge: true });
-          } else {
-            // Check if user has a pending verification
-            const verificationsRef = collection(db, 'verifications');
-            const q = query(
-              verificationsRef,
-              where('email', '==', auth.currentUser.email),
-              where('status', '==', 'pending')
-            );
-            const verificationSnapshot = await getDocs(q);
-            
-            if (!verificationSnapshot.empty) {
-              // User has a pending verification
-              setIsVerified(false);
-            } else {
-              // No verification found, user is not verified
-              setIsVerified(false);
-              
-              // Update user document to reflect unverified status
-              const userRef = doc(db, 'users', auth.currentUser.uid);
-              await setDoc(userRef, {
-                isVerified: false
-              }, { merge: true });
-            }
-          }
-        } catch (error) {
-          console.error('Error checking verification status:', error);
-          setIsVerified(false);
-        }
-      }
-    };
-    checkVerification();
-  }, []);
+  const [showStartSellingModal, setShowStartSellingModal] = useState(false);
+  const [isVerified, setIsVerified] = useState<boolean | null>(null);
 
   // Fetch products from Firebase
   useEffect(() => {
@@ -334,6 +300,21 @@ export default function Dashboard() {
     }
   }, [location]);
 
+  useEffect(() => {
+    const checkVerified = async () => {
+      const user = auth.currentUser;
+      if (!user || !user.email) {
+        setIsVerified(false);
+        return;
+      }
+      const email = user.email.toLowerCase();
+      const q = query(collection(db, "verifiedAccounts"), where("email", "==", email));
+      const snapshot = await getDocs(q);
+      setIsVerified(!snapshot.empty);
+    };
+    checkVerified();
+  }, []);
+
   // Sidebar navigation handler
   const handleSidebarNav = (view: typeof mainView) => {
     // Check if the view requires verification
@@ -363,6 +344,17 @@ export default function Dashboard() {
       (selectedCategory === 'For You' || p.name.toLowerCase().includes(selectedCategory.toLowerCase())) &&
       (search === '' || p.name.toLowerCase().includes(search.toLowerCase()))
   );
+
+  const handleAddToCart = (product: any) => {
+    setCartItems((prev) => [...prev, product]);
+    setSelectedProduct(null);
+    // Cart view is not in the allowed views, so we'll keep user on current view
+  };
+
+  const handleGoToCart = () => {
+    // Cart view is not in the allowed views, so we'll keep user on current view
+    setSelectedProduct(null);
+  };
 
   const handleProductView = async (item: any) => {
     setSelectedProduct(item);
@@ -425,6 +417,13 @@ export default function Dashboard() {
           onPickUpClick={() => handleSidebarNav('pickup')}
           onRateClick={() => handleSidebarNav('rate')}
           onMessageClick={() => handleSidebarNav('message')}
+          onStartSellingClick={() => {
+            if (isVerified) {
+              setShowStartSellingModal(true);
+            } else {
+              alert("You must be verified to start selling!");
+            }
+          }}
         />
       </div>
       {/* Main Content */}
@@ -436,12 +435,8 @@ export default function Dashboard() {
             {mainView === 'likes' && <h1 className="text-3xl font-bold text-[#F88379] pb-1">My Likes</h1>}
             {mainView === 'recently' && <h1 className="text-3xl font-bold text-[#F88379] pb-1">Recently Viewed</h1>}
             {mainView === 'pickup' && <h1 className="text-3xl font-bold text-[#F88379] pb-1">Pick Up</h1>}
-            {mainView === 'rate' && <h1 className="text-3xl font-bold text-[#F88379] pb-1">Rate</h1>}
-            {mainView === 'message' && <h1 className="text-3xl font-bold text-[#F88379] pb-1">Messages</h1>}
-            {mainView === 'product' && <h1 className="text-3xl font-bold text-[#F88379] pb-1">Product Details</h1>}
-            {mainView === 'cart' && <h1 className="text-3xl font-bold text-[#F88379] pb-1">My Cart</h1>}
           </div>
-          {/* Search bar and cart - only show on Home view */}
+          {/* Search bar and cart */}
           {mainView === 'home' && (
             <div className="flex items-center gap-[27px]">
               <div className="relative">
@@ -457,9 +452,7 @@ export default function Dashboard() {
                   className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2" 
                 />
               </div>
-              <button onClick={handleCartClick}>
-                <img src={cartIcon} alt="Shopping Cart" className="w-[30px] h-[30px]" />
-              </button>
+              <img src={cartIcon} alt="Shopping Cart" className="w-[30px] h-[30px] cursor-pointer" onClick={handleGoToCart} />
             </div>
           )}
         </header>
@@ -481,20 +474,14 @@ export default function Dashboard() {
         <div className="flex-1 px-10 pt-4 pb-10">
           {mainView === 'home' ? (
             selectedProduct ? (
-              <div className="flex flex-wrap gap-8">
-                <ProductDetail 
-                  product={selectedProduct} 
-                  onClose={() => setSelectedProduct(null)}
-                  onAddToCart={() => handleAddToCart(selectedProduct)}
-                />
-              </div>
+              <ProductDetail product={selectedProduct} onClose={() => setSelectedProduct(null)} />
             ) : (
               <div className="flex flex-wrap gap-8">
-                {filteredProducts.map((item) => (
+                {products.map((item) => (
                   <ProductCard
                     key={item.id}
                     product={item}
-                    onClick={() => handleProductView(item)}
+                    onClick={() => setSelectedProduct(item)}
                     onLikeChange={(liked) => handleLikeChange(item, liked)}
                   />
                 ))}
@@ -518,16 +505,24 @@ export default function Dashboard() {
                 </div>
               ))}
             </div>
-          ) : mainView === 'rate' ? (
-            <ToRateContent />
           ) : mainView === 'message' ? (
-            <MessagesContent />
-          ) : mainView === 'cart' ? (
-            <MyCart />
+            <div>Coming Soon</div>
+          ) : mainView === 'rate' ? (
+            <div>Coming Soon</div>
+          ) : mainView === 'product' ? (
+            <div>Coming Soon</div>
           ) : null}
         </div>
       </main>
       <VerificationModal open={showModal} onClose={() => setShowModal(false)} />
+      <StartSellingModal
+        open={showStartSellingModal}
+        onClose={() => setShowStartSellingModal(false)}
+        onStartSelling={() => {
+          setShowStartSellingModal(false);
+          // Add your logic here for what happens after clicking "Start Selling"
+        }}
+      />
     </div>
   );
 }

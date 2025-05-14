@@ -158,7 +158,18 @@ export default function AdminDashboard() {
   };
 
   const handleReject = async (id: string) => {
+    // Find the verification data to get the userId
+    const verification = verifications.find(v => v.id === id);
+    if (!verification) return;
+
+    // Remove the verification document
     await deleteDoc(doc(db, 'verifications', id));
+
+    // Update the user document to allow re-verification
+    await setDoc(doc(db, 'users', verification.userId), {
+      verificationRequested: false
+    }, { merge: true });
+
     setVerifications(v => v.filter(item => item.id !== id));
   };
 

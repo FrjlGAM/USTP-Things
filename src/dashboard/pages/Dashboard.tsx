@@ -6,17 +6,16 @@ import cartIcon from '../../assets/ustp thingS/Shopping cart.png';
 import searchIcon from '../../assets/ustp thingS/search.png';
 import React, { useState, useEffect } from 'react';
 import { db, auth } from '../../lib/firebase';
-import { collection, addDoc, getDocs, doc, setDoc, arrayUnion, arrayRemove, getDoc, query, where, query, where } from 'firebase/firestore';
+import { collection, addDoc, getDocs, doc, setDoc, arrayUnion, arrayRemove, getDoc, query, where } from 'firebase/firestore';
 import MyLikes from './MyLikes';
 import RecentlyViewed from './RecentlyViewed';
 import MyCart from './MyCart';
 import StartSellingModal from '../components/StartSellingModal';
 import { useLocation } from 'react-router-dom';
 import ProductCard from '../components/ProductCard';
-import { useLocation } from 'react-router-dom';
+import ProductDetail from './ProductDetail';
 import { MessagesContent } from './Messages';
 import { ToRateContent } from './ToRate';
-import MyCart from './MyCart';
 
 const categories = [
   'For You',
@@ -174,6 +173,7 @@ export default function Dashboard() {
   const [cartItems, setCartItems] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
   const [isVerified, setIsVerified] = useState(false);
+  const [showStartSellingModal, setShowStartSellingModal] = useState(false);
   const location = useLocation();
 
   // Check if user is verified
@@ -184,11 +184,8 @@ export default function Dashboard() {
           // First check if user has a document in verifiedAccounts
           const verifiedAccountRef = doc(db, 'verifiedAccounts', auth.currentUser.uid);
           const verifiedAccountDoc = await getDoc(verifiedAccountRef);
-          
           if (verifiedAccountDoc.exists()) {
-            // User is verified by admin
             setIsVerified(true);
-            
             // Update user document to reflect verified status
             const userRef = doc(db, 'users', auth.currentUser.uid);
             await setDoc(userRef, {
@@ -204,14 +201,10 @@ export default function Dashboard() {
               where('status', '==', 'pending')
             );
             const verificationSnapshot = await getDocs(q);
-            
             if (!verificationSnapshot.empty) {
-              // User has a pending verification
               setIsVerified(false);
             } else {
-              // No verification found, user is not verified
               setIsVerified(false);
-              
               // Update user document to reflect unverified status
               const userRef = doc(db, 'users', auth.currentUser.uid);
               await setDoc(userRef, {
@@ -320,6 +313,11 @@ export default function Dashboard() {
   const handleSidebarNav = (view: typeof mainView) => {
     setMainView(view);
     setSelectedProduct(null);
+  };
+
+  // Cart icon click handler
+  const handleCartClick = () => {
+    setMainView('cart');
   };
 
   // Filtered products
@@ -474,8 +472,6 @@ export default function Dashboard() {
             <ToRateContent />
           ) : mainView === 'message' ? (
             <MessagesContent />
-          ) : mainView === 'cart' ? (
-            <MyCart />
           ) : null}
         </div>
       </main>

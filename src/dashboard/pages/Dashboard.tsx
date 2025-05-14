@@ -9,12 +9,13 @@ import { db, auth } from '../../lib/firebase';
 import { collection, addDoc, getDocs, doc, setDoc, arrayUnion, arrayRemove, getDoc, query, where } from 'firebase/firestore';
 import MyLikes from './MyLikes';
 import RecentlyViewed from './RecentlyViewed';
-import ProductDetail from './ProductDetail';
-import ProductCard from '../components/ProductCard';
+import MyCart from './MyCart';
+import StartSellingModal from '../components/StartSellingModal';
 import { useLocation } from 'react-router-dom';
+import ProductCard from '../components/ProductCard';
+import ProductDetail from './ProductDetail';
 import { MessagesContent } from './Messages';
 import { ToRateContent } from './ToRate';
-import MyCart from './MyCart';
 
 const categories = [
   'For You',
@@ -62,7 +63,6 @@ function VerificationModal({ open, onClose }: { open: boolean; onClose: () => vo
       if (!auth.currentUser) {
         throw new Error('No user logged in');
       }
-
       await addDoc(collection(db, 'verifications'), {
         userId: auth.currentUser.uid,
         name: form.name,
@@ -73,14 +73,12 @@ function VerificationModal({ open, onClose }: { open: boolean; onClose: () => vo
         status: 'pending',
         createdAt: new Date(),
       });
-
       // Update user document with verification request
       const userRef = doc(db, 'users', auth.currentUser.uid);
       await setDoc(userRef, {
         verificationRequested: true,
         verificationRequestedAt: new Date()
       }, { merge: true });
-
       setSuccess(true);
       setForm({ name: '', id: '', email: '', agree: false });
     } catch (err) {
@@ -172,8 +170,10 @@ export default function Dashboard() {
   const [selectedCategory, setSelectedCategory] = useState('For You');
   const [search, setSearch] = useState('');
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
+  const [cartItems, setCartItems] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
   const [isVerified, setIsVerified] = useState(false);
+  const [showStartSellingModal, setShowStartSellingModal] = useState(false);
   const location = useLocation();
 
   // Check if user is verified
@@ -184,11 +184,8 @@ export default function Dashboard() {
           // First check if user has a document in verifiedAccounts
           const verifiedAccountRef = doc(db, 'verifiedAccounts', auth.currentUser.uid);
           const verifiedAccountDoc = await getDoc(verifiedAccountRef);
-          
           if (verifiedAccountDoc.exists()) {
-            // User is verified by admin
             setIsVerified(true);
-            
             // Update user document to reflect verified status
             const userRef = doc(db, 'users', auth.currentUser.uid);
             await setDoc(userRef, {
@@ -204,14 +201,10 @@ export default function Dashboard() {
               where('status', '==', 'pending')
             );
             const verificationSnapshot = await getDocs(q);
-            
             if (!verificationSnapshot.empty) {
-              // User has a pending verification
               setIsVerified(false);
             } else {
-              // No verification found, user is not verified
               setIsVerified(false);
-              
               // Update user document to reflect unverified status
               const userRef = doc(db, 'users', auth.currentUser.uid);
               await setDoc(userRef, {
@@ -234,10 +227,7 @@ export default function Dashboard() {
       try {
         const productsCollection = collection(db, 'products');
         const productsSnapshot = await getDocs(productsCollection);
-        
-        // If no products exist, add some sample products
         if (productsSnapshot.empty) {
-          console.log('No products found, adding sample products...');
           const sampleProducts = [
             {
               name: 'Uniform Set USTP (Female)',
@@ -261,48 +251,34 @@ export default function Dashboard() {
               description: 'Official USTP ballpen with school logo.'
             }
           ];
-
-          // Add sample products to Firestore
           for (const product of sampleProducts) {
             await addDoc(productsCollection, product);
           }
-          
-          // Fetch the newly added products
           const newSnapshot = await getDocs(productsCollection);
           const productsList = newSnapshot.docs.map(doc => ({
             id: doc.id,
             ...doc.data()
           }));
-          console.log('Sample products added:', productsList);
           setProducts(productsList);
         } else {
           const productsList = productsSnapshot.docs.map(doc => ({
             id: doc.id,
             ...doc.data()
           }));
-
-          // If user is logged in, check liked status for each product
           if (auth.currentUser) {
             const userRef = doc(db, 'users', auth.currentUser.uid);
             const userDoc = await getDoc(userRef);
-            
             if (userDoc.exists()) {
               const userData = userDoc.data();
               const likedProducts = userData.likedProducts || [];
-              
-              // Add liked status to each product
               const productsWithLikes = productsList.map(product => ({
                 ...product,
                 liked: likedProducts.includes(product.id)
               }));
-              
-              console.log('Fetched products with likes:', productsWithLikes);
               setProducts(productsWithLikes);
               return;
             }
           }
-          
-          console.log('Fetched products:', productsList);
           setProducts(productsList);
         }
       } catch (error) {
@@ -313,7 +289,6 @@ export default function Dashboard() {
   }, []);
 
   useEffect(() => {
-    // Update view based on current route
     const path = location.pathname;
     if (path === '/dashboard/likes') {
       setMainView('likes');
@@ -336,24 +311,12 @@ export default function Dashboard() {
 
   // Sidebar navigation handler
   const handleSidebarNav = (view: typeof mainView) => {
-    // Check if the view requires verification
-    const requiresVerification = ['cart', 'pickup', 'rate', 'message'].includes(view);
-    
-    if (requiresVerification && !isVerified) {
-      setShowModal(true);
-      return;
-    }
-    
     setMainView(view);
-    setSelectedProduct(null); // Reset product detail when navigating
+    setSelectedProduct(null);
   };
 
-  // Handle cart icon click
+  // Cart icon click handler
   const handleCartClick = () => {
-    if (!isVerified) {
-      setShowModal(true);
-      return;
-    }
     setMainView('cart');
   };
 
@@ -364,14 +327,21 @@ export default function Dashboard() {
       (search === '' || p.name.toLowerCase().includes(search.toLowerCase()))
   );
 
-  const handleProductView = async (item: any) => {
-    setSelectedProduct(item);
+  const handleAddToCart = async (product: any) => {
     if (auth.currentUser) {
-      // Add to recently viewed in Firestore
       const userRef = doc(db, 'users', auth.currentUser.uid);
+      const userDoc = await getDoc(userRef);
+      if (!userDoc.exists()) {
+        await setDoc(userRef, {
+          cartProducts: [],
+          likedProducts: [],
+          recentlyViewed: []
+        });
+      }
       await setDoc(userRef, {
-        recentlyViewed: arrayUnion(item.id)
+        cartProducts: arrayUnion(product.id)
       }, { merge: true });
+      console.log('Added to cart:', product.id);
     }
   };
 
@@ -390,29 +360,6 @@ export default function Dashboard() {
     }
   };
 
-  const handleAddToCart = async (product: any) => {
-    if (auth.currentUser) {
-      const userRef = doc(db, 'users', auth.currentUser.uid);
-      const userDoc = await getDoc(userRef);
-      
-      if (!userDoc.exists()) {
-        // Create user document if it doesn't exist
-        await setDoc(userRef, {
-          cartProducts: [],
-          likedProducts: [],
-          recentlyViewed: []
-        });
-      }
-      
-      // Add product to cart
-      await setDoc(userRef, {
-        cartProducts: arrayUnion(product.id)
-      }, { merge: true });
-      
-      console.log('Added to cart:', product.id);
-    }
-  };
-
   return (
     <div className="flex min-h-screen bg-[#f7f6fd]">
       {/* Sidebar */}
@@ -425,12 +372,19 @@ export default function Dashboard() {
           onPickUpClick={() => handleSidebarNav('pickup')}
           onRateClick={() => handleSidebarNav('rate')}
           onMessageClick={() => handleSidebarNav('message')}
+          onStartSellingClick={() => {
+            if (isVerified) {
+              setShowStartSellingModal(true);
+            } else {
+              alert("You must be verified to start selling!");
+            }
+          }}
         />
       </div>
       {/* Main Content */}
       <main className="flex-1 flex flex-col">
         {/* Header */}
-        <header className="flex items-center justify-between px-8 pr-[47px] py-4 bg-white h-[70px] shadow-[0_4px_4px_0_rgba(0,0,0,0.1)]">
+        <header className="fixed top-0 right-0 left-[348px] z-10 flex items-center justify-between px-8 pr-[47px] py-4 bg-white h-[70px] shadow-[0_4px_4px_0_rgba(0,0,0,0.1)]">
           <div className="flex items-center gap-4">
             <img src={ustpLogo} alt="USTP Things Logo" className="w-[117px] h-[63px] object-contain" />
             {mainView === 'likes' && <h1 className="text-3xl font-bold text-[#F88379] pb-1">My Likes</h1>}
@@ -441,7 +395,7 @@ export default function Dashboard() {
             {mainView === 'product' && <h1 className="text-3xl font-bold text-[#F88379] pb-1">Product Details</h1>}
             {mainView === 'cart' && <h1 className="text-3xl font-bold text-[#F88379] pb-1">My Cart</h1>}
           </div>
-          {/* Search bar and cart - only show on Home view */}
+          {/* Search bar and cart */}
           {mainView === 'home' && (
             <div className="flex items-center gap-[27px]">
               <div className="relative">
@@ -465,7 +419,7 @@ export default function Dashboard() {
         </header>
         {/* Category Chips (only on Home/Product Feed) */}
         {mainView === 'home' && !selectedProduct && (
-          <div className="flex gap-2 px-10 py-2">
+          <div className="flex gap-2 px-10 py-2 mt-[80px]">
             {categories.map((cat) => (
               <button
                 key={cat}
@@ -478,23 +432,17 @@ export default function Dashboard() {
           </div>
         )}
         {/* Main Content Switcher */}
-        <div className="flex-1 px-10 pt-4 pb-10">
+        <div className={`flex-1 px-10 pt-4 pb-10 ${mainView === 'home' && !selectedProduct ? 'mt-1' : 'mt-[70px]'}`}>
           {mainView === 'home' ? (
             selectedProduct ? (
-              <div className="flex flex-wrap gap-8">
-                <ProductDetail 
-                  product={selectedProduct} 
-                  onClose={() => setSelectedProduct(null)}
-                  onAddToCart={() => handleAddToCart(selectedProduct)}
-                />
-              </div>
+              <ProductDetail product={selectedProduct} onClose={() => setSelectedProduct(null)} />
             ) : (
               <div className="flex flex-wrap gap-8">
-                {filteredProducts.map((item) => (
+                {products.map((item) => (
                   <ProductCard
                     key={item.id}
                     product={item}
-                    onClick={() => handleProductView(item)}
+                    onClick={() => setSelectedProduct(item)}
                     onLikeChange={(liked) => handleLikeChange(item, liked)}
                   />
                 ))}
@@ -518,16 +466,24 @@ export default function Dashboard() {
                 </div>
               ))}
             </div>
+          ) : mainView === 'cart' ? (
+            <MyCart />
           ) : mainView === 'rate' ? (
             <ToRateContent />
           ) : mainView === 'message' ? (
             <MessagesContent />
-          ) : mainView === 'cart' ? (
-            <MyCart />
           ) : null}
         </div>
       </main>
       <VerificationModal open={showModal} onClose={() => setShowModal(false)} />
+      <StartSellingModal
+        open={showStartSellingModal}
+        onClose={() => setShowStartSellingModal(false)}
+        onStartSelling={() => {
+          setShowStartSellingModal(false);
+          // Add your logic here for what happens after clicking "Start Selling"
+        }}
+      />
     </div>
   );
 }

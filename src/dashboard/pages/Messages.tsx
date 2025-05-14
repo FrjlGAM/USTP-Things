@@ -70,19 +70,21 @@ interface Message {
   };
 }
 
-interface MessagesContentProps {
-  onProductClick?: (product: any) => void;
-}
+// Content component that can be used both standalone and embedded
+export function MessagesContent() {
+  const navigate = useNavigate();
 
-// Content component without header and sidebar
-export function MessagesContent({ onProductClick }: MessagesContentProps) {
+  const handleMessageClick = (message: Message) => {
+    navigate(`/dashboard/messages/${message.sender.replace(/\s+/g, '-').toLowerCase()}`);
+  };
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 p-10">
       {messages.map((message: Message) => (
         <div 
           key={message.id} 
           className="bg-white rounded-xl p-4 shadow cursor-pointer hover:shadow-md transition"
-          onClick={() => onProductClick?.(message.product)}
+          onClick={() => handleMessageClick(message)}
         >
           <div className="flex items-center gap-4">
             <img src={message.avatar} alt={message.sender} className="w-16 h-16 rounded-full object-cover" />
@@ -100,13 +102,13 @@ export function MessagesContent({ onProductClick }: MessagesContentProps) {
   );
 }
 
-// Full page component with header and sidebar
+// Main Messages page component
 export default function Messages() {
   const [showModal, setShowModal] = useState(false);
   const navigate = useNavigate();
 
   // Sidebar navigation handler
-  const handleSidebarNav = (view: 'home' | 'likes' | 'recently' | 'pickup' | 'rate' | 'message') => {
+  const handleSidebarNav = (view: 'home' | 'likes' | 'recently' | 'orders' | 'to-rate' | 'messages') => {
     switch (view) {
       case 'home':
         navigate('/dashboard');
@@ -117,13 +119,13 @@ export default function Messages() {
       case 'recently':
         navigate('/dashboard/recently-viewed');
         break;
-      case 'pickup':
-        navigate('/dashboard/pickup');
+      case 'orders':
+        navigate('/dashboard/orders');
         break;
-      case 'rate':
+      case 'to-rate':
         navigate('/dashboard/to-rate');
         break;
-      case 'message':
+      case 'messages':
         navigate('/dashboard/messages');
         break;
     }
@@ -139,8 +141,9 @@ export default function Messages() {
           onLikesClick={() => handleSidebarNav('likes')}
           onRecentlyClick={() => handleSidebarNav('recently')}
           onOrdersClick={() => handleSidebarNav('orders')}
-          onRateClick={() => handleSidebarNav('rate')}
-          onMessageClick={() => handleSidebarNav('message')}
+          onRateClick={() => handleSidebarNav('to-rate')}
+          onMessageClick={() => handleSidebarNav('messages')}
+          activeButton="messages"
         />
       </div>
       {/* Main Content */}

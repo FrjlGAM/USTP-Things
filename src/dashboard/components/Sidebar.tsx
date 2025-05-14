@@ -23,6 +23,7 @@ type SidebarProps = {
   onMessageClick?: () => void;
   onStartSellingClick?: () => void;
   verificationRequested?: boolean;
+  activeButton?: 'home' | 'likes' | 'recently' | 'orders' | 'to-rate' | 'messages' | 'product' | 'cart' | 'verify' | 'seller' | 'settings';
 };
 
 export default function Sidebar({ 
@@ -34,15 +35,27 @@ export default function Sidebar({
   onRateClick, 
   onMessageClick, 
   onStartSellingClick,
-  verificationRequested
+  verificationRequested,
+  activeButton: propActiveButton
 }: SidebarProps) {
   const [isVerified, setIsVerified] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
   const [username, setUsername] = useState<string>('Username');
   const [profileImage, setProfileImage] = useState<string | null>(null);
-  const [activeButton, setActiveButton] = useState<string>('home');
+  const [activeButton, setActiveButton] = useState<SidebarProps['activeButton']>(propActiveButton || 'home');
   const user = auth.currentUser;
   const navigate = useNavigate();
+
+  // Update activeButton when prop changes
+  useEffect(() => {
+    if (propActiveButton) {
+      // Don't update active button if viewing product details
+      if (propActiveButton === 'product') {
+        return;
+      }
+      setActiveButton(propActiveButton);
+    }
+  }, [propActiveButton]);
 
   useEffect(() => {
     const checkVerified = async () => {
@@ -89,7 +102,10 @@ export default function Sidebar({
       onVerifyClick?.();
       return;
     }
-    setActiveButton(buttonName);
+    // Don't update active button if it's already set to this value
+    if (activeButton !== buttonName) {
+      setActiveButton(buttonName as SidebarProps['activeButton']);
+    }
     onClick?.();
   };
 
@@ -178,8 +194,8 @@ export default function Sidebar({
             <img src={purchasesIcon} alt="Orders" className="w-5 h-5" />Orders
           </button>
           <button 
-            onClick={() => handleRestrictedButtonClick('rate', onRateClick)}
-            className={`flex items-center gap-2 text-[#F88379] font-semibold text-lg text-left transition ${activeButton === 'rate' ? 'bg-white rounded-[23.08px] px-2 py-1' : ''}`}
+            onClick={() => handleRestrictedButtonClick('to-rate', onRateClick)}
+            className={`flex items-center gap-2 text-[#F88379] font-semibold text-lg text-left transition ${activeButton === 'to-rate' ? 'bg-white rounded-[23.08px] px-2 py-1' : ''}`}
           >
             <img src={rateIcon} alt="To Rate" className="w-5 h-5" />To Rate
           </button>
@@ -199,9 +215,10 @@ export default function Sidebar({
               onVerifyClick?.();
               return;
             }
+            setActiveButton('seller');
             onStartSellingClick?.();
           }}
-          className={`w-full ${activeButton === 'sell' ? 'bg-white text-[#F88379]' : 'bg-[#F88379] text-white'} hover:bg-[#F88379]/90 font-semibold py-2 rounded-[23.08px] shadow mb-10 transition text-lg`}
+          className={`w-full ${activeButton === 'seller' ? 'bg-white text-[#F88379]' : 'bg-[#F88379] text-white'} hover:bg-[#F88379]/90 font-semibold py-2 rounded-[23.08px] shadow mb-10 transition text-lg`}
         >
           Start selling now!
         </button>

@@ -5,7 +5,7 @@ import cartIcon from '../../assets/ustp thingS/Shopping cart.png';
 import greenCartIcon from '../../assets/ustp thingS/Shopping green.png';
 import xIcon from '../../assets/ustp thingS/X button.png';
 import { db, auth } from '../../lib/firebase';
-import { doc, getDoc, setDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
+import { doc, getDoc, setDoc, arrayUnion, arrayRemove, onSnapshot } from 'firebase/firestore';
 
 const productDetails = {
   description: [
@@ -63,35 +63,41 @@ export default function ProductDetail({
     checkCartStatus();
   }, [product.id]);
 
-  // Load liked state from localStorage
+  // Sync liked state with Firestore
   useEffect(() => {
-    const savedLikes = localStorage.getItem('likedProducts');
-    if (savedLikes) {
-      const likedProducts = JSON.parse(savedLikes);
-      setIsLiked(likedProducts.some((p: { id: string }) => p.id === product.id));
-    }
-  }, [product.id]);
+    if (!auth.currentUser || !product.id) return;
 
-  const handleLikeChange = (liked: boolean) => {
-    setIsLiked(liked);
+    const userRef = doc(db, 'users', auth.currentUser.uid);
     
-    // Update localStorage
-    const savedLikes = localStorage.getItem('likedProducts');
-    let likedProducts = savedLikes ? JSON.parse(savedLikes) : [];
-    
-    if (liked) {
-      // Add to liked products if not already present
-      if (!likedProducts.some((p: { id: string }) => p.id === product.id)) {
-        likedProducts.push(product);
+    // Set up real-time listener for user document
+    const unsubscribe = onSnapshot(userRef, (doc) => {
+      if (doc.exists()) {
+        const userData = doc.data();
+        const likedProducts = userData?.likedProducts || [];
+        setIsLiked(likedProducts.includes(product.id));
       }
-    } else {
-      // Remove from liked products
-      likedProducts = likedProducts.filter((p: { id: string }) => p.id !== product.id);
-    }
+    });
+
+    return () => unsubscribe();
+  }, [product.id, auth.currentUser]);
+
+  const handleLikeChange = async (liked: boolean) => {
+    if (!auth.currentUser) return;
     
-    localStorage.setItem('likedProducts', JSON.stringify(likedProducts));
-    // Trigger storage event for MyLikes component
-    window.dispatchEvent(new Event('storage'));
+    const userRef = doc(db, 'users', auth.currentUser.uid);
+    try {
+      if (liked) {
+        await setDoc(userRef, {
+          likedProducts: arrayUnion(product.id)
+        }, { merge: true });
+      } else {
+        await setDoc(userRef, {
+          likedProducts: arrayRemove(product.id)
+        }, { merge: true });
+      }
+    } catch (error) {
+      console.error('Error updating like status:', error);
+    }
   };
 
   const handleBuyNow = () => {

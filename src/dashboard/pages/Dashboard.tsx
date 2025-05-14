@@ -11,7 +11,7 @@ import MyLikes from './MyLikes';
 import RecentlyViewed from './RecentlyViewed';
 import MyCart from './MyCart';
 import StartSellingModal from '../components/StartSellingModal';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import ProductCard from '../components/ProductCard';
 import ProductDetail from './ProductDetail';
 import { MessagesContent } from './Messages';
@@ -175,6 +175,7 @@ export default function Dashboard() {
   const [isVerified, setIsVerified] = useState(false);
   const [showStartSellingModal, setShowStartSellingModal] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
 
   // Check if user is verified
   useEffect(() => {
@@ -428,7 +429,7 @@ export default function Dashboard() {
             if (isVerified) {
               setShowStartSellingModal(true);
             } else {
-              alert("You must be verified to start selling!");
+              alert("Verify muna bago benta :P!");
             }
           }}
         />
@@ -547,7 +548,7 @@ export default function Dashboard() {
         onClose={() => setShowStartSellingModal(false)}
         onStartSelling={() => {
           setShowStartSellingModal(false);
-          // Add your logic here for what happens after clicking "Start Selling"
+          navigate('/dashboard/seller');
         }}
       />
     </div>

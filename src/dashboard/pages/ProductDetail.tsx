@@ -19,24 +19,26 @@ const productDetails = {
 
 interface ProductDetailProps {
   product: {
-    id: number;
+    id: string;
     name: string;
     price: string;
     image: string;
-    liked?: boolean;
+    description: string;
+    category: string;
   };
-  onClose?: () => void;
+  onClose: () => void;
+  onAddToCart?: () => void;
 }
 
-export default function ProductDetail({ product, onClose }: ProductDetailProps) {
-  const [isLiked, setIsLiked] = useState(product.liked || false);
+export default function ProductDetail({ product, onClose, onAddToCart }: ProductDetailProps) {
+  const [isLiked, setIsLiked] = useState(false);
 
   // Load liked state from localStorage
   useEffect(() => {
     const savedLikes = localStorage.getItem('likedProducts');
     if (savedLikes) {
       const likedProducts = JSON.parse(savedLikes);
-      setIsLiked(likedProducts.some((p: { id: number }) => p.id === product.id));
+      setIsLiked(likedProducts.some((p: { id: string }) => p.id === product.id));
     }
   }, [product.id]);
 
@@ -49,12 +51,12 @@ export default function ProductDetail({ product, onClose }: ProductDetailProps) 
     
     if (liked) {
       // Add to liked products if not already present
-      if (!likedProducts.some((p: { id: number }) => p.id === product.id)) {
+      if (!likedProducts.some((p: { id: string }) => p.id === product.id)) {
         likedProducts.push(product);
       }
     } else {
       // Remove from liked products
-      likedProducts = likedProducts.filter((p: { id: number }) => p.id !== product.id);
+      likedProducts = likedProducts.filter((p: { id: string }) => p.id !== product.id);
     }
     
     localStorage.setItem('likedProducts', JSON.stringify(likedProducts));
@@ -79,10 +81,15 @@ export default function ProductDetail({ product, onClose }: ProductDetailProps) 
           <div className="bg-[#f7f6fd] rounded-2xl p-4 flex items-center justify-center w-full mb-4">
             <img src={product.image} alt={product.name} className="w-[320px] h-[320px] object-cover rounded-xl" />
           </div>
-          <button className="flex items-center justify-center gap-2 w-full bg-[#FFB085] hover:bg-[#F88379] text-white font-bold py-3 rounded-xl shadow transition text-lg mt-2">
-            <img src={cartIcon} alt="Add to Cart" className="w-6 h-6" />
-            Add to Cart
-          </button>
+          {onAddToCart && (
+            <button 
+              onClick={onAddToCart}
+              className="flex items-center justify-center gap-2 w-full bg-[#FFB085] hover:bg-[#F88379] text-white font-bold py-3 rounded-xl shadow transition text-lg mt-2"
+            >
+              <img src={cartIcon} alt="Add to Cart" className="w-6 h-6" />
+              Add to Cart
+            </button>
+          )}
         </div>
         {/* Product Details Section */}
         <div className="flex-1 flex flex-col justify-between pr-0 md:pr-6">
@@ -94,19 +101,19 @@ export default function ProductDetail({ product, onClose }: ProductDetailProps) 
             </div>
             <div className="flex flex-col mb-4">
               <div className="flex items-center gap-3">
-                <span className="text-lg md:text-xl text-blue-400 font-bold">{productDetails.sold}</span> <span className="text-lg md:text-xl text-gray-500">Sold</span>
+                <span className="text-xl text-blue-400 font-bold">{productDetails.sold}</span> <span className="text-xl text-gray-500">Sold</span>
               </div>
               <div className="flex items-center gap-3 mt-2">
-                <span className="text-lg md:text-xl text-blue-400 font-bold">{productDetails.soldOut}</span> <span className="text-lg md:text-xl text-gray-500">Sold Out</span>
+                <span className="text-xl text-blue-400 font-bold">{productDetails.soldOut}</span> <span className="text-xl text-gray-500">Sold Out</span>
               </div>
             </div>
             <div className="flex items-center gap-3 mb-3">
               <HeartButton initialLiked={isLiked} onLikeChange={handleLikeChange} productId={product.id} />
-              <span className="text-base text-gray-500">Add to Favorites</span>
+              <span className="text-xl text-gray-500">Add to Favorites</span>
             </div>
             <div className="flex items-center gap-3 mb-8">
-              <span className="text-[#F88379] text-2xl md:text-3xl">{'★'.repeat(Math.floor(productDetails.rating))}</span>
-              <span className="text-lg md:text-xl text-gray-600 font-semibold">{productDetails.rating.toFixed(1)}/5.0</span>
+              <span className="text-[#F88379] text-2xl">{'★'.repeat(Math.floor(productDetails.rating))}</span>
+              <span className="text-xl text-gray-600 font-semibold">{productDetails.rating.toFixed(1)}/5.0</span>
             </div>
           </div>
           {/* Buy Now button only */}

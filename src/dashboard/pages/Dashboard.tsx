@@ -6,7 +6,7 @@ import cartIcon from '../../assets/ustp thingS/Shopping cart.png';
 import searchIcon from '../../assets/ustp thingS/search.png';
 import React, { useState, useEffect } from 'react';
 import { db, auth } from '../../lib/firebase';
-import { collection, addDoc, getDocs, doc, setDoc, arrayUnion, arrayRemove, getDoc } from 'firebase/firestore';
+import { collection, addDoc, getDocs, doc, setDoc, arrayUnion, arrayRemove, getDoc, query, where } from 'firebase/firestore';
 import MyLikes from './MyLikes';
 import RecentlyViewed from './RecentlyViewed';
 import ProductDetail from './ProductDetail';
@@ -14,6 +14,7 @@ import ProductCard from '../components/ProductCard';
 import { useLocation } from 'react-router-dom';
 import { MessagesContent } from './Messages';
 import { ToRateContent } from './ToRate';
+import MyCart from './MyCart';
 
 const categories = [
   'For You',
@@ -58,17 +59,32 @@ function VerificationModal({ open, onClose }: { open: boolean; onClose: () => vo
     e.preventDefault();
     setLoading(true);
     try {
+      if (!auth.currentUser) {
+        throw new Error('No user logged in');
+      }
+
       await addDoc(collection(db, 'verifications'), {
+        userId: auth.currentUser.uid,
         name: form.name,
         studentId: form.id,
         email: form.email,
         agreed: form.agree,
         type: 'student',
+        status: 'pending',
         createdAt: new Date(),
       });
+
+      // Update user document with verification request
+      const userRef = doc(db, 'users', auth.currentUser.uid);
+      await setDoc(userRef, {
+        verificationRequested: true,
+        verificationRequestedAt: new Date()
+      }, { merge: true });
+
       setSuccess(true);
       setForm({ name: '', id: '', email: '', agree: false });
     } catch (err) {
+      console.error('Failed to submit verification:', err);
       alert('Failed to submit verification.');
     } finally {
       setLoading(false);
@@ -152,12 +168,65 @@ function VerificationModal({ open, onClose }: { open: boolean; onClose: () => vo
 
 export default function Dashboard() {
   const [showModal, setShowModal] = useState(false);
-  const [mainView, setMainView] = useState<'home' | 'likes' | 'recently' | 'pickup' | 'rate' | 'message' | 'product'>('home');
+  const [mainView, setMainView] = useState<'home' | 'likes' | 'recently' | 'pickup' | 'rate' | 'message' | 'product' | 'cart'>('home');
   const [selectedCategory, setSelectedCategory] = useState('For You');
   const [search, setSearch] = useState('');
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [products, setProducts] = useState<any[]>([]);
+  const [isVerified, setIsVerified] = useState(false);
   const location = useLocation();
+
+  // Check if user is verified
+  useEffect(() => {
+    const checkVerification = async () => {
+      if (auth.currentUser) {
+        try {
+          // First check if user has a document in verifiedAccounts
+          const verifiedAccountRef = doc(db, 'verifiedAccounts', auth.currentUser.uid);
+          const verifiedAccountDoc = await getDoc(verifiedAccountRef);
+          
+          if (verifiedAccountDoc.exists()) {
+            // User is verified by admin
+            setIsVerified(true);
+            
+            // Update user document to reflect verified status
+            const userRef = doc(db, 'users', auth.currentUser.uid);
+            await setDoc(userRef, {
+              isVerified: true,
+              verifiedAt: verifiedAccountDoc.data().verifiedAt || new Date()
+            }, { merge: true });
+          } else {
+            // Check if user has a pending verification
+            const verificationsRef = collection(db, 'verifications');
+            const q = query(
+              verificationsRef,
+              where('email', '==', auth.currentUser.email),
+              where('status', '==', 'pending')
+            );
+            const verificationSnapshot = await getDocs(q);
+            
+            if (!verificationSnapshot.empty) {
+              // User has a pending verification
+              setIsVerified(false);
+            } else {
+              // No verification found, user is not verified
+              setIsVerified(false);
+              
+              // Update user document to reflect unverified status
+              const userRef = doc(db, 'users', auth.currentUser.uid);
+              await setDoc(userRef, {
+                isVerified: false
+              }, { merge: true });
+            }
+          }
+        } catch (error) {
+          console.error('Error checking verification status:', error);
+          setIsVerified(false);
+        }
+      }
+    };
+    checkVerification();
+  }, []);
 
   // Fetch products from Firebase
   useEffect(() => {
@@ -258,6 +327,8 @@ export default function Dashboard() {
       setMainView('message');
     } else if (path.startsWith('/dashboard/product/')) {
       setMainView('product');
+    } else if (path === '/dashboard/cart') {
+      setMainView('cart');
     } else if (path === '/dashboard') {
       setMainView('home');
     }
@@ -265,8 +336,25 @@ export default function Dashboard() {
 
   // Sidebar navigation handler
   const handleSidebarNav = (view: typeof mainView) => {
+    // Check if the view requires verification
+    const requiresVerification = ['cart', 'pickup', 'rate', 'message'].includes(view);
+    
+    if (requiresVerification && !isVerified) {
+      setShowModal(true);
+      return;
+    }
+    
     setMainView(view);
     setSelectedProduct(null); // Reset product detail when navigating
+  };
+
+  // Handle cart icon click
+  const handleCartClick = () => {
+    if (!isVerified) {
+      setShowModal(true);
+      return;
+    }
+    setMainView('cart');
   };
 
   // Filtered products
@@ -302,6 +390,29 @@ export default function Dashboard() {
     }
   };
 
+  const handleAddToCart = async (product: any) => {
+    if (auth.currentUser) {
+      const userRef = doc(db, 'users', auth.currentUser.uid);
+      const userDoc = await getDoc(userRef);
+      
+      if (!userDoc.exists()) {
+        // Create user document if it doesn't exist
+        await setDoc(userRef, {
+          cartProducts: [],
+          likedProducts: [],
+          recentlyViewed: []
+        });
+      }
+      
+      // Add product to cart
+      await setDoc(userRef, {
+        cartProducts: arrayUnion(product.id)
+      }, { merge: true });
+      
+      console.log('Added to cart:', product.id);
+    }
+  };
+
   return (
     <div className="flex min-h-screen bg-[#f7f6fd]">
       {/* Sidebar */}
@@ -319,7 +430,7 @@ export default function Dashboard() {
       {/* Main Content */}
       <main className="flex-1 flex flex-col">
         {/* Header */}
-        <header className="fixed top-0 right-0 left-[348px] z-10 flex items-center justify-between px-8 pr-[47px] py-4 bg-white h-[70px] shadow-[0_4px_4px_0_rgba(0,0,0,0.1)]">
+        <header className="flex items-center justify-between px-8 pr-[47px] py-4 bg-white h-[70px] shadow-[0_4px_4px_0_rgba(0,0,0,0.1)]">
           <div className="flex items-center gap-4">
             <img src={ustpLogo} alt="USTP Things Logo" className="w-[117px] h-[63px] object-contain" />
             {mainView === 'likes' && <h1 className="text-3xl font-bold text-[#F88379] pb-1">My Likes</h1>}
@@ -328,6 +439,7 @@ export default function Dashboard() {
             {mainView === 'rate' && <h1 className="text-3xl font-bold text-[#F88379] pb-1">Rate</h1>}
             {mainView === 'message' && <h1 className="text-3xl font-bold text-[#F88379] pb-1">Messages</h1>}
             {mainView === 'product' && <h1 className="text-3xl font-bold text-[#F88379] pb-1">Product Details</h1>}
+            {mainView === 'cart' && <h1 className="text-3xl font-bold text-[#F88379] pb-1">My Cart</h1>}
           </div>
           {/* Search bar and cart - only show on Home view */}
           {mainView === 'home' && (
@@ -345,13 +457,15 @@ export default function Dashboard() {
                   className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2" 
                 />
               </div>
-              <img src={cartIcon} alt="Shopping Cart" className="w-[30px] h-[30px]" />
+              <button onClick={handleCartClick}>
+                <img src={cartIcon} alt="Shopping Cart" className="w-[30px] h-[30px]" />
+              </button>
             </div>
           )}
         </header>
         {/* Category Chips (only on Home/Product Feed) */}
         {mainView === 'home' && !selectedProduct && (
-          <div className="flex gap-2 px-10 py-2 mt-[80px]">
+          <div className="flex gap-2 px-10 py-2">
             {categories.map((cat) => (
               <button
                 key={cat}
@@ -364,11 +478,15 @@ export default function Dashboard() {
           </div>
         )}
         {/* Main Content Switcher */}
-        <div className={`flex-1 px-10 pt-4 pb-10 ${mainView === 'home' && !selectedProduct ? 'mt-1' : 'mt-[70px]'}`}>
+        <div className="flex-1 px-10 pt-4 pb-10">
           {mainView === 'home' ? (
             selectedProduct ? (
               <div className="flex flex-wrap gap-8">
-                <ProductDetail product={selectedProduct} onClose={() => setSelectedProduct(null)} />
+                <ProductDetail 
+                  product={selectedProduct} 
+                  onClose={() => setSelectedProduct(null)}
+                  onAddToCart={() => handleAddToCart(selectedProduct)}
+                />
               </div>
             ) : (
               <div className="flex flex-wrap gap-8">
@@ -404,6 +522,8 @@ export default function Dashboard() {
             <ToRateContent />
           ) : mainView === 'message' ? (
             <MessagesContent />
+          ) : mainView === 'cart' ? (
+            <MyCart />
           ) : null}
         </div>
       </main>

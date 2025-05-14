@@ -17,8 +17,8 @@ export default function ProductCard({ product, onClick, onLikeChange }: ProductC
   return (
     <div
       style={{
-        width: 306,
-        height: 346,
+        width: 'calc((100% - 64px) / 3)', // (100% - 2 * gap) / 3 cards
+        height: 380,
         position: 'relative',
         opacity: 0.8,
         overflow: 'hidden',
@@ -34,8 +34,8 @@ export default function ProductCard({ product, onClick, onLikeChange }: ProductC
         src={product.image}
         alt={product.name}
         style={{
-          width: 240,
-          height: 240,
+          width: 'calc(100% - 66px)', // Full width minus left and right margins
+          height: 'calc(100% - 140px)', // Adjusted for new height
           left: 33,
           top: 27,
           position: 'absolute',
@@ -45,10 +45,10 @@ export default function ProductCard({ product, onClick, onLikeChange }: ProductC
       />
       <div
         style={{
-          width: 223,
+          width: 'calc(100% - 83px)', // Full width minus left margin and heart button area
           height: 31,
           left: 33,
-          top: 276,
+          top: 310, // Adjusted for new height
           position: 'absolute',
           color: 'black',
           fontSize: 20,
@@ -64,10 +64,10 @@ export default function ProductCard({ product, onClick, onLikeChange }: ProductC
       </div>
       <div
         style={{
-          width: 129,
+          width: 'calc(100% - 177px)', // Full width minus left margin, heart button area, and some padding
           height: 25,
           left: 33,
-          top: 303,
+          top: 337, // Adjusted for new height
           position: 'absolute',
           color: '#F88379',
           fontSize: 20,
@@ -84,8 +84,8 @@ export default function ProductCard({ product, onClick, onLikeChange }: ProductC
         style={{
           width: 28,
           height: 28,
-          left: 245,
-          top: 290,
+          right: 33,
+          top: 324, // Adjusted for new height
           position: 'absolute',
           display: 'flex',
           alignItems: 'center',

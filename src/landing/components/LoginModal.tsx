@@ -5,7 +5,7 @@ import emailIcon from '../../assets/ustp thingS/Email.png';
 import xButton from '../../assets/ustp thingS/X button.png';
 import { useState } from 'react';
 import { auth, db } from '../../lib/firebase';
-import { signInWithEmailAndPassword, fetchSignInMethodsForEmail } from 'firebase/auth';
+import { signInWithEmailAndPassword } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
 import { doc, getDoc } from 'firebase/firestore';
 
@@ -29,17 +29,6 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
     setError('');
     setLoading(true);
     try {
-      // Check if email exists
-      const signInMethods = await fetchSignInMethodsForEmail(auth, email);
-      console.log('Login - Sign in methods:', signInMethods); // Debug log
-
-      // If email doesn't exist, it will have no sign-in methods
-      if (signInMethods.length === 0) {
-        setError('This email is not registered. Please sign up first.');
-        setLoading(false);
-        return;
-      }
-
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       
       // Check if the user is an admin
@@ -53,8 +42,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
 
       navigate('/dashboard');
     } catch (err: any) {
-      console.error('Login error:', err); // Debug log
-      setError(err.message || 'Failed to login.');
+      setError('Invalid email or password.');
     } finally {
       setLoading(false);
     }

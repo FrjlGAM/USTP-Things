@@ -4,52 +4,60 @@ import ProductDetail from './ProductDetail';
 import { db, auth } from '../../lib/firebase';
 import { doc, getDoc, setDoc, arrayRemove } from 'firebase/firestore';
 
-export default function MyLikes() {
+export default function MyCart() {
   const [products, setProducts] = useState<any[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
 
   useEffect(() => {
-    const fetchLikedProducts = async () => {
+    const fetchCartProducts = async () => {
+      console.log('Fetching cart products...');
       if (auth.currentUser) {
+        console.log('User is logged in:', auth.currentUser.uid);
         const userRef = doc(db, 'users', auth.currentUser.uid);
         const userDoc = await getDoc(userRef);
         
         if (userDoc.exists()) {
           const userData = userDoc.data();
-          const likedProductIds = userData.likedProducts || [];
+          const cartProductIds = userData.cartProducts || [];
+          console.log('Cart product IDs:', cartProductIds);
           
-          // Fetch product details for each liked product
-          const productsPromises = likedProductIds.map(async (productId: string) => {
+          // Fetch product details for each cart product
+          const productsPromises = cartProductIds.map(async (productId: string) => {
+            console.log('Fetching product:', productId);
             const productRef = doc(db, 'products', productId);
             const productDoc = await getDoc(productRef);
             if (productDoc.exists()) {
               return {
                 id: productDoc.id,
-                ...productDoc.data(),
-                liked: true // Set liked to true since these are liked products
+                ...productDoc.data()
               };
             }
             return null;
           });
           
           const productsList = (await Promise.all(productsPromises)).filter(Boolean);
+          console.log('Fetched products:', productsList);
           setProducts(productsList);
+        } else {
+          console.log('User document does not exist');
         }
+      } else {
+        console.log('No user is logged in');
       }
     };
 
-    fetchLikedProducts();
+    fetchCartProducts();
   }, []);
 
   const handleProductView = (product: any) => {
     setSelectedProduct(product);
   };
 
-  const handleUnlike = async (product: any) => {
+  const handleRemoveFromCart = async (product: any) => {
     if (auth.currentUser) {
       const userRef = doc(db, 'users', auth.currentUser.uid);
       await setDoc(userRef, {
-        likedProducts: arrayRemove(product.id)
+        cartProducts: arrayRemove(product.id)
       }, { merge: true });
       
       // Update local state
@@ -60,7 +68,11 @@ export default function MyLikes() {
   if (selectedProduct) {
     return (
       <div className="flex flex-wrap gap-8">
-        <ProductDetail product={selectedProduct} onClose={() => setSelectedProduct(null)} />
+        <ProductDetail 
+          product={selectedProduct} 
+          onClose={() => setSelectedProduct(null)}
+          onAddToCart={() => {}} // Empty function since we're in cart view
+        />
       </div>
     );
   }
@@ -68,7 +80,7 @@ export default function MyLikes() {
   if (products.length === 0) {
     return (
       <div className="text-center text-gray-500 mt-8">
-        No liked products yet. Click the heart icon on products to add them to your likes.
+        Your cart is empty. Add products to your cart to see them here.
       </div>
     );
   }
@@ -82,7 +94,7 @@ export default function MyLikes() {
           onClick={() => handleProductView(product)}
           onLikeChange={(liked) => {
             if (!liked) {
-              handleUnlike(product);
+              handleRemoveFromCart(product);
             }
           }}
         />

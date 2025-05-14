@@ -3,8 +3,11 @@ import { useNavigate } from "react-router-dom";
 import homeLogo from "../../assets/ustp thingS/Home.png";
 import Username from "../components/Username"; // adjust the path if needed
 import PhoneNumber from "../components/PhoneNumber"; // adjust the path if needed
+import Email from "../components/Email";
+import VerificationCodeEmail from "../components/VerficationCodeEmail";
 import { getDoc, doc, setDoc } from "firebase/firestore";
 import { auth, db } from "../../lib/firebase";
+import { updateEmail, sendEmailVerification, EmailAuthProvider, reauthenticateWithCredential } from "firebase/auth";
 
 type AccountandSecurityProps = {
   onSettingsClick: () => void;
@@ -19,6 +22,10 @@ export default function AccountandSecurity({ onSettingsClick, onMyProfileClick }
   const [showPhoneNumberModal, setShowPhoneNumberModal] = useState(false);
   const [phoneNumber, setPhoneNumber] = useState(""); // or fetch from Firestore if you want it to persist
   const [loadingPhoneNumber, setLoadingPhoneNumber] = useState(true);
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [showVerificationCodeModal, setShowVerificationCodeModal] = useState(false);
+  const [email, setEmail] = useState("");
+  const [verificationCode, setVerificationCode] = useState("");
 
   useEffect(() => {
     const fetchUsername = async () => {
@@ -58,6 +65,46 @@ export default function AccountandSecurity({ onSettingsClick, onMyProfileClick }
     await setDoc(doc(db, "users", auth.currentUser.uid), { phoneNumber: newPhoneNumber }, { merge: true });
     setPhoneNumber(newPhoneNumber);
     setShowPhoneNumberModal(false);
+  };
+
+  const handleSaveEmail = async (newEmail: string, password: string) => {
+    if (!auth.currentUser || !auth.currentUser.email) return;
+    try {
+      // 1. Re-authenticate
+      const credential = EmailAuthProvider.credential(auth.currentUser.email, password);
+      await reauthenticateWithCredential(auth.currentUser, credential);
+
+      // 2. Update email
+      await updateEmail(auth.currentUser, newEmail);
+
+      // 3. Send verification link
+      await sendEmailVerification(auth.currentUser);
+
+      setEmail(newEmail);
+      setShowEmailModal(false);
+      setShowVerificationCodeModal(true);
+      // Optionally, show a message: "A verification link has been sent to your email."
+    } catch (error: any) {
+      alert(error.message);
+    }
+  };
+
+  const handleSaveVerificationCode = (code: string) => {
+    setVerificationCode(code);
+    setShowVerificationCodeModal(false);
+    // Here, you would verify the code with your backend/Firebase
+  };
+
+  const handleCheckVerification = async () => {
+    if (!auth.currentUser) return;
+    await auth.currentUser.reload();
+    if (auth.currentUser.emailVerified) {
+      setShowVerificationCodeModal(false);
+      alert("Email verified successfully!");
+      // Optionally, update Firestore or UI here
+    } else {
+      alert("Email not verified yet. Please check your inbox and click the verification link.");
+    }
   };
 
   return (
@@ -206,8 +253,22 @@ export default function AccountandSecurity({ onSettingsClick, onMyProfileClick }
             padding: 0,
           }}
         >
-          <div style={{ padding: "14px 16px", display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 17, cursor: "pointer", fontFamily: "inherit" }}>
-            Email <span style={{ color: "#888" }}>&gt;</span>
+          <div
+            style={{
+              padding: "14px 16px",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              fontSize: 17,
+              fontFamily: "inherit",
+              cursor: "pointer",
+            }}
+            onClick={() => setShowEmailModal(true)}
+          >
+            Email
+            <span style={{ color: "#888", fontSize: 15 }}>
+              {email ? email : "Set now"} <span style={{ marginLeft: 8, color: "#888" }}>&gt;</span>
+            </span>
           </div>
         </div>
         <div
@@ -236,6 +297,19 @@ export default function AccountandSecurity({ onSettingsClick, onMyProfileClick }
           onClose={() => setShowPhoneNumberModal(false)}
           onSave={handleSavePhoneNumber}
           initialPhoneNumber={phoneNumber}
+        />
+      )}
+      {showEmailModal && (
+        <Email
+          onClose={() => setShowEmailModal(false)}
+          onSave={handleSaveEmail}
+          initialEmail={email}
+        />
+      )}
+      {showVerificationCodeModal && (
+        <VerificationCodeEmail
+          onClose={() => setShowVerificationCodeModal(false)}
+          onCheckVerification={handleCheckVerification}
         />
       )}
     </div>

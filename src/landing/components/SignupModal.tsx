@@ -10,6 +10,7 @@ import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { setDoc, doc } from 'firebase/firestore';
 import { useNavigate } from 'react-router-dom';
 import TermsModal from './TermsModal';
+import { verifyEmail } from '../../lib/emailVerification';
 
 interface SignupModalProps {
   isOpen: boolean;
@@ -49,6 +50,14 @@ export default function SignupModal({ isOpen, onClose }: SignupModalProps) {
 
     setLoading(true);
     try {
+      // Verify if the email actually exists
+      const isEmailValid = await verifyEmail(email);
+      if (!isEmailValid) {
+        setError('This email address does not exist. Please use a valid email address.');
+        setLoading(false);
+        return;
+      }
+
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       // Save username and email to Firestore 'users' collection
       await setDoc(doc(db, 'users', userCredential.user.uid), {
@@ -64,6 +73,7 @@ export default function SignupModal({ isOpen, onClose }: SignupModalProps) {
       setAgreeToTerms(false);
       navigate('/dashboard');
     } catch (err: any) {
+      console.error('Signup error:', err);
       setError(err.message || 'Failed to sign up.');
     } finally {
       setLoading(false);

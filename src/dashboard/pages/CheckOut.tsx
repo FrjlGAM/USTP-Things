@@ -116,7 +116,7 @@ export default function CheckOut({ product, onClose }: CheckOutProps) {
         
         if (orderRef.id) {
           alert('Order placed successfully!');
-          navigate('/dashboard/pickup');
+          navigate('/dashboard/orders');
         } else {
           throw new Error('Failed to get order ID');
         }

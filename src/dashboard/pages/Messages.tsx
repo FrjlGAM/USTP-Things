@@ -138,7 +138,7 @@ export default function Messages() {
           onHomeClick={() => handleSidebarNav('home')}
           onLikesClick={() => handleSidebarNav('likes')}
           onRecentlyClick={() => handleSidebarNav('recently')}
-          onPickUpClick={() => handleSidebarNav('pickup')}
+          onOrdersClick={() => handleSidebarNav('orders')}
           onRateClick={() => handleSidebarNav('rate')}
           onMessageClick={() => handleSidebarNav('message')}
         />

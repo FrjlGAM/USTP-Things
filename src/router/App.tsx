@@ -7,7 +7,7 @@ import AdminDashboard from '../admin/components/AdminDashboard';
 import SettingsContainer from "../dashboard/pages/SettingsContainer";
 import Messages from '../dashboard/pages/Messages';
 import ToRate from '../dashboard/pages/ToRate';
-import Pickup from '../dashboard/pages/Pickup';
+import Orders from '../dashboard/pages/Orders';
 import CheckOut from '../dashboard/pages/CheckOut';
 import { useLocation, Navigate } from 'react-router-dom';
 import SellerPage from '../dashboard/pages/SellerPage';
@@ -31,15 +31,15 @@ function App() {
       <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/dashboard/likes" element={<Dashboard />} />
       <Route path="/dashboard/recently-viewed" element={<Dashboard />} />
+      <Route path="/dashboard/orders" element={<Orders />} />
+      <Route path="/dashboard/rate" element={<ToRate />} />
+      <Route path="/dashboard/message" element={<Messages />} />
+      <Route path="/dashboard/settings" element={<SettingsContainer />} />
       <Route path="/dashboard/checkout" element={<CheckOutWrapper />} />
+      <Route path="/dashboard/seller" element={<SellerPage />} />
       <Route path="/admin/login" element={<AdminLogin />} />
       <Route path="/admin/signup" element={<AdminSignup />} />
       <Route path="/admin/dashboard" element={<AdminDashboard />} />
-      <Route path="/dashboard/settings" element={<SettingsContainer />} />
-      <Route path="/dashboard/messages" element={<Messages />} />
-      <Route path="/dashboard/to-rate" element={<ToRate />} />
-      <Route path="/dashboard/pickup" element={<Pickup />} />
-      <Route path="/dashboard/seller" element={<SellerPage />} />
     </Routes>
   );
 }

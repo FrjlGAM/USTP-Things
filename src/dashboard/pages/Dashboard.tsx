@@ -5,8 +5,8 @@ import xIcon from '../../assets/ustp thingS/X button.png';
 import cartIcon from '../../assets/ustp thingS/Shopping cart.png';
 import searchIcon from '../../assets/ustp thingS/search.png';
 import React, { useState, useEffect } from 'react';
-import { db } from '../../lib/firebase';
-import { collection, addDoc } from 'firebase/firestore';
+import { db, auth } from '../../lib/firebase';
+import { collection, addDoc, getDocs, doc, setDoc, arrayUnion, arrayRemove, getDoc } from 'firebase/firestore';
 import MyLikes from './MyLikes';
 import RecentlyViewed from './RecentlyViewed';
 import ProductDetail from './ProductDetail';
@@ -14,23 +14,6 @@ import ProductCard from '../components/ProductCard';
 import { useLocation } from 'react-router-dom';
 import { MessagesContent } from './Messages';
 import { ToRateContent } from './ToRate';
-
-const products = [
-  {
-    id: 1,
-    name: 'Uniform Set USTP (Female) ...',
-    price: '₱1,000,000',
-    image: uniformImg,
-    liked: false,
-  },
-  {
-    id: 2,
-    name: 'Item 2 [Desc]',
-    price: '₱1,000,000',
-    image: 'https://static.wikia.nocookie.net/spongebob/images/7/7e/Nat_Peterson_29.png',
-    liked: false,
-  },
-];
 
 const categories = [
   'For You',
@@ -173,7 +156,92 @@ export default function Dashboard() {
   const [selectedCategory, setSelectedCategory] = useState('For You');
   const [search, setSearch] = useState('');
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
+  const [products, setProducts] = useState<any[]>([]);
   const location = useLocation();
+
+  // Fetch products from Firebase
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const productsCollection = collection(db, 'products');
+        const productsSnapshot = await getDocs(productsCollection);
+        
+        // If no products exist, add some sample products
+        if (productsSnapshot.empty) {
+          console.log('No products found, adding sample products...');
+          const sampleProducts = [
+            {
+              name: 'Uniform Set USTP (Female)',
+              price: '₱1,000',
+              image: uniformImg,
+              category: 'Uniform',
+              description: 'Complete USTP uniform set for female students including blouse, skirt, and necktie.'
+            },
+            {
+              name: 'USTP ID Lace',
+              price: '₱50',
+              image: uniformImg,
+              category: 'Accessories',
+              description: 'High-quality ID lace for USTP student ID.'
+            },
+            {
+              name: 'USTP Ballpen',
+              price: '₱20',
+              image: uniformImg,
+              category: 'School Supplies',
+              description: 'Official USTP ballpen with school logo.'
+            }
+          ];
+
+          // Add sample products to Firestore
+          for (const product of sampleProducts) {
+            await addDoc(productsCollection, product);
+          }
+          
+          // Fetch the newly added products
+          const newSnapshot = await getDocs(productsCollection);
+          const productsList = newSnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          }));
+          console.log('Sample products added:', productsList);
+          setProducts(productsList);
+        } else {
+          const productsList = productsSnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          }));
+
+          // If user is logged in, check liked status for each product
+          if (auth.currentUser) {
+            const userRef = doc(db, 'users', auth.currentUser.uid);
+            const userDoc = await getDoc(userRef);
+            
+            if (userDoc.exists()) {
+              const userData = userDoc.data();
+              const likedProducts = userData.likedProducts || [];
+              
+              // Add liked status to each product
+              const productsWithLikes = productsList.map(product => ({
+                ...product,
+                liked: likedProducts.includes(product.id)
+              }));
+              
+              console.log('Fetched products with likes:', productsWithLikes);
+              setProducts(productsWithLikes);
+              return;
+            }
+          }
+          
+          console.log('Fetched products:', productsList);
+          setProducts(productsList);
+        }
+      } catch (error) {
+        console.error('Error fetching products:', error);
+      }
+    };
+    fetchProducts();
+  }, []);
 
   useEffect(() => {
     // Update view based on current route
@@ -201,12 +269,38 @@ export default function Dashboard() {
     setSelectedProduct(null); // Reset product detail when navigating
   };
 
-  // Filtered products (dummy logic for now)
+  // Filtered products
   const filteredProducts = products.filter(
     (p) =>
       (selectedCategory === 'For You' || p.name.toLowerCase().includes(selectedCategory.toLowerCase())) &&
       (search === '' || p.name.toLowerCase().includes(search.toLowerCase()))
   );
+
+  const handleProductView = async (item: any) => {
+    setSelectedProduct(item);
+    if (auth.currentUser) {
+      // Add to recently viewed in Firestore
+      const userRef = doc(db, 'users', auth.currentUser.uid);
+      await setDoc(userRef, {
+        recentlyViewed: arrayUnion(item.id)
+      }, { merge: true });
+    }
+  };
+
+  const handleLikeChange = async (item: any, liked: boolean) => {
+    if (auth.currentUser) {
+      const userRef = doc(db, 'users', auth.currentUser.uid);
+      if (liked) {
+        await setDoc(userRef, {
+          likedProducts: arrayUnion(item.id)
+        }, { merge: true });
+      } else {
+        await setDoc(userRef, {
+          likedProducts: arrayRemove(item.id)
+        }, { merge: true });
+      }
+    }
+  };
 
   return (
     <div className="flex min-h-screen bg-[#f7f6fd]">
@@ -270,25 +364,20 @@ export default function Dashboard() {
           </div>
         )}
         {/* Main Content Switcher */}
-        <div className={`flex-1 px-10 pt-4 pb-10 ${mainView === 'home' ? 'mt-1' : 'mt-[70px]'}`}>
+        <div className={`flex-1 px-10 pt-4 pb-10 ${mainView === 'home' && !selectedProduct ? 'mt-1' : 'mt-[70px]'}`}>
           {mainView === 'home' ? (
             selectedProduct ? (
-              <ProductDetail product={selectedProduct} onClose={() => setSelectedProduct(null)} />
+              <div className="flex flex-wrap gap-8">
+                <ProductDetail product={selectedProduct} onClose={() => setSelectedProduct(null)} />
+              </div>
             ) : (
               <div className="flex flex-wrap gap-8">
                 {filteredProducts.map((item) => (
                   <ProductCard
                     key={item.id}
                     product={item}
-                    onClick={() => setSelectedProduct(item)}
-                    onLikeChange={(liked) => {
-                      // Update the liked state in the products array
-                      const updatedProducts = products.map(p =>
-                        p.id === item.id ? { ...p, liked } : p
-                      );
-                      // You might want to update this in your state management system
-                      console.log('Product liked:', item.id, liked);
-                    }}
+                    onClick={() => handleProductView(item)}
+                    onLikeChange={(liked) => handleLikeChange(item, liked)}
                   />
                 ))}
               </div>

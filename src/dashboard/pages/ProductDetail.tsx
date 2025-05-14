@@ -1,4 +1,4 @@
-import React from 'react';
+import { useEffect, useState } from 'react';
 import HeartButton from '../components/HeartButton';
 import cartIcon from '../../assets/ustp thingS/Shopping cart.png';
 import xIcon from '../../assets/ustp thingS/X button.png';
@@ -29,8 +29,41 @@ interface ProductDetailProps {
 }
 
 export default function ProductDetail({ product, onClose }: ProductDetailProps) {
+  const [isLiked, setIsLiked] = useState(product.liked || false);
+
+  // Load liked state from localStorage
+  useEffect(() => {
+    const savedLikes = localStorage.getItem('likedProducts');
+    if (savedLikes) {
+      const likedProducts = JSON.parse(savedLikes);
+      setIsLiked(likedProducts.some((p: { id: number }) => p.id === product.id));
+    }
+  }, [product.id]);
+
+  const handleLikeChange = (liked: boolean) => {
+    setIsLiked(liked);
+    
+    // Update localStorage
+    const savedLikes = localStorage.getItem('likedProducts');
+    let likedProducts = savedLikes ? JSON.parse(savedLikes) : [];
+    
+    if (liked) {
+      // Add to liked products if not already present
+      if (!likedProducts.some((p: { id: number }) => p.id === product.id)) {
+        likedProducts.push(product);
+      }
+    } else {
+      // Remove from liked products
+      likedProducts = likedProducts.filter((p: { id: number }) => p.id !== product.id);
+    }
+    
+    localStorage.setItem('likedProducts', JSON.stringify(likedProducts));
+    // Trigger storage event for MyLikes component
+    window.dispatchEvent(new Event('storage'));
+  };
+
   return (
-    <div className="w-full bg-white rounded-2xl shadow p-4 md:pl-10 md:pr-16 md:py-10 mt-[90px] relative">
+    <div className="w-full bg-white rounded-2xl shadow p-4 md:pl-10 md:pr-16 md:py-10 relative">
       {/* X Button */}
       {onClose && (
         <button
@@ -68,7 +101,7 @@ export default function ProductDetail({ product, onClose }: ProductDetailProps) 
               </div>
             </div>
             <div className="flex items-center gap-3 mb-3">
-              <HeartButton initialLiked={product.liked} />
+              <HeartButton initialLiked={isLiked} onLikeChange={handleLikeChange} productId={product.id} />
               <span className="text-base text-gray-500">Add to Favorites</span>
             </div>
             <div className="flex items-center gap-3 mb-8">

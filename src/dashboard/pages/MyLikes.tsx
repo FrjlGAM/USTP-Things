@@ -1,34 +1,89 @@
-import React from 'react';
-import uniformImg from '../../assets/ustp thingS/Product.png';
+import React, { useState, useEffect } from 'react';
 import ProductCard from '../components/ProductCard';
-
-const likedProducts = [
-  {
-    id: 1,
-    name: 'Uniform Set USTP (Female) ...',
-    price: '₱1,000,000',
-    image: uniformImg,
-    liked: true,
-  },
-  {
-    id: 2,
-    name: 'Item 2 [Desc]',
-    price: '₱1,000,000',
-    image: 'https://static.wikia.nocookie.net/spongebob/images/7/7e/Nat_Peterson_29.png',
-    liked: true,
-  },
-];
+import ProductDetail from './ProductDetail';
+import { db, auth } from '../../lib/firebase';
+import { doc, getDoc, setDoc, arrayRemove } from 'firebase/firestore';
 
 export default function MyLikes() {
+  const [products, setProducts] = useState<any[]>([]);
+  const [selectedProduct, setSelectedProduct] = useState<any>(null);
+
+  useEffect(() => {
+    const fetchLikedProducts = async () => {
+      if (auth.currentUser) {
+        const userRef = doc(db, 'users', auth.currentUser.uid);
+        const userDoc = await getDoc(userRef);
+        
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          const likedProductIds = userData.likedProducts || [];
+          
+          // Fetch product details for each liked product
+          const productsPromises = likedProductIds.map(async (productId: string) => {
+            const productRef = doc(db, 'products', productId);
+            const productDoc = await getDoc(productRef);
+            if (productDoc.exists()) {
+              return {
+                id: productDoc.id,
+                ...productDoc.data(),
+                liked: true // Set liked to true since these are liked products
+              };
+            }
+            return null;
+          });
+          
+          const productsList = (await Promise.all(productsPromises)).filter(Boolean);
+          setProducts(productsList);
+        }
+      }
+    };
+
+    fetchLikedProducts();
+  }, []);
+
+  const handleProductView = (product: any) => {
+    setSelectedProduct(product);
+  };
+
+  const handleUnlike = async (product: any) => {
+    if (auth.currentUser) {
+      const userRef = doc(db, 'users', auth.currentUser.uid);
+      await setDoc(userRef, {
+        likedProducts: arrayRemove(product.id)
+      }, { merge: true });
+      
+      // Update local state
+      setProducts(prevProducts => prevProducts.filter(p => p.id !== product.id));
+    }
+  };
+
+  if (selectedProduct) {
+    return (
+      <div className="flex flex-wrap gap-8">
+        <ProductDetail product={selectedProduct} onClose={() => setSelectedProduct(null)} />
+      </div>
+    );
+  }
+
+  if (products.length === 0) {
+    return (
+      <div className="text-center text-gray-500 mt-8">
+        No liked products yet. Click the heart icon on products to add them to your likes.
+      </div>
+    );
+  }
+
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
-      {likedProducts.map((item) => (
+    <div className="flex flex-wrap gap-8">
+      {products.map((product) => (
         <ProductCard
-          key={item.id}
-          product={item}
-          onClick={() => {}}
+          key={product.id}
+          product={product}
+          onClick={() => handleProductView(product)}
           onLikeChange={(liked) => {
-            console.log('Product liked:', item.id, liked);
+            if (!liked) {
+              handleUnlike(product);
+            }
           }}
         />
       ))}

@@ -3,7 +3,7 @@ import HeartButton from './HeartButton';
 
 interface ProductCardProps {
   product: {
-    id: number;
+    id: string | number;
     name: string;
     price: string;
     image: string;
@@ -96,6 +96,7 @@ export default function ProductCard({ product, onClick, onLikeChange }: ProductC
         <HeartButton
           initialLiked={product.liked}
           onLikeChange={onLikeChange}
+          productId={product.id}
         />
       </div>
     </div>

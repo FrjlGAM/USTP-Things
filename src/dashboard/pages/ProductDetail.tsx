@@ -29,7 +29,7 @@ interface ProductDetailProps {
     image: string;
     description: string;
     category: string;
-    sellerId?: string;
+    sellerId: string;
   };
   onClose: () => void;
   onAddToCart?: () => void;
@@ -99,6 +99,12 @@ export default function ProductDetail({
       onVerifyClick();
       return;
     }
+
+    if (!product.sellerId) {
+      alert('Cannot proceed with purchase. Product seller information is missing.');
+      return;
+    }
+
     navigate('/dashboard/checkout', { state: { product } });
   };
 

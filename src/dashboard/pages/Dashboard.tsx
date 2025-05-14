@@ -6,7 +6,8 @@ import cartIcon from '../../assets/ustp thingS/Shopping cart.png';
 import searchIcon from '../../assets/ustp thingS/search.png';
 import React, { useState, useEffect } from 'react';
 import { db, auth } from '../../lib/firebase';
-import { collection, addDoc, getDocs, doc, setDoc, arrayUnion, arrayRemove, getDoc, query, where } from 'firebase/firestore';
+import { collection, addDoc, getDocs, doc, setDoc, arrayUnion, arrayRemove, getDoc, query, where, serverTimestamp, writeBatch, deleteDoc } from 'firebase/firestore';
+import type { DocumentData } from 'firebase/firestore';
 import MyLikes from './MyLikes';
 import RecentlyViewed from './RecentlyViewed';
 import MyCart from './MyCart';
@@ -16,6 +17,7 @@ import ProductCard from '../components/ProductCard';
 import ProductDetail from './ProductDetail';
 import { MessagesContent } from './Messages';
 import { ToRateContent } from './ToRate';
+import Pickup from './Pickup';
 
 const categories = [
   'For You',
@@ -161,6 +163,12 @@ function VerificationModal({ open, onClose, setVerificationRequested }: { open: 
   );
 }
 
+interface SellerData {
+  businessName: string;
+  isVerified?: boolean;
+  role?: string;
+}
+
 export default function Dashboard() {
   const [showModal, setShowModal] = useState(false);
   const [mainView, setMainView] = useState<'home' | 'likes' | 'recently' | 'pickup' | 'rate' | 'message' | 'product' | 'cart'>('home');
@@ -203,67 +211,134 @@ export default function Dashboard() {
   // Fetch products from Firebase
   useEffect(() => {
     const fetchProducts = async () => {
+      if (!auth.currentUser) return;
+
       try {
         const productsCollection = collection(db, 'products');
-        const productsSnapshot = await getDocs(productsCollection);
-        if (productsSnapshot.empty) {
-          const sampleProducts = [
-            {
-              name: 'Uniform Set USTP (Female)',
-              price: '₱1,000',
-              image: uniformImg,
-              category: 'Uniform',
-              description: 'Complete USTP uniform set for female students including blouse, skirt, and necktie.'
-            },
-            {
-              name: 'USTP ID Lace',
-              price: '₱50',
-              image: uniformImg,
-              category: 'Accessories',
-              description: 'High-quality ID lace for USTP student ID.'
-            },
-            {
-              name: 'USTP Ballpen',
-              price: '₱20',
-              image: uniformImg,
-              category: 'School Supplies',
-              description: 'Official USTP ballpen with school logo.'
-            }
-          ];
-          for (const product of sampleProducts) {
-            await addDoc(productsCollection, product);
+        
+        // Delete all existing products first
+        const existingProducts = await getDocs(productsCollection);
+        const deletePromises = existingProducts.docs.map(doc => deleteDoc(doc.ref));
+        await Promise.all(deletePromises);
+        console.log('Deleted all existing products');
+
+        // Create a seller account for sample products
+        const sellerRef = doc(db, 'users', 'sample-seller');
+        await setDoc(sellerRef, {
+          businessName: 'Galdo Boutique',
+          isVerified: true,
+          role: 'seller'
+        });
+
+        const sampleProducts = [
+          {
+            name: 'Uniform Set USTP (Female)',
+            price: '₱1,000',
+            image: uniformImg,
+            category: 'Uniform',
+            description: 'Complete USTP uniform set for female students including blouse, skirt, and necktie.',
+            sellerId: 'sample-seller',
+            sold: 100,
+            soldOut: 0,
+            rating: 5.0,
+            createdAt: serverTimestamp(),
+            stock: 50,
+            details: [
+              'White Blouse: With USTP logo (Size: Medium)',
+              'Black Skirt: Waist - 28", Length - Knee-length',
+              'USTP Necktie',
+              'Barely used and in excellent condition',
+              'No stains, tears, or damages',
+              'Ideal for students looking for an affordable and well-maintained uniform'
+            ]
+          },
+          {
+            name: 'USTP ID Lace',
+            price: '₱50',
+            image: uniformImg,
+            category: 'Accessories',
+            description: 'High-quality ID lace for USTP student ID.',
+            sellerId: 'sample-seller',
+            sold: 250,
+            soldOut: 0,
+            rating: 4.8,
+            createdAt: serverTimestamp(),
+            stock: 1000,
+            details: [
+              'Official USTP ID lace',
+              'Durable material',
+              'Standard length',
+              'USTP branding'
+            ]
+          },
+          {
+            name: 'USTP Ballpen',
+            price: '₱20',
+            image: uniformImg,
+            category: 'School Supplies',
+            description: 'Official USTP ballpen with school logo.',
+            sellerId: 'sample-seller',
+            sold: 500,
+            soldOut: 0,
+            rating: 4.5,
+            createdAt: serverTimestamp(),
+            stock: 2000,
+            details: [
+              'Official USTP branded ballpen',
+              'Smooth writing experience',
+              'Blue ink',
+              'Long-lasting'
+            ]
           }
-          const newSnapshot = await getDocs(productsCollection);
-          const productsList = newSnapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-          }));
-          setProducts(productsList);
-        } else {
-          const productsList = productsSnapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-          }));
-          if (auth.currentUser) {
-            const userRef = doc(db, 'users', auth.currentUser.uid);
-            const userDoc = await getDoc(userRef);
-            if (userDoc.exists()) {
-              const userData = userDoc.data();
-              const likedProducts = userData.likedProducts || [];
-              const productsWithLikes = productsList.map(product => ({
-                ...product,
-                liked: likedProducts.includes(product.id)
-              }));
-              setProducts(productsWithLikes);
-              return;
-            }
+        ];
+
+        // Create new products
+        for (const product of sampleProducts) {
+          try {
+            const docRef = await addDoc(productsCollection, product);
+            console.log('Added product:', product.name, 'with ID:', docRef.id);
+          } catch (error) {
+            console.error('Error adding product:', error);
           }
-          setProducts(productsList);
         }
+
+        // Fetch all products with seller information
+        console.log('Fetching updated products...');
+        const allProductsSnapshot = await getDocs(productsCollection);
+        const productsWithSellers = await Promise.all(
+          allProductsSnapshot.docs.map(async (docSnapshot) => {
+            const productData = docSnapshot.data() as DocumentData;
+            console.log('Fetched product data:', productData);
+            
+            let sellerData: SellerData = { businessName: 'Unknown Seller' };
+
+            if (productData.sellerId) {
+              const sellerDocRef = doc(db, 'users', productData.sellerId);
+              const sellerDocSnap = await getDoc(sellerDocRef);
+              if (sellerDocSnap.exists()) {
+                const data = sellerDocSnap.data();
+                sellerData = {
+                  businessName: data.businessName || 'Unknown Seller',
+                  isVerified: data.isVerified,
+                  role: data.role
+                };
+              }
+            }
+
+            return {
+              id: docSnapshot.id,
+              ...productData,
+              sellerName: sellerData.businessName
+            };
+          })
+        );
+
+        setProducts(productsWithSellers);
       } catch (error) {
-        console.error('Error fetching products:', error);
+        console.error('Error fetching/updating products:', error);
       }
     };
+
     fetchProducts();
   }, []);
 
@@ -504,19 +579,7 @@ export default function Dashboard() {
           ) : mainView === 'recently' ? (
             <RecentlyViewed onProductClick={handleProductView} />
           ) : mainView === 'pickup' ? (
-            <div className="space-y-6">
-              {pickups.map((pickup, index) => (
-                <div key={index} className="bg-white rounded-2xl shadow p-6">
-                  <div className="flex items-center gap-4">
-                    <img src={pickup.image} alt={pickup.product} className="w-24 h-24 object-cover rounded-xl" />
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-800">{pickup.boutique}</h3>
-                      <p className="text-gray-600">{pickup.product}</p>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <Pickup />
           ) : mainView === 'cart' ? (
             <MyCart onProductClick={handleProductView} />
           ) : mainView === 'rate' ? (

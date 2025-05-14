@@ -2,7 +2,7 @@ import Sidebar from '../components/Sidebar';
 import ustpLogo from '../../assets/ustp-things-logo.png';
 import userAvatar from '../../assets/ustp thingS/Person.png';
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { db, auth } from '../../lib/firebase';
 import { collection, query, where, getDocs, doc, getDoc, updateDoc } from 'firebase/firestore';
 
@@ -39,6 +39,8 @@ export default function Pickup() {
   const [pickupOrders, setPickupOrders] = useState<PickupOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const location = useLocation();
+  const isStandalone = location.pathname === '/dashboard/pickup';
 
   useEffect(() => {
     const fetchPickupOrders = async () => {
@@ -133,7 +135,7 @@ export default function Pickup() {
     }
   };
 
-  return (
+  return isStandalone ? (
     <div className="flex min-h-screen bg-[#f7f6fd]">
       {/* Sidebar */}
       <div className="w-[348px] flex-shrink-0">
@@ -201,6 +203,49 @@ export default function Pickup() {
           )}
         </div>
       </main>
+    </div>
+  ) : (
+    // Embedded version (when used inside Dashboard)
+    <div className="space-y-6">
+      {loading ? (
+        <div className="text-center text-gray-500 mt-8">
+          Loading pickup orders...
+        </div>
+      ) : pickupOrders.length === 0 ? (
+        <div className="text-center text-gray-500 mt-8">
+          No pickup orders found. Items you purchase will appear here when they're ready for pickup.
+        </div>
+      ) : (
+        pickupOrders.map((order) => (
+          <div key={order.id} className="bg-white rounded-2xl shadow p-6">
+            <div className="flex items-center gap-4">
+              <img src={order.sellerAvatar} alt={order.sellerName} className="w-16 h-16 rounded-full object-cover" />
+              <div className="flex-1">
+                <div className="flex justify-between items-start">
+                  <h3 className="text-lg font-semibold text-gray-800">{order.sellerName}</h3>
+                  <span className="text-sm text-gray-500">
+                    {order.createdAt.toLocaleDateString()} {order.createdAt.toLocaleTimeString()}
+                  </span>
+                </div>
+                <p className="text-gray-600 mt-1">{order.productName}</p>
+                <div className="flex justify-between items-center mt-2">
+                  <span className={`text-sm font-semibold ${order.status === 'Ready for pickup' ? 'text-green-600' : 'text-yellow-600'}`}>
+                    {order.status}
+                  </span>
+                  {order.status === 'Ready for pickup' && (
+                    <button 
+                      onClick={() => handlePickupNow(order.id)}
+                      className="bg-[#F88379] hover:bg-[#F88379]/90 text-white font-semibold py-2 px-6 rounded-lg shadow transition"
+                    >
+                      Pick Up Now
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        ))
+      )}
     </div>
   );
 } 

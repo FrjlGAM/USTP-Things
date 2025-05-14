@@ -1,8 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { db, auth } from '../../lib/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { FirebaseError } from 'firebase/app';
 import Sidebar from '../components/Sidebar';
+import ConfirmOrder from '../components/ConfirmOrder';
 
 interface CheckOutProps {
   product: {
@@ -18,23 +20,79 @@ interface CheckOutProps {
 export default function CheckOut({ product, onClose }: CheckOutProps) {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [schoolLocation, setSchoolLocation] = useState('');
   const [pickupDate, setPickupDate] = useState('');
   const [pickupTime, setPickupTime] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState('');
+  const [paymentMethod] = useState('GCash');
+  const [quantity, setQuantity] = useState(1);
+
+  // Validate product data on mount
+  useEffect(() => {
+    if (!product || !product.id || !product.sellerId) {
+      alert('Invalid product data. Returning to previous page.');
+      navigate(-1);
+    }
+  }, [product, navigate]);
 
   const handleCancel = () => {
     navigate(-1);
   };
 
+  const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = parseInt(e.target.value) || 1;
+    setQuantity(Math.max(1, Math.min(value, 99))); // Limit between 1 and 99
+  };
+
+  const calculateSubtotal = () => {
+    const basePrice = parseFloat(product.price.replace('₱', '').replace(',', ''));
+    return basePrice * quantity;
+  };
+
+  const formatPrice = (amount: number) => {
+    return `₱${amount.toLocaleString()}`;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!auth.currentUser) return;
+    console.log('Form submitted with values:', {
+      schoolLocation,
+      pickupDate,
+      pickupTime,
+      quantity
+    });
+    setShowConfirmModal(true);
+  };
+
+  const handleConfirmOrder = async () => {
+    if (!auth.currentUser) {
+      alert('Please sign in to place an order.');
+      return;
+    }
+
+    if (!schoolLocation || !pickupDate || !pickupTime) {
+      alert('Please fill in all required fields.');
+      return;
+    }
+
+    // Validate product data
+    if (!product || !product.id || !product.sellerId) {
+      console.error('Invalid product data:', product);
+      alert('Invalid product data. Please try again.');
+      return;
+    }
+
+    console.log('Product data:', {
+      id: product.id,
+      sellerId: product.sellerId,
+      name: product.name,
+      price: product.price
+    });
 
     setLoading(true);
     try {
       // Create order in pickupOrders collection
-      const orderRef = await addDoc(collection(db, 'pickupOrders'), {
+      const orderData = {
         userId: auth.currentUser.uid,
         productId: product.id,
         sellerId: product.sellerId,
@@ -43,17 +101,37 @@ export default function CheckOut({ product, onClose }: CheckOutProps) {
         pickupDate,
         pickupTime,
         paymentMethod,
-        totalAmount: parseFloat(product.price.replace('₱', '').replace(',', '')),
-        createdAt: serverTimestamp()
-      });
+        quantity,
+        totalAmount: calculateSubtotal(),
+        createdAt: serverTimestamp(),
+        productName: product.name,
+        productImage: product.image
+      };
 
-      // Navigate to success page or back to dashboard
-      navigate('/dashboard/pickup');
+      console.log('Creating order with data:', orderData);
+
+      try {
+        const orderRef = await addDoc(collection(db, 'pickupOrders'), orderData);
+        console.log('Order created with ID:', orderRef.id);
+        
+        if (orderRef.id) {
+          alert('Order placed successfully!');
+          navigate('/dashboard/pickup');
+        } else {
+          throw new Error('Failed to get order ID');
+        }
+      } catch (dbError) {
+        const error = dbError as FirebaseError;
+        console.error('Database error:', error);
+        throw new Error(`Failed to create order in database: ${error.message}`);
+      }
     } catch (error) {
-      console.error('Error creating order:', error);
-      alert('Failed to create order. Please try again.');
+      const firebaseError = error as Error;
+      console.error('Error creating order:', firebaseError);
+      alert(`Failed to create order: ${firebaseError.message}. Please try again.`);
     } finally {
       setLoading(false);
+      setShowConfirmModal(false);
     }
   };
 
@@ -91,11 +169,18 @@ export default function CheckOut({ product, onClose }: CheckOutProps) {
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-gray-600">Quantity</span>
-                  <span>1</span>
+                  <input
+                    type="number"
+                    min="1"
+                    max="99"
+                    value={quantity}
+                    onChange={handleQuantityChange}
+                    className="w-20 text-center border rounded-lg p-1 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-auto [&::-webkit-inner-spin-button]:appearance-auto"
+                  />
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-gray-600">Subtotal</span>
-                  <span className="font-semibold">{product.price}</span>
+                  <span className="font-semibold">{formatPrice(calculateSubtotal())}</span>
                 </div>
               </div>
             </div>
@@ -120,8 +205,11 @@ export default function CheckOut({ product, onClose }: CheckOutProps) {
                   required
                 >
                   <option value="">Select location</option>
-                  <option value="Main Campus">Main Campus</option>
-                  <option value="CDO Campus">CDO Campus</option>
+                  <option value="Cafeteria">USTP Cafeteria</option>
+                  <option value="Building 43">Building 43 (Engineering Complex Left Wing)</option>
+                  <option value="Building 44">Building 44 (ICT Building)</option>
+                  <option value="Building 41">Building 41 (Science Complex)</option>
+                  <option value="DRER Hall">DRER Hall</option>
                 </select>
               </div>
 
@@ -153,25 +241,18 @@ export default function CheckOut({ product, onClose }: CheckOutProps) {
           {/* Payment Method Section */}
           <div className="bg-white p-6 rounded-2xl mb-6">
             <h2 className="font-semibold text-lg mb-4">Payment Method</h2>
-            <select 
-              className="w-full p-2 border rounded-lg bg-white"
-              value={paymentMethod}
-              onChange={(e) => setPaymentMethod(e.target.value)}
-              required
-            >
-              <option value="">Choose Payment Method</option>
-              <option value="Cash">Cash on Pickup</option>
-              <option value="GCash">GCash</option>
-            </select>
+            <div className="w-full p-2 border rounded-lg bg-gray-100 text-gray-700 cursor-not-allowed">
+              GCash
+            </div>
 
             <div className="mt-6 space-y-2">
               <div className="flex justify-between">
                 <span className="text-gray-600">Item Subtotal</span>
-                <span>{product.price}</span>
+                <span>{formatPrice(calculateSubtotal())}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">Total Payment</span>
-                <span className="text-xl font-bold text-[#F88379]">{product.price}</span>
+                <span className="text-xl font-bold text-[#F88379]">{formatPrice(calculateSubtotal())}</span>
               </div>
             </div>
           </div>
@@ -195,6 +276,12 @@ export default function CheckOut({ product, onClose }: CheckOutProps) {
           </div>
         </form>
       </main>
+
+      <ConfirmOrder 
+        open={showConfirmModal}
+        onConfirm={handleConfirmOrder}
+        onCancel={() => setShowConfirmModal(false)}
+      />
     </div>
   );
 } 

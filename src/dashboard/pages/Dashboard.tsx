@@ -44,7 +44,7 @@ const pickups = [
   },
 ];
 
-function VerificationModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+function VerificationModal({ open, onClose, setVerificationRequested }: { open: boolean; onClose: () => void; setVerificationRequested: (val: boolean) => void }) {
   const [step, setStep] = React.useState<'select' | 'student'>('select');
   const [form, setForm] = React.useState({ name: '', id: '', email: '', agree: false });
   const [loading, setLoading] = React.useState(false);
@@ -77,7 +77,7 @@ function VerificationModal({ open, onClose }: { open: boolean; onClose: () => vo
       
       setSuccess(true);
       setForm({ name: '', id: '', email: '', agree: false });
-      // setVerificationRequested(true); // <-- Commented out because it's not defined
+      setVerificationRequested(true);
     } catch (err) {
       console.error('Failed to submit verification:', err);
       alert('Failed to submit verification.');
@@ -180,19 +180,20 @@ export default function Dashboard() {
     const checkVerification = async () => {
       if (auth.currentUser) {
         try {
-          // Check user document first
           const userRef = doc(db, 'users', auth.currentUser.uid);
           const userDoc = await getDoc(userRef);
-          if (userDoc.exists() && userDoc.data().isVerified === true) {
-            console.log('User is verified from user document');
-            setIsVerified(true);
-            return;
+          if (userDoc.exists()) {
+            const data = userDoc.data();
+            setIsVerified(Boolean(data.isVerified));
+            setVerificationRequested(Boolean(data.verificationRequested));
+          } else {
+            setIsVerified(false);
+            setVerificationRequested(false);
           }
-          // If not verified, set to false
-          setIsVerified(false);
         } catch (error) {
           console.error('Error checking verification:', error);
           setIsVerified(false);
+          setVerificationRequested(false);
         }
       }
     };
@@ -525,7 +526,11 @@ export default function Dashboard() {
           ) : null}
         </div>
       </main>
-      <VerificationModal open={showModal} onClose={() => setShowModal(false)} />
+      <VerificationModal
+        open={showModal}
+        onClose={() => setShowModal(false)}
+        setVerificationRequested={setVerificationRequested}
+      />
       <StartSellingModal
         open={showStartSellingModal}
         onClose={() => setShowStartSellingModal(false)}

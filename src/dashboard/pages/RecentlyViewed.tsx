@@ -8,6 +8,7 @@ export default function RecentlyViewed() {
   const [products, setProducts] = useState<any[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [isVerified, setIsVerified] = useState(false);
 
   useEffect(() => {
     const fetchRecentlyViewed = async () => {
@@ -47,6 +48,17 @@ export default function RecentlyViewed() {
     };
 
     fetchRecentlyViewed();
+  }, []);
+
+  useEffect(() => {
+    const checkVerification = async () => {
+      if (auth.currentUser) {
+        const userRef = doc(db, 'users', auth.currentUser.uid);
+        const userDoc = await getDoc(userRef);
+        setIsVerified(Boolean(userDoc.exists() && userDoc.data().isVerified));
+      }
+    };
+    checkVerification();
   }, []);
 
   const handleProductView = async (product: any) => {
@@ -119,7 +131,11 @@ export default function RecentlyViewed() {
   if (selectedProduct) {
     return (
       <div className="flex flex-wrap gap-8">
-        <ProductDetail product={selectedProduct} onClose={() => setSelectedProduct(null)} />
+        <ProductDetail
+          product={selectedProduct}
+          onClose={() => setSelectedProduct(null)}
+          isVerified={isVerified}
+        />
       </div>
     );
   }

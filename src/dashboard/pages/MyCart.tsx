@@ -7,6 +7,7 @@ import { doc, getDoc, setDoc, arrayRemove } from 'firebase/firestore';
 export default function MyCart() {
   const [products, setProducts] = useState<any[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
+  const [isVerified, setIsVerified] = useState(false);
 
   useEffect(() => {
     const fetchCartProducts = async () => {
@@ -49,6 +50,17 @@ export default function MyCart() {
     fetchCartProducts();
   }, []);
 
+  useEffect(() => {
+    const checkVerification = async () => {
+      if (auth.currentUser) {
+        const userRef = doc(db, 'users', auth.currentUser.uid);
+        const userDoc = await getDoc(userRef);
+        setIsVerified(Boolean(userDoc.exists() && userDoc.data().isVerified));
+      }
+    };
+    checkVerification();
+  }, []);
+
   const handleProductView = (product: any) => {
     setSelectedProduct(product);
   };
@@ -72,6 +84,7 @@ export default function MyCart() {
           product={selectedProduct} 
           onClose={() => setSelectedProduct(null)}
           onAddToCart={() => {}} // Empty function since we're in cart view
+          isVerified={isVerified}
         />
       </div>
     );

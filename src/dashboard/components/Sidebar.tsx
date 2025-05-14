@@ -6,7 +6,7 @@ import userAvatar from '../../assets/ustp thingS/Person.png';
 import homeIcon from '../../assets/ustp thingS/Home.png';
 import heartIcon from '../../assets/ustp thingS/Heart.png';
 import clockIcon from '../../assets/ustp thingS/Clock.png';
-import locationIcon from '../../assets/ustp thingS/location_on.png';
+import purchasesIcon from '../../assets/ustp thingS/Purchases.png';
 import rateIcon from '../../assets/ustp thingS/Rate.png';
 import chatIcon from '../../assets/ustp thingS/Message circle.png';
 import settingsIcon from '../../assets/ustp thingS/Settings.png';
@@ -18,7 +18,7 @@ type SidebarProps = {
   onHomeClick?: () => void;
   onLikesClick?: () => void;
   onRecentlyClick?: () => void;
-  onPickUpClick?: () => void;
+  onOrdersClick?: () => void;
   onRateClick?: () => void;
   onMessageClick?: () => void;
   onStartSellingClick?: () => void;
@@ -30,7 +30,7 @@ export default function Sidebar({
   onHomeClick, 
   onLikesClick, 
   onRecentlyClick, 
-  onPickUpClick, 
+  onOrdersClick, 
   onRateClick, 
   onMessageClick, 
   onStartSellingClick,
@@ -163,10 +163,10 @@ export default function Sidebar({
           </button>
           <div className="mt-4 mb-2 font-bold text-[#F88379] text-xl flex justify-center">My Purchases</div>
           <button 
-            onClick={() => handleRestrictedButtonClick('pickup', onPickUpClick)}
-            className={`flex items-center gap-2 text-[#F88379] font-semibold text-lg text-left transition ${activeButton === 'pickup' ? 'bg-white rounded-[23.08px] px-2 py-1' : ''}`}
+            onClick={() => handleRestrictedButtonClick('orders', onOrdersClick)}
+            className={`flex items-center gap-2 text-[#F88379] font-semibold text-lg text-left transition ${activeButton === 'orders' ? 'bg-white rounded-[23.08px] px-2 py-1' : ''}`}
           >
-            <img src={locationIcon} alt="Pick Up" className="w-5 h-5" />Pick Up
+            <img src={purchasesIcon} alt="Orders" className="w-5 h-5" />Orders
           </button>
           <button 
             onClick={() => handleRestrictedButtonClick('rate', onRateClick)}

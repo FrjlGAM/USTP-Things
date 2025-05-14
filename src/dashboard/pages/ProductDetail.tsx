@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import HeartButton from '../components/HeartButton';
 import cartIcon from '../../assets/ustp thingS/Shopping cart.png';
 import xIcon from '../../assets/ustp thingS/X button.png';
@@ -25,13 +26,23 @@ interface ProductDetailProps {
     image: string;
     description: string;
     category: string;
+    sellerId?: string;
   };
   onClose: () => void;
   onAddToCart?: () => void;
+  isVerified?: boolean;
+  onVerifyClick?: () => void;
 }
 
-export default function ProductDetail({ product, onClose, onAddToCart }: ProductDetailProps) {
+export default function ProductDetail({ 
+  product, 
+  onClose, 
+  onAddToCart,
+  isVerified = false,
+  onVerifyClick
+}: ProductDetailProps) {
   const [isLiked, setIsLiked] = useState(false);
+  const navigate = useNavigate();
 
   // Load liked state from localStorage
   useEffect(() => {
@@ -62,6 +73,10 @@ export default function ProductDetail({ product, onClose, onAddToCart }: Product
     localStorage.setItem('likedProducts', JSON.stringify(likedProducts));
     // Trigger storage event for MyLikes component
     window.dispatchEvent(new Event('storage'));
+  };
+
+  const handleBuyNow = () => {
+    navigate('/dashboard/checkout', { state: { product } });
   };
 
   return (
@@ -116,9 +131,14 @@ export default function ProductDetail({ product, onClose, onAddToCart }: Product
               <span className="text-xl text-gray-600 font-semibold">{productDetails.rating.toFixed(1)}/5.0</span>
             </div>
           </div>
-          {/* Buy Now button only */}
+          {/* Buy Now button */}
           <div className="flex mt-2">
-            <button className="flex-1 bg-[#F88379] hover:bg-[#F88379]/90 text-white font-bold py-3 rounded-xl shadow transition text-lg">Buy Now</button>
+            <button 
+              onClick={handleBuyNow}
+              className="flex-1 bg-[#F88379] hover:bg-[#F88379]/90 text-white font-bold py-3 rounded-xl shadow transition text-lg"
+            >
+              Buy Now
+            </button>
           </div>
         </div>
       </div>

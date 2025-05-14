@@ -181,36 +181,31 @@ export default function Dashboard() {
     const checkVerification = async () => {
       if (auth.currentUser) {
         try {
-          // First check if user has a document in verifiedAccounts
+          // Check user document first
+          const userRef = doc(db, 'users', auth.currentUser.uid);
+          const userDoc = await getDoc(userRef);
+          
+          if (userDoc.exists() && userDoc.data().isVerified === true) {
+            console.log('User is verified from user document');
+            setIsVerified(true);
+            return;
+          }
+
+          // If not verified in user document, check verifiedAccounts
           const verifiedAccountRef = doc(db, 'verifiedAccounts', auth.currentUser.uid);
           const verifiedAccountDoc = await getDoc(verifiedAccountRef);
-          if (verifiedAccountDoc.exists()) {
+          
+          if (verifiedAccountDoc.exists() && verifiedAccountDoc.data().status === 'verified') {
+            console.log('User is verified from verifiedAccounts');
             setIsVerified(true);
             // Update user document to reflect verified status
-            const userRef = doc(db, 'users', auth.currentUser.uid);
             await setDoc(userRef, {
               isVerified: true,
               verifiedAt: verifiedAccountDoc.data().verifiedAt || new Date()
             }, { merge: true });
           } else {
-            // Check if user has a pending verification
-            const verificationsRef = collection(db, 'verifications');
-            const q = query(
-              verificationsRef,
-              where('email', '==', auth.currentUser.email),
-              where('status', '==', 'pending')
-            );
-            const verificationSnapshot = await getDocs(q);
-            if (!verificationSnapshot.empty) {
-              setIsVerified(false);
-            } else {
-              setIsVerified(false);
-              // Update user document to reflect unverified status
-              const userRef = doc(db, 'users', auth.currentUser.uid);
-              await setDoc(userRef, {
-                isVerified: false
-              }, { merge: true });
-            }
+            console.log('User is not verified');
+            setIsVerified(false);
           }
         } catch (error) {
           console.error('Error checking verification status:', error);
@@ -366,6 +361,42 @@ export default function Dashboard() {
     }
   };
 
+  // Add function to track product views
+  const handleProductView = async (product: any) => {
+    setSelectedProduct(product);
+    if (auth.currentUser) {
+      try {
+        const userRef = doc(db, 'users', auth.currentUser.uid);
+        const userDoc = await getDoc(userRef);
+        
+        // Initialize user document if it doesn't exist
+        if (!userDoc.exists()) {
+          await setDoc(userRef, {
+            cartProducts: [],
+            likedProducts: [],
+            recentlyViewed: []
+          });
+        }
+
+        // Add to recently viewed, removing old entry if it exists
+        const userData = userDoc.exists() ? userDoc.data() : {};
+        const recentlyViewed = userData.recentlyViewed || [];
+        
+        // Remove the product if it's already in the list
+        const filteredViewed = recentlyViewed.filter((id: string) => id !== product.id);
+        
+        // Add the product to the beginning of the array (most recent)
+        const updatedViewed = [product.id, ...filteredViewed].slice(0, 20); // Keep only last 20 items
+        
+        await setDoc(userRef, {
+          recentlyViewed: updatedViewed
+        }, { merge: true });
+      } catch (error) {
+        console.error('Error updating recently viewed:', error);
+      }
+    }
+  };
+
   const handleLikeChange = async (item: any, liked: boolean) => {
     if (auth.currentUser) {
       const userRef = doc(db, 'users', auth.currentUser.uid);
@@ -405,39 +436,41 @@ export default function Dashboard() {
       {/* Main Content */}
       <main className="flex-1 flex flex-col">
         {/* Header */}
-        <header className="fixed top-0 right-0 left-[348px] z-10 flex items-center justify-between px-8 pr-[47px] py-4 bg-white h-[70px] shadow-[0_4px_4px_0_rgba(0,0,0,0.1)]">
-          <div className="flex items-center gap-4">
-            <img src={ustpLogo} alt="USTP Things Logo" className="w-[117px] h-[63px] object-contain" />
-            {mainView === 'likes' && <h1 className="text-3xl font-bold text-[#F88379] pb-1">My Likes</h1>}
-            {mainView === 'recently' && <h1 className="text-3xl font-bold text-[#F88379] pb-1">Recently Viewed</h1>}
-            {mainView === 'pickup' && <h1 className="text-3xl font-bold text-[#F88379] pb-1">Pick Up</h1>}
-            {mainView === 'rate' && <h1 className="text-3xl font-bold text-[#F88379] pb-1">Rate</h1>}
-            {mainView === 'message' && <h1 className="text-3xl font-bold text-[#F88379] pb-1">Messages</h1>}
-            {mainView === 'product' && <h1 className="text-3xl font-bold text-[#F88379] pb-1">Product Details</h1>}
-            {mainView === 'cart' && <h1 className="text-3xl font-bold text-[#F88379] pb-1">My Cart</h1>}
-          </div>
-          {/* Search bar and cart */}
-          {mainView === 'home' && (
-            <div className="flex items-center gap-[27px]">
-              <div className="relative">
-                <input
-                  className="w-[371px] h-[41px] pl-12 pr-4 py-2 rounded-full border-2 border-[rgba(230,230,230,0.80)] focus:outline-none text-[rgba(248,131,121,0.80)] placeholder-[rgba(248,131,121,0.80)]"
-                  placeholder="Search"
-                  value={search}
-                  onChange={e => setSearch(e.target.value)}
-                />
-                <img 
-                  src={searchIcon} 
-                  alt="Search" 
-                  className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2" 
-                />
-              </div>
-              <button onClick={handleCartClick}>
-                <img src={cartIcon} alt="Shopping Cart" className="w-[30px] h-[30px]" />
-              </button>
+        {!selectedProduct && (
+          <header className="fixed top-0 right-0 left-[348px] z-10 flex items-center justify-between px-8 pr-[47px] py-4 bg-white h-[70px] shadow-[0_4px_4px_0_rgba(0,0,0,0.1)]">
+            <div className="flex items-center gap-4">
+              <img src={ustpLogo} alt="USTP Things Logo" className="w-[117px] h-[63px] object-contain" />
+              {mainView === 'likes' && <h1 className="text-3xl font-bold text-[#F88379] pb-1">My Likes</h1>}
+              {mainView === 'recently' && <h1 className="text-3xl font-bold text-[#F88379] pb-1">Recently Viewed</h1>}
+              {mainView === 'pickup' && <h1 className="text-3xl font-bold text-[#F88379] pb-1">Pick Up</h1>}
+              {mainView === 'rate' && <h1 className="text-3xl font-bold text-[#F88379] pb-1">Rate</h1>}
+              {mainView === 'message' && <h1 className="text-3xl font-bold text-[#F88379] pb-1">Messages</h1>}
+              {mainView === 'product' && <h1 className="text-3xl font-bold text-[#F88379] pb-1">Product Details</h1>}
+              {mainView === 'cart' && <h1 className="text-3xl font-bold text-[#F88379] pb-1">My Cart</h1>}
             </div>
-          )}
-        </header>
+            {/* Search bar and cart */}
+            {mainView === 'home' && (
+              <div className="flex items-center gap-[27px]">
+                <div className="relative">
+                  <input
+                    className="w-[371px] h-[41px] pl-12 pr-4 py-2 rounded-full border-2 border-[rgba(230,230,230,0.80)] focus:outline-none text-[rgba(248,131,121,0.80)] placeholder-[rgba(248,131,121,0.80)]"
+                    placeholder="Search"
+                    value={search}
+                    onChange={e => setSearch(e.target.value)}
+                  />
+                  <img 
+                    src={searchIcon} 
+                    alt="Search" 
+                    className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2" 
+                  />
+                </div>
+                <button onClick={handleCartClick}>
+                  <img src={cartIcon} alt="Shopping Cart" className="w-[30px] h-[30px]" />
+                </button>
+              </div>
+            )}
+          </header>
+        )}
         {/* Category Chips (only on Home/Product Feed) */}
         {mainView === 'home' && !selectedProduct && (
           <div className="flex gap-2 px-10 py-2 mt-[80px]">
@@ -453,17 +486,29 @@ export default function Dashboard() {
           </div>
         )}
         {/* Main Content Switcher */}
-        <div className={`flex-1 px-10 pt-4 pb-10 ${mainView === 'home' && !selectedProduct ? 'mt-1' : 'mt-[70px]'}`}>
+        <div className={`flex-1 px-10 pt-4 pb-10 ${mainView === 'home' && !selectedProduct ? 'mt-1' : selectedProduct ? 'mt-0' : 'mt-[70px]'}`}>
           {mainView === 'home' ? (
             selectedProduct ? (
-              <ProductDetail product={selectedProduct} onClose={() => setSelectedProduct(null)} />
+              <ProductDetail 
+                product={selectedProduct} 
+                onClose={() => setSelectedProduct(null)} 
+                onAddToCart={() => {
+                  if (!isVerified) {
+                    setShowModal(true);
+                    return;
+                  }
+                  handleAddToCart(selectedProduct);
+                }}
+                isVerified={isVerified}
+                onVerifyClick={() => setShowModal(true)}
+              />
             ) : (
               <div className="flex flex-wrap gap-8">
-                {products.map((item) => (
+                {filteredProducts.map((item) => (
                   <ProductCard
                     key={item.id}
                     product={item}
-                    onClick={() => setSelectedProduct(item)}
+                    onClick={() => handleProductView(item)}
                     onLikeChange={(liked) => handleLikeChange(item, liked)}
                   />
                 ))}

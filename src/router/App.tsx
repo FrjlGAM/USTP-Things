@@ -8,6 +8,20 @@ import SettingsContainer from "../dashboard/pages/SettingsContainer";
 import Messages from '../dashboard/pages/Messages';
 import ToRate from '../dashboard/pages/ToRate';
 import Pickup from '../dashboard/pages/Pickup';
+import CheckOut from '../dashboard/pages/CheckOut';
+import { useLocation, Navigate } from 'react-router-dom';
+
+// Wrapper component to handle checkout route with product data
+function CheckOutWrapper() {
+  const location = useLocation();
+  const product = location.state?.product;
+
+  if (!product) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return <CheckOut product={product} />;
+}
 
 function App() {
   return (
@@ -16,6 +30,7 @@ function App() {
       <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/dashboard/likes" element={<Dashboard />} />
       <Route path="/dashboard/recently-viewed" element={<Dashboard />} />
+      <Route path="/dashboard/checkout" element={<CheckOutWrapper />} />
       <Route path="/admin/login" element={<AdminLogin />} />
       <Route path="/admin/signup" element={<AdminSignup />} />
       <Route path="/admin/dashboard" element={<AdminDashboard />} />

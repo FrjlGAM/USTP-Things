@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { auth, db } from '../../lib/firebase';
-import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, getDoc, setDoc } from 'firebase/firestore';
 import ustpLogo from '../../assets/ustp-things-logo.png';
 import userAvatar from '../../assets/ustp thingS/Person.png';
 import homeIcon from '../../assets/ustp thingS/Home.png';
@@ -24,7 +24,16 @@ type SidebarProps = {
   onStartSellingClick?: () => void;
 };
 
-export default function Sidebar({ onVerifyClick, onHomeClick, onLikesClick, onRecentlyClick, onPickUpClick, onRateClick, onMessageClick, onStartSellingClick }: SidebarProps) {
+export default function Sidebar({ 
+  onVerifyClick, 
+  onHomeClick, 
+  onLikesClick, 
+  onRecentlyClick, 
+  onPickUpClick, 
+  onRateClick, 
+  onMessageClick, 
+  onStartSellingClick
+}: SidebarProps) {
   const [isVerified, setIsVerified] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
   const [username, setUsername] = useState<string>('Username');
@@ -34,23 +43,48 @@ export default function Sidebar({ onVerifyClick, onHomeClick, onLikesClick, onRe
 
   useEffect(() => {
     const checkVerified = async () => {
-      if (!user || !user.email) {
+      if (!user) {
         setIsVerified(false);
         setLoading(false);
         return;
       }
-      // Force lowercase for comparison
-      const email = user.email.toLowerCase();
-      // If you want to use UID instead, use:
-      // const q = query(collection(db, 'verifiedAccounts'), where('id', '==', user.uid));
-      const q = query(collection(db, 'verifiedAccounts'), where('email', '==', email));
-      const snapshot = await getDocs(q);
-      console.log('Checking verified for:', email);
-      console.log('Query empty:', snapshot.empty);
-      console.log('Docs found:', snapshot.docs.map(d => d.data()));
-      setIsVerified(!snapshot.empty);
-      setLoading(false);
+
+      try {
+        // Check user document first
+        const userRef = doc(db, 'users', user.uid);
+        const userDoc = await getDoc(userRef);
+        
+        if (userDoc.exists() && userDoc.data().isVerified === true) {
+          console.log('User is verified from user document');
+          setIsVerified(true);
+          setLoading(false);
+          return;
+        }
+
+        // If not verified in user document, check verifiedAccounts
+        const verifiedAccountRef = doc(db, 'verifiedAccounts', user.uid);
+        const verifiedAccountDoc = await getDoc(verifiedAccountRef);
+        
+        if (verifiedAccountDoc.exists() && verifiedAccountDoc.data().status === 'verified') {
+          console.log('User is verified from verifiedAccounts');
+          setIsVerified(true);
+          // Update user document to reflect verified status
+          await setDoc(userRef, {
+            isVerified: true,
+            verifiedAt: verifiedAccountDoc.data().verifiedAt || new Date()
+          }, { merge: true });
+        } else {
+          console.log('User is not verified');
+          setIsVerified(false);
+        }
+      } catch (error) {
+        console.error('Error checking verification status:', error);
+        setIsVerified(false);
+      } finally {
+        setLoading(false);
+      }
     };
+
     checkVerified();
   }, [user]);
 
@@ -66,6 +100,16 @@ export default function Sidebar({ onVerifyClick, onHomeClick, onLikesClick, onRe
     fetchUsername();
   }, [user]);
 
+  const handleRestrictedButtonClick = (buttonName: string, onClick?: () => void) => {
+    if (!isVerified) {
+      // Don't set active button if user is not verified
+      onVerifyClick?.();
+      return;
+    }
+    setActiveButton(buttonName);
+    onClick?.();
+  };
+
   return (
     <aside className="fixed h-screen w-[348px] bg-[#FFF3F2] flex flex-col justify-between p-6 overflow-hidden">
       <div className="flex-1 overflow-y-auto">
@@ -75,7 +119,7 @@ export default function Sidebar({ onVerifyClick, onHomeClick, onLikesClick, onRe
           <div>
             <div className="font-bold text-lg text-gray-800 flex items-center gap-2">
               {username}
-              {isVerified && (
+              {isVerified === true && (
                 <span
                   title="Verified"
                   className="inline-flex items-center px-2 py-0.5 rounded-full bg-green-200 text-green-800 text-xs font-semibold ml-1"
@@ -90,7 +134,7 @@ export default function Sidebar({ onVerifyClick, onHomeClick, onLikesClick, onRe
             <div className="text-xs text-gray-500">{user?.email || 'Email or Phone'}</div>
           </div>
         </div>
-        {/* Verify Button */}
+        {/* Verify Button - Only show if not verified and not loading */}
         {!loading && isVerified === false && (
           <button
             className={`w-full ${activeButton === 'verify' ? 'bg-white text-[#F88379]' : 'bg-[#F88379] text-white'} hover:bg-[#F88379]/90 font-semibold py-2 rounded-[23.08px] shadow mb-8 transition text-lg`}
@@ -133,28 +177,19 @@ export default function Sidebar({ onVerifyClick, onHomeClick, onLikesClick, onRe
           </button>
           <div className="mt-4 mb-2 font-bold text-[#F88379] text-xl flex justify-center">My Purchases</div>
           <button 
-            onClick={() => {
-              setActiveButton('pickup');
-              onPickUpClick?.();
-            }}
+            onClick={() => handleRestrictedButtonClick('pickup', onPickUpClick)}
             className={`flex items-center gap-2 text-[#F88379] font-semibold text-lg text-left transition ${activeButton === 'pickup' ? 'bg-white rounded-[23.08px] px-2 py-1' : ''}`}
           >
             <img src={locationIcon} alt="Pick Up" className="w-5 h-5" />Pick Up
           </button>
           <button 
-            onClick={() => {
-              setActiveButton('rate');
-              onRateClick?.();
-            }}
+            onClick={() => handleRestrictedButtonClick('rate', onRateClick)}
             className={`flex items-center gap-2 text-[#F88379] font-semibold text-lg text-left transition ${activeButton === 'rate' ? 'bg-white rounded-[23.08px] px-2 py-1' : ''}`}
           >
             <img src={rateIcon} alt="To Rate" className="w-5 h-5" />To Rate
           </button>
           <button 
-            onClick={() => {
-              setActiveButton('messages');
-              onMessageClick?.();
-            }}
+            onClick={() => handleRestrictedButtonClick('messages', onMessageClick)}
             className={`flex items-center gap-2 text-[#F88379] font-semibold text-lg text-left transition ${activeButton === 'messages' ? 'bg-white rounded-[23.08px] px-2 py-1' : ''}`}
           >
             <img src={chatIcon} alt="Messages" className="w-5 h-5" />Messages
@@ -164,7 +199,13 @@ export default function Sidebar({ onVerifyClick, onHomeClick, onLikesClick, onRe
       <div className="mt-auto">
         {/* Start Selling Button */}
         <button 
-          onClick={onStartSellingClick}
+          onClick={() => {
+            if (!isVerified) {
+              onVerifyClick?.();
+              return;
+            }
+            onStartSellingClick?.();
+          }}
           className={`w-full ${activeButton === 'sell' ? 'bg-white text-[#F88379]' : 'bg-[#F88379] text-white'} hover:bg-[#F88379]/90 font-semibold py-2 rounded-[23.08px] shadow mb-10 transition text-lg`}
         >
           Start selling now!

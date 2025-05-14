@@ -126,13 +126,35 @@ export default function AdminDashboard() {
     // Find the verification data
     const verification = verifications.find(v => v.id === id);
     if (!verification) return;
-    // Add to verifiedAccounts
-    await setDoc(doc(db, 'verifiedAccounts', id), verification);
-    // Remove from verifications
-    await deleteDoc(doc(db, 'verifications', id));
-    setVerifications(v => v.filter(item => item.id !== id));
-    if (tab === 'verified') fetchVerifiedAccounts();
-    if (tab === 'dashboard') fetchDashboardData();
+
+    try {
+      const now = new Date();
+      // Add to verifiedAccounts using userId instead of verification id
+      await setDoc(doc(db, 'verifiedAccounts', verification.userId), {
+        ...verification,
+        verifiedAt: now,
+        status: 'verified',
+        verificationId: id,
+        updatedAt: now
+      });
+
+      // Update user document to reflect verified status
+      await setDoc(doc(db, 'users', verification.userId), {
+        isVerified: true,
+        verifiedAt: now,
+        updatedAt: now
+      }, { merge: true });
+
+      // Remove from verifications collection
+      await deleteDoc(doc(db, 'verifications', id));
+      
+      setVerifications(v => v.filter(item => item.id !== id));
+      if (tab === 'verified') fetchVerifiedAccounts();
+      if (tab === 'dashboard') fetchDashboardData();
+    } catch (error) {
+      console.error('Error confirming verification:', error);
+      alert('Failed to confirm verification. Please try again.');
+    }
   };
 
   const handleReject = async (id: string) => {

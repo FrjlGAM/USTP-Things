@@ -1,12 +1,14 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import homeLogo from "../../assets/ustp thingS/Home.png";
 import profilePic from "../../assets/ustp thingS/Person.png"; // Using Person.png instead of sample-profile.png
+import pencilIcon from "../../assets/ustp thingS/Pencil.png";
 // import editIcon from "../../assets/ustp thingS/Edit.png"; // If you want a small edit icon
 import Name from "../components/Name"; // adjust the path if needed
 import Gender from "../components/Gender"; // adjust the path if needed
 import { auth, db } from "../../lib/firebase"; // adjust path as needed
 import { doc, getDoc, setDoc } from "firebase/firestore";
+import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
 type MyProfileProps = {
   onSettingsClick: () => void;
@@ -21,6 +23,9 @@ export default function MyProfile({ onSettingsClick, setView }: MyProfileProps) 
   const [showGenderModal, setShowGenderModal] = useState(false);
   const [gender, setGender] = useState<"Female" | "Male" | "">(""); // user's gender
   const [loadingGender, setLoadingGender] = useState(true);
+  const [profileImage, setProfileImage] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -31,6 +36,7 @@ export default function MyProfile({ onSettingsClick, setView }: MyProfileProps) 
       if (userDoc.exists()) {
         setName(userDoc.data().name || "");
         setGender(userDoc.data().gender || "");
+        setProfileImage(userDoc.data().profileImage || null);
       }
       setLoadingName(false);
       setLoadingGender(false);
@@ -50,6 +56,25 @@ export default function MyProfile({ onSettingsClick, setView }: MyProfileProps) 
     await setDoc(doc(db, "users", auth.currentUser.uid), { gender: newGender }, { merge: true });
     setGender(newGender);
     setShowGenderModal(false);
+  };
+
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || !auth.currentUser) return;
+    const file = e.target.files[0];
+    setUploading(true);
+    try {
+      const storage = getStorage();
+      const storageRef = ref(storage, `profileImages/${auth.currentUser.uid}`);
+      await uploadBytes(storageRef, file);
+      const url = await getDownloadURL(storageRef);
+      setProfileImage(url);
+      await setDoc(doc(db, "users", auth.currentUser.uid), { profileImage: url }, { merge: true });
+      alert("Profile image updated!");
+    } catch (error) {
+      console.error("Image upload error:", error);
+      alert("Failed to upload image. Check console for details.");
+    }
+    setUploading(false);
   };
 
   return (
@@ -123,7 +148,7 @@ export default function MyProfile({ onSettingsClick, setView }: MyProfileProps) 
         >
           <div style={{ position: "relative" }}>
             <img
-              src={profilePic}
+              src={profileImage || profilePic}
               alt="Profile"
               style={{
                 width: 70,
@@ -134,22 +159,23 @@ export default function MyProfile({ onSettingsClick, setView }: MyProfileProps) 
                 boxShadow: "0 2px 8px #0001",
               }}
             />
-            {/* Uncomment if you want a small edit icon */}
-            {/* <img
-              src={editIcon}
+            <input
+              type="file"
+              accept="image/*"
+              style={{ display: "none" }}
+              ref={fileInputRef}
+              onChange={handleImageChange}
+            />
+            <img
+              src={pencilIcon}
               alt="Edit"
               style={{
                 position: "absolute",
                 right: 0,
-                bottom: 0,
-                width: 20,
-                height: 20,
-                borderRadius: "50%",
-                background: "#F88379",
-                border: "2px solid #fff",
-                padding: 2,
+                bottom: 0
               }}
-            /> */}
+              onClick={() => fileInputRef.current?.click()}
+            />
           </div>
         </div>
         {/* Profile fields */}

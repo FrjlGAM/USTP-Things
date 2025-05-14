@@ -162,6 +162,8 @@ export default function AdminDashboard() {
     setVerifications(v => v.filter(item => item.id !== id));
   };
 
+  const pendingVerifications = verifications.filter(v => v.status === 'pending');
+
   return (
     <div className="min-h-screen bg-[#F8F6FF] p-2">
       {/* Navigation Bar */}
@@ -272,10 +274,10 @@ export default function AdminDashboard() {
               <tbody>
                 {loadingVerifications ? (
                   <tr><td colSpan={4} className="text-center py-8">Loading...</td></tr>
-                ) : verifications.length === 0 ? (
+                ) : pendingVerifications.length === 0 ? (
                   <tr><td colSpan={4} className="text-center py-8 text-gray-400">No pending accounts.</td></tr>
                 ) : (
-                  verifications.map((v) => (
+                  pendingVerifications.map((v) => (
                     <tr key={v.id} className="bg-yellow-50 rounded-full my-2">
                       <td className="flex items-center gap-3 py-4 px-4 rounded-l-full">
                         <img src={userAvatar} alt="Avatar" className="w-10 h-10 rounded-full border border-pink-200" />

@@ -11,7 +11,7 @@ import MyLikes from './MyLikes';
 import RecentlyViewed from './RecentlyViewed';
 import MyCart from './MyCart';
 import StartSellingModal from '../components/StartSellingModal';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import ProductCard from '../components/ProductCard';
 import ProductDetail from './ProductDetail';
 import { MessagesContent } from './Messages';
@@ -44,7 +44,7 @@ const pickups = [
   },
 ];
 
-function VerificationModal({ open, onClose, setVerificationRequested }: { open: boolean; onClose: () => void; setVerificationRequested: (val: boolean) => void }) {
+function VerificationModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [step, setStep] = React.useState<'select' | 'student'>('select');
   const [form, setForm] = React.useState({ name: '', id: '', email: '', agree: false });
   const [loading, setLoading] = React.useState(false);
@@ -63,18 +63,22 @@ function VerificationModal({ open, onClose, setVerificationRequested }: { open: 
       if (!auth.currentUser) {
         throw new Error('No user logged in');
       }
-      
+      await addDoc(collection(db, 'verifications'), {
+        userId: auth.currentUser.uid,
+        name: form.name,
+        studentId: form.id,
+        email: form.email,
+        agreed: form.agree,
+        type: 'student',
+        status: 'pending',
+        createdAt: new Date(),
+      });
       // Update user document with verification request
       const userRef = doc(db, 'users', auth.currentUser.uid);
       await setDoc(userRef, {
         verificationRequested: true,
-        verificationRequestedAt: new Date(),
-        name: form.name,
-        studentId: form.id,
-        studentEmail: form.email,
-        type: 'student'
+        verificationRequestedAt: new Date()
       }, { merge: true });
-      
       setSuccess(true);
       setForm({ name: '', id: '', email: '', agree: false });
       setVerificationRequested(true);
@@ -173,27 +177,45 @@ export default function Dashboard() {
   const [showStartSellingModal, setShowStartSellingModal] = useState(false);
   const location = useLocation();
   const [verificationRequested, setVerificationRequested] = useState(false);
-  const navigate = useNavigate();
 
   // Check if user is verified
   useEffect(() => {
     const checkVerification = async () => {
       if (auth.currentUser) {
         try {
+          // Check user document first
           const userRef = doc(db, 'users', auth.currentUser.uid);
           const userDoc = await getDoc(userRef);
+          
           if (userDoc.exists()) {
             const data = userDoc.data();
-            setIsVerified(Boolean(data.isVerified));
-            setVerificationRequested(Boolean(data.verificationRequested));
+            if (data.isVerified === true) {
+              setIsVerified(true);
+              setVerificationRequested(false);
+              return;
+            }
+            setVerificationRequested(!!data.verificationRequested);
+          }
+
+          // If not verified in user document, check verifiedAccounts
+          const verifiedAccountRef = doc(db, 'verifiedAccounts', auth.currentUser.uid);
+          const verifiedAccountDoc = await getDoc(verifiedAccountRef);
+          
+          if (verifiedAccountDoc.exists() && verifiedAccountDoc.data().status === 'verified') {
+            console.log('User is verified from verifiedAccounts');
+            setIsVerified(true);
+            // Update user document to reflect verified status
+            await setDoc(userRef, {
+              isVerified: true,
+              verifiedAt: verifiedAccountDoc.data().verifiedAt || new Date()
+            }, { merge: true });
           } else {
+            console.log('User is not verified');
             setIsVerified(false);
-            setVerificationRequested(false);
           }
         } catch (error) {
-          console.error('Error checking verification:', error);
+          console.error('Error checking verification status:', error);
           setIsVerified(false);
-          setVerificationRequested(false);
         }
       }
     };
@@ -309,8 +331,6 @@ export default function Dashboard() {
     }
     setMainView(view);
     setSelectedProduct(null);
-    // Scroll to top when changing views
-    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   // Cart icon click handler
@@ -398,22 +418,8 @@ export default function Dashboard() {
     }
   };
 
-  // Add effect to handle body overflow
-  useEffect(() => {
-    if (selectedProduct) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'auto';
-    }
-    
-    // Cleanup
-    return () => {
-      document.body.style.overflow = 'auto';
-    };
-  }, [selectedProduct]);
-
   return (
-    <div className={`flex min-h-screen bg-[#f7f6fd] ${selectedProduct ? 'overflow-hidden' : ''}`}>
+    <div className="flex min-h-screen bg-[#f7f6fd]">
       {/* Sidebar */}
       <div className="w-[348px] flex-shrink-0">
         <Sidebar
@@ -428,17 +434,17 @@ export default function Dashboard() {
             if (isVerified) {
               setShowStartSellingModal(true);
             } else {
-              alert("Verify muna bago benta :P!");
+              alert("You must be verified to start selling!");
             }
           }}
           verificationRequested={verificationRequested}
         />
       </div>
       {/* Main Content */}
-      <main className="flex-1 flex flex-col relative">
+      <main className="flex-1 flex flex-col">
         {/* Header */}
         {!selectedProduct && (
-          <header className="flex items-center justify-between px-8 pr-[47px] py-4 bg-white h-[70px] shadow-[0_4px_4px_0_rgba(0,0,0,0.1)]">
+          <header className="fixed top-0 right-0 left-[348px] z-10 flex items-center justify-between px-8 pr-[47px] py-4 bg-white h-[70px] shadow-[0_4px_4px_0_rgba(0,0,0,0.1)]">
             <div className="flex items-center gap-4">
               <img src={ustpLogo} alt="USTP Things Logo" className="w-[117px] h-[63px] object-contain" />
               {mainView === 'likes' && <h1 className="text-3xl font-bold text-[#F88379] pb-1">My Likes</h1>}
@@ -474,7 +480,7 @@ export default function Dashboard() {
         )}
         {/* Category Chips (only on Home/Product Feed) */}
         {mainView === 'home' && !selectedProduct && (
-          <div className="flex gap-2 px-10 py-2">
+          <div className="flex gap-2 px-10 py-2 mt-[80px]">
             {categories.map((cat) => (
               <button
                 key={cat}
@@ -487,22 +493,38 @@ export default function Dashboard() {
           </div>
         )}
         {/* Main Content Switcher */}
-        <div className={`flex-1 px-10 pt-4 pb-10`}>
+        <div className={`flex-1 px-10 pt-4 pb-10 ${mainView === 'home' && !selectedProduct ? 'mt-1' : selectedProduct ? 'mt-0' : 'mt-[70px]'}`}>
           {mainView === 'home' ? (
-            <div className="flex flex-wrap gap-8">
-              {filteredProducts.map((item) => (
-                <ProductCard
-                  key={item.id}
-                  product={item}
-                  onClick={() => handleProductView(item)}
-                  onLikeChange={(liked) => handleLikeChange(item, liked)}
-                />
-              ))}
-            </div>
+            selectedProduct ? (
+              <ProductDetail 
+                product={selectedProduct} 
+                onClose={() => setSelectedProduct(null)} 
+                onAddToCart={() => {
+                  if (!isVerified) {
+                    setShowModal(true);
+                    return;
+                  }
+                  handleAddToCart(selectedProduct);
+                }}
+                isVerified={isVerified}
+                onVerifyClick={() => setShowModal(true)}
+              />
+            ) : (
+              <div className="flex flex-wrap gap-8">
+                {filteredProducts.map((item) => (
+                  <ProductCard
+                    key={item.id}
+                    product={item}
+                    onClick={() => handleProductView(item)}
+                    onLikeChange={(liked) => handleLikeChange(item, liked)}
+                  />
+                ))}
+              </div>
+            )
           ) : mainView === 'likes' ? (
-            <MyLikes onProductClick={handleProductView} />
+            <MyLikes />
           ) : mainView === 'recently' ? (
-            <RecentlyViewed onProductClick={handleProductView} />
+            <RecentlyViewed />
           ) : mainView === 'pickup' ? (
             <div className="space-y-6">
               {pickups.map((pickup, index) => (
@@ -518,45 +540,21 @@ export default function Dashboard() {
               ))}
             </div>
           ) : mainView === 'cart' ? (
-            <MyCart onProductClick={handleProductView} />
+            <MyCart />
           ) : mainView === 'rate' ? (
-            <ToRateContent onProductClick={handleProductView} />
+            <ToRateContent />
           ) : mainView === 'message' ? (
-            <MessagesContent onProductClick={handleProductView} />
+            <MessagesContent />
           ) : null}
         </div>
       </main>
-
-      {/* Product Detail Overlay */}
-      {selectedProduct && (
-        <div className="fixed inset-0 left-[348px] top-0 z-50 bg-white overflow-y-auto">
-          <ProductDetail 
-            product={selectedProduct} 
-            onClose={() => setSelectedProduct(null)} 
-            onAddToCart={() => {
-              if (!isVerified) {
-                setShowModal(true);
-                return;
-              }
-              handleAddToCart(selectedProduct);
-            }}
-            isVerified={isVerified}
-            onVerifyClick={() => setShowModal(true)}
-          />
-        </div>
-      )}
-
-      <VerificationModal
-        open={showModal}
-        onClose={() => setShowModal(false)}
-        setVerificationRequested={setVerificationRequested}
-      />
+      <VerificationModal open={showModal} onClose={() => setShowModal(false)} />
       <StartSellingModal
         open={showStartSellingModal}
         onClose={() => setShowStartSellingModal(false)}
         onStartSelling={() => {
           setShowStartSellingModal(false);
-          navigate('/dashboard/seller');
+          // Add your logic here for what happens after clicking "Start Selling"
         }}
       />
     </div>

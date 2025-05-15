@@ -147,8 +147,7 @@ export default function MyLikes({ onProductClick, isStandalone = false }: MyLike
     if (isLoading) {
       return (
         <div className="text-center text-gray-500 mt-8">
-          <div className="w-16 h-16 border-4 border-[#F88379] border-t-transparent rounded-full animate-spin mb-4 mx-auto"></div>
-          <p className="text-lg text-[#F88379] font-semibold">Loading liked products...</p>
+          <p className="text-center text-gray-500 mt-8">Loading liked products...</p>
         </div>
       );
     }

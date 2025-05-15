@@ -6,8 +6,7 @@ import cartIcon from '../../assets/ustp thingS/Shopping cart.png';
 import searchIcon from '../../assets/ustp thingS/search.png';
 import React, { useState, useEffect } from 'react';
 import { db, auth } from '../../lib/firebase';
-import { collection, addDoc, getDocs, doc, setDoc, arrayUnion, arrayRemove, getDoc, query, where, serverTimestamp, writeBatch, deleteDoc, limit } from 'firebase/firestore';
-import type { DocumentData } from 'firebase/firestore';
+import { collection, addDoc, getDocs, doc, setDoc, arrayUnion, arrayRemove, getDoc, query, where } from 'firebase/firestore';
 import MyLikes from './MyLikes';
 import RecentlyViewed from './RecentlyViewed';
 import MyCart from './MyCart';
@@ -15,10 +14,8 @@ import StartSellingModal from '../components/StartSellingModal';
 import { useLocation, useNavigate } from 'react-router-dom';
 import ProductCard from '../components/ProductCard';
 import ProductDetail from './ProductDetail';
+import { MessagesContent } from './Messages';
 import { ToRateContent } from './ToRate';
-import Orders from './Orders';
-import userAvatar from '../../assets/ustp thingS/Person.png';
-import BuyerMessage from './BuyerMessage';
 
 const categories = [
   'For You',
@@ -66,18 +63,22 @@ function VerificationModal({ open, onClose, setVerificationRequested }: { open: 
       if (!auth.currentUser) {
         throw new Error('No user logged in');
       }
-      
+      await addDoc(collection(db, 'verifications'), {
+        userId: auth.currentUser.uid,
+        name: form.name,
+        studentId: form.id,
+        email: form.email,
+        agreed: form.agree,
+        type: 'student',
+        status: 'pending',
+        createdAt: new Date(),
+      });
       // Update user document with verification request
       const userRef = doc(db, 'users', auth.currentUser.uid);
       await setDoc(userRef, {
         verificationRequested: true,
-        verificationRequestedAt: new Date(),
-        name: form.name,
-        studentId: form.id,
-        studentEmail: form.email,
-        type: 'student'
+        verificationRequestedAt: new Date()
       }, { merge: true });
-      
       setSuccess(true);
       setForm({ name: '', id: '', email: '', agree: false });
       setVerificationRequested(true);
@@ -164,85 +165,58 @@ function VerificationModal({ open, onClose, setVerificationRequested }: { open: 
   );
 }
 
-interface SellerData {
-  businessName: string;
-  avatar?: string;
-}
-
-interface OrderData {
-  userId: string;
-  sellerId: string;
-  productId: string;
-  status: 'Completed';
-  schoolLocation: string;
-  pickupDate: string;
-  pickupTime: string;
-  paymentMethod: string;
-  quantity: number;
-  totalAmount: number;
-  createdAt: { toDate: () => Date };
-  completedAt: { toDate: () => Date };
-  productName: string;
-  productImage: string;
-  isRated?: boolean;
-}
-
-interface Order {
-  id: string;
-  sellerId: string;
-  productId: string;
-  status: 'Completed';
-  schoolLocation: string;
-  pickupDate: string;
-  pickupTime: string;
-  paymentMethod: string;
-  quantity: number;
-  totalAmount: number;
-  createdAt: Date;
-  completedAt: Date;
-  productName: string;
-  productImage: string;
-  sellerName?: string;
-  sellerAvatar?: string;
-  isRated?: boolean;
-}
-
 export default function Dashboard() {
   const [showModal, setShowModal] = useState(false);
-  const [mainView, setMainView] = useState<'home' | 'likes' | 'recently' | 'orders' | 'to-rate' | 'messages' | 'product' | 'cart'>('home');
+  const [mainView, setMainView] = useState<'home' | 'likes' | 'recently' | 'pickup' | 'rate' | 'message' | 'product' | 'cart'>('home');
   const [selectedCategory, setSelectedCategory] = useState('For You');
   const [search, setSearch] = useState('');
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [cartItems, setCartItems] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [isVerified, setIsVerified] = useState(false);
   const [showStartSellingModal, setShowStartSellingModal] = useState(false);
   const location = useLocation();
   const [verificationRequested, setVerificationRequested] = useState(false);
   const navigate = useNavigate();
-  const [toRateOrders, setToRateOrders] = useState<Order[]>([]);
-  const [toRateLoading, setToRateLoading] = useState(true);
 
   // Check if user is verified
   useEffect(() => {
     const checkVerification = async () => {
       if (auth.currentUser) {
         try {
+          // Check user document first
           const userRef = doc(db, 'users', auth.currentUser.uid);
           const userDoc = await getDoc(userRef);
+          
           if (userDoc.exists()) {
             const data = userDoc.data();
-            setIsVerified(Boolean(data.isVerified));
-            setVerificationRequested(Boolean(data.verificationRequested));
+            if (data.isVerified === true) {
+              setIsVerified(true);
+              setVerificationRequested(false);
+              return;
+            }
+            setVerificationRequested(!!data.verificationRequested);
+          }
+
+          // If not verified in user document, check verifiedAccounts
+          const verifiedAccountRef = doc(db, 'verifiedAccounts', auth.currentUser.uid);
+          const verifiedAccountDoc = await getDoc(verifiedAccountRef);
+          
+          if (verifiedAccountDoc.exists() && verifiedAccountDoc.data().status === 'verified') {
+            console.log('User is verified from verifiedAccounts');
+            setIsVerified(true);
+            // Update user document to reflect verified status
+            await setDoc(userRef, {
+              isVerified: true,
+              verifiedAt: verifiedAccountDoc.data().verifiedAt || new Date()
+            }, { merge: true });
           } else {
+            console.log('User is not verified');
             setIsVerified(false);
-            setVerificationRequested(false);
           }
         } catch (error) {
-          console.error('Error checking verification:', error);
+          console.error('Error checking verification status:', error);
           setIsVerified(false);
-          setVerificationRequested(false);
         }
       }
     };
@@ -252,219 +226,112 @@ export default function Dashboard() {
   // Fetch products from Firebase
   useEffect(() => {
     const fetchProducts = async () => {
-      if (!auth.currentUser) return;
-
       try {
-        setIsLoading(true);
         const productsCollection = collection(db, 'products');
-        
-        // Delete all existing products first
-        const existingProducts = await getDocs(productsCollection);
-        const deletePromises = existingProducts.docs.map(doc => deleteDoc(doc.ref));
-        await Promise.all(deletePromises);
-        console.log('Deleted all existing products');
-
-        // Create a seller account for sample products
-        const sellerRef = doc(db, 'users', 'sample-seller');
-        await setDoc(sellerRef, {
-          businessName: 'Galdo Boutique',
-          isVerified: true,
-          role: 'seller'
-        });
-
-        const sampleProducts = [
-          {
-            name: 'Uniform Set USTP (Female)',
-            price: '₱1,000',
-            image: uniformImg,
-            category: 'Uniform',
-            description: 'Complete USTP uniform set for female students including blouse, skirt, and necktie.',
-            sellerId: 'sample-seller',
-            sold: 100,
-            soldOut: 0,
-            rating: 5.0,
-            createdAt: serverTimestamp(),
-            stock: 50,
-            details: [
-              'White Blouse: With USTP logo (Size: Medium)',
-              'Black Skirt: Waist - 28", Length - Knee-length',
-              'USTP Necktie',
-              'Barely used and in excellent condition',
-              'No stains, tears, or damages',
-              'Ideal for students looking for an affordable and well-maintained uniform'
-            ]
-          },
-          {
-            name: 'USTP ID Lace',
-            price: '₱50',
-            image: uniformImg,
-            category: 'Accessories',
-            description: 'High-quality ID lace for USTP student ID.',
-            sellerId: 'sample-seller',
-            sold: 250,
-            soldOut: 0,
-            rating: 4.8,
-            createdAt: serverTimestamp(),
-            stock: 1000,
-            details: [
-              'Official USTP ID lace',
-              'Durable material',
-              'Standard length',
-              'USTP branding'
-            ]
-          },
-          {
-            name: 'USTP Ballpen',
-            price: '₱20',
-            image: uniformImg,
-            category: 'School Supplies',
-            description: 'Official USTP ballpen with school logo.',
-            sellerId: 'sample-seller',
-            sold: 500,
-            soldOut: 0,
-            rating: 4.5,
-            createdAt: serverTimestamp(),
-            stock: 2000,
-            details: [
-              'Official USTP branded ballpen',
-              'Smooth writing experience',
-              'Blue ink',
-              'Long-lasting'
-            ]
-          }
-        ];
-
-        // Create new products
-        for (const product of sampleProducts) {
-          try {
-            const docRef = await addDoc(productsCollection, product);
-            console.log('Added product:', product.name, 'with ID:', docRef.id);
-          } catch (error) {
-            console.error('Error adding product:', error);
-          }
-        }
-
-        // Fetch all products with seller information
-        console.log('Fetching updated products...');
-        const allProductsSnapshot = await getDocs(productsCollection);
-        const productsWithSellers = await Promise.all(
-          allProductsSnapshot.docs.map(async (docSnapshot) => {
-            const productData = docSnapshot.data() as DocumentData;
-            console.log('Fetched product data:', productData);
-            
-            let sellerData: SellerData = { businessName: 'Unknown Seller' };
-
-            if (productData.sellerId) {
-              const sellerDocRef = doc(db, 'users', productData.sellerId);
-              const sellerDocSnap = await getDoc(sellerDocRef);
-              if (sellerDocSnap.exists()) {
-                const data = sellerDocSnap.data();
-                sellerData = {
-                  businessName: data.businessName || 'Unknown Seller',
-                  avatar: data.avatar
-                };
-              }
+        const productsSnapshot = await getDocs(productsCollection);
+        if (productsSnapshot.empty) {
+          const sampleProducts = [
+            {
+              name: 'Uniform Set USTP (Female)',
+              price: '₱1,000',
+              image: uniformImg,
+              category: 'Uniform',
+              description: 'Complete USTP uniform set for female students including blouse, skirt, and necktie.'
+            },
+            {
+              name: 'USTP ID Lace',
+              price: '₱50',
+              image: uniformImg,
+              category: 'Accessories',
+              description: 'High-quality ID lace for USTP student ID.'
+            },
+            {
+              name: 'USTP Ballpen',
+              price: '₱20',
+              image: uniformImg,
+              category: 'School Supplies',
+              description: 'Official USTP ballpen with school logo.'
             }
-
-            return {
-              id: docSnapshot.id,
-              ...productData,
-              sellerName: sellerData.businessName,
-              sellerAvatar: sellerData.avatar
-            };
-          })
-        );
-
-        setProducts(productsWithSellers);
+          ];
+          for (const product of sampleProducts) {
+            await addDoc(productsCollection, product);
+          }
+          const newSnapshot = await getDocs(productsCollection);
+          const productsList = newSnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          }));
+          setProducts(productsList);
+        } else {
+          const productsList = productsSnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          }));
+          if (auth.currentUser) {
+            const userRef = doc(db, 'users', auth.currentUser.uid);
+            const userDoc = await getDoc(userRef);
+            if (userDoc.exists()) {
+              const userData = userDoc.data();
+              const likedProducts = userData.likedProducts || [];
+              const productsWithLikes = productsList.map(product => ({
+                ...product,
+                liked: likedProducts.includes(product.id)
+              }));
+              setProducts(productsWithLikes);
+              return;
+            }
+          }
+          setProducts(productsList);
+        }
       } catch (error) {
-        console.error('Error fetching/updating products:', error);
-      } finally {
-        setIsLoading(false);
+        console.error('Error fetching products:', error);
       }
     };
-
     fetchProducts();
   }, []);
 
-  // Update mainView based on URL path
   useEffect(() => {
     const path = location.pathname;
     // Check if user is trying to access restricted pages through URL
     if (!isVerified && (
       path === '/dashboard/cart' ||
-      path === '/dashboard/orders' ||
-      path === '/dashboard/to-rate' ||
-      path === '/dashboard/messages' ||
-      path.includes('/dashboard/messages/')
+      path === '/dashboard/pickup' ||
+      path === '/dashboard/rate' ||
+      path === '/dashboard/message'
     )) {
       setShowModal(true);
       setMainView('home');
       return;
     }
 
-    let newView: typeof mainView = 'home';
-
     if (path === '/dashboard/likes') {
-      newView = 'likes';
+      setMainView('likes');
     } else if (path === '/dashboard/recently-viewed') {
-      newView = 'recently';
-    } else if (path === '/dashboard/orders') {
-      newView = 'orders';
-    } else if (path === '/dashboard/to-rate') {
-      newView = 'to-rate';
-    } else if (path === '/dashboard/messages' || path.includes('/dashboard/messages/')) {
-      newView = 'messages';
+      setMainView('recently');
+    } else if (path === '/dashboard/pickup') {
+      setMainView('pickup');
+    } else if (path === '/dashboard/rate') {
+      setMainView('rate');
+    } else if (path === '/dashboard/message') {
+      setMainView('message');
     } else if (path.startsWith('/dashboard/product/')) {
-      // Keep the previous view when viewing product details
-      return;
+      setMainView('product');
     } else if (path === '/dashboard/cart') {
-      newView = 'cart';
+      setMainView('cart');
     } else if (path === '/dashboard') {
-      newView = 'home';
+      setMainView('home');
     }
-
-    setMainView(newView);
   }, [location, isVerified]);
 
   // Sidebar navigation handler
-  const handleSidebarNav = (view: 'home' | 'likes' | 'recently' | 'orders' | 'to-rate' | 'messages' | 'product' | 'cart') => {
+  const handleSidebarNav = (view: typeof mainView) => {
     // Check if user is trying to access restricted pages
-    if (!isVerified && ['cart', 'orders', 'to-rate', 'messages'].includes(view)) {
+    if (!isVerified && ['cart', 'pickup', 'rate', 'message'].includes(view)) {
       setShowModal(true);
       return;
     }
-
-    // Don't reset selected product when navigating to product details
-    if (view !== 'product') {
-      setSelectedProduct(null);
-    }
-    
     setMainView(view);
-
-    switch (view) {
-      case 'home':
-        navigate('/dashboard');
-        break;
-      case 'likes':
-        navigate('/dashboard/likes');
-        break;
-      case 'recently':
-        navigate('/dashboard/recently-viewed');
-        break;
-      case 'orders':
-        navigate('/dashboard/orders');
-        break;
-      case 'to-rate':
-        navigate('/dashboard/to-rate');
-        break;
-      case 'messages':
-        navigate('/dashboard/messages');
-        break;
-      default:
-        if (view !== 'product' && view !== 'cart') {
-          navigate('/dashboard');
-        }
-    }
+    setSelectedProduct(null);
   };
 
   // Cart icon click handler
@@ -552,82 +419,8 @@ export default function Dashboard() {
     }
   };
 
-  // Add effect to handle body overflow
-  useEffect(() => {
-    if (selectedProduct) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'auto';
-    }
-    
-    // Cleanup
-    return () => {
-      document.body.style.overflow = 'auto';
-    };
-  }, [selectedProduct]);
-
-  useEffect(() => {
-    const fetchToRateOrders = async () => {
-      if (!auth.currentUser) return;
-
-      try {
-        const ordersQuery = query(
-          collection(db, 'pickupOrders'),
-          where('userId', '==', auth.currentUser.uid),
-          where('status', '==', 'Completed'),
-          where('isRated', '==', false),
-          // Limit to 3 most recent orders for dashboard
-          limit(3)
-        );
-        
-        const querySnapshot = await getDocs(ordersQuery);
-        const fetchedOrders: Order[] = [];
-
-        for (const docSnapshot of querySnapshot.docs) {
-          const orderData = docSnapshot.data() as OrderData;
-          
-          const sellerDoc = await getDoc(doc(db, 'users', orderData.sellerId));
-          const sellerData = sellerDoc.exists() ? sellerDoc.data() as SellerData : null;
-
-          fetchedOrders.push({
-            id: docSnapshot.id,
-            sellerId: orderData.sellerId,
-            productId: orderData.productId,
-            status: orderData.status,
-            schoolLocation: orderData.schoolLocation,
-            pickupDate: orderData.pickupDate,
-            pickupTime: orderData.pickupTime,
-            paymentMethod: orderData.paymentMethod,
-            quantity: orderData.quantity,
-            totalAmount: orderData.totalAmount,
-            createdAt: orderData.createdAt?.toDate() || new Date(),
-            completedAt: orderData.completedAt?.toDate() || new Date(),
-            productName: orderData.productName,
-            productImage: orderData.productImage,
-            sellerName: sellerData?.businessName || 'Unknown Seller',
-            sellerAvatar: sellerData?.avatar || userAvatar,
-            isRated: orderData.isRated
-          });
-        }
-
-        fetchedOrders.sort((a, b) => b.completedAt.getTime() - a.completedAt.getTime());
-        setToRateOrders(fetchedOrders);
-      } catch (error) {
-        console.error('Error fetching to-rate orders:', error);
-      } finally {
-        setToRateLoading(false);
-      }
-    };
-
-    fetchToRateOrders();
-  }, []);
-
-  const handleRateNow = (order: Order) => {
-    navigate(`/dashboard/rate/${order.id}`, { state: { order } });
-  };
-
   return (
-    <div className={`flex min-h-screen bg-[#f7f6fd] ${selectedProduct ? 'overflow-hidden' : ''}`}>
+    <div className="flex min-h-screen bg-[#f7f6fd]">
       {/* Sidebar */}
       <div className="w-[348px] flex-shrink-0">
         <Sidebar
@@ -635,9 +428,8 @@ export default function Dashboard() {
           onHomeClick={() => handleSidebarNav('home')}
           onLikesClick={() => handleSidebarNav('likes')}
           onRecentlyClick={() => handleSidebarNav('recently')}
-          onOrdersClick={() => handleSidebarNav('orders')}
-          onRateClick={() => handleSidebarNav('to-rate')}
-          onMessageClick={() => handleSidebarNav('messages')}
+          onRateClick={() => handleSidebarNav('rate')}
+          onMessageClick={() => handleSidebarNav('message')}
           onStartSellingClick={() => {
             if (isVerified) {
               setShowStartSellingModal(true);
@@ -646,23 +438,20 @@ export default function Dashboard() {
             }
           }}
           verificationRequested={verificationRequested}
-          activeButton={mainView === 'recently' ? 'recently' : 
-                       mainView === 'to-rate' ? 'to-rate' : 
-                       mainView === 'product' ? 'home' : mainView}
         />
       </div>
       {/* Main Content */}
-      <main className="flex-1 flex flex-col relative">
+      <main className="flex-1 flex flex-col">
         {/* Header */}
         {!selectedProduct && (
-          <header className="flex items-center justify-between px-8 pr-[47px] py-4 bg-white h-[70px] shadow-[0_4px_4px_0_rgba(0,0,0,0.1)]">
+          <header className="fixed top-0 right-0 left-[348px] z-10 flex items-center justify-between px-8 pr-[47px] py-4 bg-white h-[70px] shadow-[0_4px_4px_0_rgba(0,0,0,0.1)]">
             <div className="flex items-center gap-4">
               <img src={ustpLogo} alt="USTP Things Logo" className="w-[117px] h-[63px] object-contain" />
               {mainView === 'likes' && <h1 className="text-3xl font-bold text-[#F88379] pb-1">My Likes</h1>}
               {mainView === 'recently' && <h1 className="text-3xl font-bold text-[#F88379] pb-1">Recently Viewed</h1>}
-              {mainView === 'orders' && <h1 className="text-3xl font-bold text-[#F88379] pb-1">My Orders</h1>}
-              {mainView === 'to-rate' && <h1 className="text-3xl font-bold text-[#F88379] pb-1">To Rate</h1>}
-              {mainView === 'messages' && <h1 className="text-3xl font-bold text-[#F88379] pb-1">Messages</h1>}
+              {mainView === 'pickup' && <h1 className="text-3xl font-bold text-[#F88379] pb-1">Pick Up</h1>}
+              {mainView === 'rate' && <h1 className="text-3xl font-bold text-[#F88379] pb-1">Rate</h1>}
+              {mainView === 'message' && <h1 className="text-3xl font-bold text-[#F88379] pb-1">Messages</h1>}
               {mainView === 'product' && <h1 className="text-3xl font-bold text-[#F88379] pb-1">Product Details</h1>}
               {mainView === 'cart' && <h1 className="text-3xl font-bold text-[#F88379] pb-1">My Cart</h1>}
             </div>
@@ -691,7 +480,7 @@ export default function Dashboard() {
         )}
         {/* Category Chips (only on Home/Product Feed) */}
         {mainView === 'home' && !selectedProduct && (
-          <div className="flex gap-2 px-10 py-2">
+          <div className="flex gap-2 px-10 py-2 mt-[80px]">
             {categories.map((cat) => (
               <button
                 key={cat}
@@ -704,15 +493,22 @@ export default function Dashboard() {
           </div>
         )}
         {/* Main Content Switcher */}
-        <div className={`flex-1 px-10 pt-4 pb-10`}>
+        <div className={`flex-1 px-10 pt-4 pb-10 ${mainView === 'home' && !selectedProduct ? 'mt-1' : selectedProduct ? 'mt-0' : 'mt-[70px]'}`}>
           {mainView === 'home' ? (
-            isLoading ? (
-              <div className="flex items-center justify-center h-[calc(100vh-200px)]">
-                <div className="text-center">
-                  <div className="w-16 h-16 border-4 border-[#F88379] border-t-transparent rounded-full animate-spin mb-4 mx-auto"></div>
-                  <p className="text-lg text-[#F88379] font-semibold">Loading products...</p>
-                </div>
-              </div>
+            selectedProduct ? (
+              <ProductDetail 
+                product={selectedProduct} 
+                onClose={() => setSelectedProduct(null)} 
+                onAddToCart={() => {
+                  if (!isVerified) {
+                    setShowModal(true);
+                    return;
+                  }
+                  handleAddToCart(selectedProduct);
+                }}
+                isVerified={isVerified}
+                onVerifyClick={() => setShowModal(true)}
+              />
             ) : (
               <div className="flex flex-wrap gap-8">
                 {filteredProducts.map((item) => (
@@ -726,62 +522,33 @@ export default function Dashboard() {
               </div>
             )
           ) : mainView === 'likes' ? (
-            <MyLikes onProductClick={handleProductView} />
+            <MyLikes />
           ) : mainView === 'recently' ? (
-            <RecentlyViewed onProductClick={handleProductView} />
-          ) : mainView === 'orders' ? (
-            <Orders />
-          ) : mainView === 'cart' ? (
-            <MyCart onProductClick={handleProductView} />
-          ) : mainView === 'to-rate' ? (
-            toRateOrders.length > 0 ? (
-              <>
-                <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-xl font-semibold">To Rate</h2>
-                  <button
-                    onClick={() => navigate('/dashboard/to-rate')}
-                    className="text-[#F88379] hover:text-[#F88379]/80 font-medium"
-                  >
-                    View All
-                  </button>
+            <RecentlyViewed />
+          ) : mainView === 'pickup' ? (
+            <div className="space-y-6">
+              {pickups.map((pickup, index) => (
+                <div key={index} className="bg-white rounded-2xl shadow p-6">
+                  <div className="flex items-center gap-4">
+                    <img src={pickup.image} alt={pickup.product} className="w-24 h-24 object-cover rounded-xl" />
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-800">{pickup.boutique}</h3>
+                      <p className="text-gray-600">{pickup.product}</p>
+                    </div>
+                  </div>
                 </div>
-                <ToRateContent 
-                  orders={toRateOrders}
-                  onRateNow={handleRateNow}
-                  loading={toRateLoading}
-                />
-              </>
-            ) : (
-              <div className="text-center text-gray-500 mt-8">No orders to rate at the moment.</div>
-            )
+              ))}
+            </div>
+          ) : mainView === 'cart' ? (
+            <MyCart />
+          ) : mainView === 'rate' ? (
+            <ToRateContent orders={[]} onRateNow={() => {}} loading={false} />
+          ) : mainView === 'message' ? (
+            <MessagesContent />
           ) : null}
         </div>
       </main>
-
-      {/* Product Detail Overlay */}
-      {selectedProduct && (
-        <div className="fixed inset-0 left-[348px] top-0 z-50 bg-white overflow-y-auto">
-          <ProductDetail 
-            product={selectedProduct} 
-            onClose={() => setSelectedProduct(null)} 
-            onAddToCart={() => {
-              if (!isVerified) {
-                setShowModal(true);
-                return;
-              }
-              handleAddToCart(selectedProduct);
-            }}
-            isVerified={isVerified}
-            onVerifyClick={() => setShowModal(true)}
-          />
-        </div>
-      )}
-
-      <VerificationModal
-        open={showModal}
-        onClose={() => setShowModal(false)}
-        setVerificationRequested={setVerificationRequested}
-      />
+      <VerificationModal open={showModal} onClose={() => setShowModal(false)} setVerificationRequested={setVerificationRequested} />
       <StartSellingModal
         open={showStartSellingModal}
         onClose={() => setShowStartSellingModal(false)}
@@ -793,3 +560,4 @@ export default function Dashboard() {
     </div>
   );
 }
+

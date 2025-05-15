@@ -17,40 +17,45 @@ type AccountandSecurityProps = {
 export default function AccountandSecurity({ onSettingsClick, onMyProfileClick }: AccountandSecurityProps) {
   const navigate = useNavigate();
   const [showUsernameModal, setShowUsernameModal] = useState(false);
-  const [username, setUsername] = useState(""); // or fetch from Firestore if you want it to persist
+  const [username, setUsername] = useState("N/A");
   const [loadingUsername, setLoadingUsername] = useState(true);
   const [showPhoneNumberModal, setShowPhoneNumberModal] = useState(false);
-  const [phoneNumber, setPhoneNumber] = useState(""); // or fetch from Firestore if you want it to persist
+  const [phoneNumber, setPhoneNumber] = useState("N/A");
   const [loadingPhoneNumber, setLoadingPhoneNumber] = useState(true);
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [showVerificationCodeModal, setShowVerificationCodeModal] = useState(false);
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState("N/A");
   const [verificationCode, setVerificationCode] = useState("");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchUsername = async () => {
+    const fetchUserData = async () => {
       if (!auth.currentUser) return;
-      setLoadingUsername(true);
-      const userDoc = await getDoc(doc(db, "users", auth.currentUser.uid));
-      if (userDoc.exists()) {
-        setUsername(userDoc.data().username || "");
+      
+      setLoading(true);
+      try {
+        // Set email from auth user
+        setEmail(auth.currentUser.email || "N/A");
+        
+        // Fetch user data from Firestore
+        const userDoc = await getDoc(doc(db, "users", auth.currentUser.uid));
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          setUsername(userData.username || "N/A");
+          setPhoneNumber(userData.phoneNumber || "N/A");
+        }
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+        setUsername("N/A");
+        setPhoneNumber("N/A");
+      } finally {
+        setLoading(false);
+        setLoadingUsername(false);
+        setLoadingPhoneNumber(false);
       }
-      setLoadingUsername(false);
     };
-    fetchUsername();
-  }, []);
 
-  useEffect(() => {
-    const fetchPhoneNumber = async () => {
-      if (!auth.currentUser) return;
-      setLoadingPhoneNumber(true);
-      const userDoc = await getDoc(doc(db, "users", auth.currentUser.uid));
-      if (userDoc.exists()) {
-        setPhoneNumber(userDoc.data().phoneNumber || "");
-      }
-      setLoadingPhoneNumber(false);
-    };
-    fetchPhoneNumber();
+    fetchUserData();
   }, []);
 
   const handleSaveUsername = async (newUsername: string) => {
@@ -215,7 +220,7 @@ export default function AccountandSecurity({ onSettingsClick, onMyProfileClick }
           >
             Username
             <span style={{ color: "#888", fontSize: 15 }}>
-              {loadingUsername ? "Loading..." : username ? username : "Set now"} <span style={{ marginLeft: 8, color: "#888" }}>&gt;</span>
+              {loading ? "Loading..." : username} <span style={{ marginLeft: 8, color: "#888" }}>&gt;</span>
             </span>
           </div>
         </div>
@@ -241,7 +246,7 @@ export default function AccountandSecurity({ onSettingsClick, onMyProfileClick }
           >
             Phone
             <span style={{ color: "#888", fontSize: 15 }}>
-              {loadingPhoneNumber ? "Loading..." : phoneNumber ? phoneNumber : "Set now"} <span style={{ marginLeft: 8, color: "#888" }}>&gt;</span>
+              {loading ? "Loading..." : phoneNumber} <span style={{ marginLeft: 8, color: "#888" }}>&gt;</span>
             </span>
           </div>
         </div>
@@ -267,7 +272,7 @@ export default function AccountandSecurity({ onSettingsClick, onMyProfileClick }
           >
             Email
             <span style={{ color: "#888", fontSize: 15 }}>
-              {email ? email : "Set now"} <span style={{ marginLeft: 8, color: "#888" }}>&gt;</span>
+              {loading ? "Loading..." : email} <span style={{ marginLeft: 8, color: "#888" }}>&gt;</span>
             </span>
           </div>
         </div>

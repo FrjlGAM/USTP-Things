@@ -1,6 +1,7 @@
 import Sidebar from '../components/Sidebar';
 import ustpLogo from '../../assets/ustp-things-logo.png';
 import userAvatar from '../../assets/ustp thingS/Person.png';
+import leftArrow from '../../assets/ustp thingS/LeftArrow.png';
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { db, auth } from '../../lib/firebase';
@@ -238,32 +239,29 @@ export default function SellerOrders() {
   };
 
   return (
-    <div className="flex min-h-screen bg-[#f7f6fd]">
-      {/* Sidebar */}
-      <div className="w-[348px] flex-shrink-0">
-        <Sidebar
-          onVerifyClick={() => setShowModal(true)}
-          onHomeClick={() => handleSidebarNav('home')}
-          onLikesClick={() => handleSidebarNav('likes')}
-          onRecentlyClick={() => handleSidebarNav('recently')}
-          onOrdersClick={() => handleSidebarNav('seller-orders')}
-          onRateClick={() => handleSidebarNav('rate')}
-          onMessageClick={() => handleSidebarNav('message')}
-          activeButton="orders"
-        />
-      </div>
+    <div className="min-h-screen bg-[#f7f6fd]">
       {/* Main Content */}
       <main className="flex-1 flex flex-col">
         {/* Header */}
         <header className="flex items-center justify-between px-8 pr-[47px] py-4 bg-white h-[70px] shadow-[0_4px_4px_0_rgba(0,0,0,0.1)]">
-          <div className="flex items-center gap-4">
-            <img src={ustpLogo} alt="USTP Things Logo" className="w-[117px] h-[63px] object-contain" />
-            <h1 className="text-3xl font-bold text-[#F88379] pb-1">Product Orders</h1>
+          <div className="flex items-center gap-8">
+            <button 
+              onClick={() => navigate('/dashboard/seller')}
+              className="hover:opacity-80 transition-opacity"
+            >
+              <img src={leftArrow} alt="Back" className="w-6 h-6" />
+            </button>
+            <div className="flex items-center gap-4">
+              <img src={ustpLogo} alt="USTP Things Logo" className="w-[117px] h-[63px] object-contain" />
+              <h1 className="text-3xl font-bold text-[#F88379] pb-1">Product Orders</h1>
+            </div>
           </div>
         </header>
         <div className="p-10">
           {loading ? (
-            <div className="text-center text-gray-500 mt-8">Loading orders...</div>
+            <div className="flex items-center justify-center min-h-[400px]">
+              <div className="w-16 h-16 border-4 border-[#F88379] border-t-transparent rounded-full animate-spin"></div>
+            </div>
           ) : orders.length === 0 ? (
             <div className="text-center text-gray-500 mt-8">No orders found.</div>
           ) : (

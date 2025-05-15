@@ -161,7 +161,7 @@ const SellerPage: React.FC = () => {
             <button
               className="flex items-center gap-3 px-4 py-1 rounded-full bg-[#F88379] shadow-[0_2px_8px_0_rgba(248,131,121,0.15)] hover:scale-105 transition-transform"
               style={{ minWidth: 120, fontFamily: 'Nunito, Quicksand, sans-serif', boxShadow: '0 2px 8px 0 rgba(248,131,121,0.15)' }}
-              onClick={() => navigate('/dashboard/orders')}
+              onClick={() => navigate('/dashboard/seller-orders')}
             >
               <img src={productOrdersIcon} alt="Product Orders" className="w-6 h-6" />
               <span className="text-white font-bold text-sm text-left" style={{ fontFamily: 'inherit', letterSpacing: '0.5px' }}>

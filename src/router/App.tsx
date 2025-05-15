@@ -15,6 +15,7 @@ import BuyerMessage from '../dashboard/pages/BuyerMessage';
 import TransactionHistory from '../dashboard/pages/TransactionHistory';
 import Earnings from '../dashboard/pages/Earnings';
 import CustomerMessages from '../dashboard/pages/CustomerMessages';
+import SellerOrders from '../dashboard/pages/SellerOrders';
 
 // Wrapper component to handle checkout route with product data
 function CheckOutWrapper() {
@@ -45,6 +46,7 @@ function App() {
       <Route path="/dashboard/transaction-history" element={<TransactionHistory />} />
       <Route path="/dashboard/earnings" element={<Earnings />} />
       <Route path="/dashboard/customer-messages" element={<CustomerMessages />} />
+      <Route path="/dashboard/seller-orders" element={<SellerOrders />} />
       <Route path="/admin/login" element={<AdminLogin />} />
       <Route path="/admin/signup" element={<AdminSignup />} />
       <Route path="/admin/dashboard" element={<AdminDashboard />} />

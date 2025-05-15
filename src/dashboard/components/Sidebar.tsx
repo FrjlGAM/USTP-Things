@@ -24,6 +24,7 @@ type SidebarProps = {
   onStartSellingClick?: () => void;
   verificationRequested?: boolean;
   activeButton?: 'home' | 'likes' | 'recently' | 'orders' | 'to-rate' | 'messages' | 'product' | 'cart' | 'verify' | 'seller' | 'settings';
+  sellerPageOpened?: boolean;
 };
 
 export default function Sidebar({ 
@@ -36,13 +37,15 @@ export default function Sidebar({
   onMessageClick, 
   onStartSellingClick,
   verificationRequested,
-  activeButton: propActiveButton
+  activeButton: propActiveButton,
+  sellerPageOpened: propSellerPageOpened
 }: SidebarProps) {
   const [isVerified, setIsVerified] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
   const [username, setUsername] = useState<string>('Username');
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const [activeButton, setActiveButton] = useState<SidebarProps['activeButton']>(propActiveButton || 'home');
+  const [sellerPageOpened, setSellerPageOpened] = useState(propSellerPageOpened || false);
   const user = auth.currentUser;
   const navigate = useNavigate();
 
@@ -219,16 +222,16 @@ export default function Sidebar({
         {/* Start Selling Button */}
         <button 
           onClick={() => {
-            if (!isVerified) {
-              onVerifyClick?.();
-              return;
+            if (isVerified) {
+              setSellerPageOpened(true);
+              onStartSellingClick?.();
+            } else {
+              alert("Verify muna bago benta :P!");
             }
-            setActiveButton('seller');
-            onStartSellingClick?.();
           }}
           className={`w-full ${activeButton === 'seller' ? 'bg-white text-[#F88379]' : 'bg-[#F88379] text-white'} hover:bg-[#F88379]/90 font-semibold py-2 rounded-[23.08px] shadow mb-10 transition text-lg`}
         >
-          Start selling now!
+          {sellerPageOpened ? "View Your Seller Page" : "Start selling now!"}
         </button>
         {/* Settings */}
         <button

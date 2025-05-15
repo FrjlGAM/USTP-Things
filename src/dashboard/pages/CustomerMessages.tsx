@@ -27,12 +27,14 @@ const CustomerMessages: React.FC = () => {
   return (
     <div className="min-h-screen w-full bg-[#FFF3F2]">
       {/* Top bar with back button and header */}
-      <div className="flex items-center p-4">
-        <button onClick={() => navigate(-1)}>
-          <span className="text-[#F88379] text-3xl font-bold">&#8592;</span>
-        </button>
-        <span className="ml-4 text-2xl text-[#F88379] font-bold">Customer Messages</span>
-      </div>
+      <header className="flex items-center justify-between px-8 pr-[47px] py-4 bg-white h-[70px] shadow-[0_4px_4px_0_rgba(0,0,0,0.1)]">
+        <div className="flex items-center gap-4">
+          <button onClick={() => navigate(-1)}>
+            <span className="text-[#F88379] text-3xl font-bold">&#8592;</span>
+          </button>
+          <h1 className="text-3xl font-bold text-[#F88379] pb-1">Customer Messages</h1>
+        </div>
+      </header>
       <div className="p-8 space-y-6">
         {customerMessages.map((msg) => (
           <div key={msg.id} className="flex items-center bg-white rounded-2xl px-6 py-4 shadow" style={{ minHeight: 80 }}>

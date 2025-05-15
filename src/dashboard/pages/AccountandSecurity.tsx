@@ -25,15 +25,16 @@ export default function AccountandSecurity({ onSettingsClick, onMyProfileClick }
   const [loadingPhoneNumber, setLoadingPhoneNumber] = useState(true);
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [showVerificationCodeModal, setShowVerificationCodeModal] = useState(false);
+  const [showSecurityCheckModal, setShowSecurityCheckModal] = useState(false);
   const [email, setEmail] = useState("N/A");
   const [verificationCode, setVerificationCode] = useState("");
-  const [showSecurityCheckModal, setShowSecurityCheckModal] = useState(false);
 
   useEffect(() => {
     const fetchUserData = async () => {
       if (!auth.currentUser) return;
       
-      setLoading(true);
+      setLoadingUsername(true);
+      setLoadingPhoneNumber(true);
       try {
         // Set email from auth user
         setEmail(auth.currentUser.email || "N/A");
@@ -50,7 +51,6 @@ export default function AccountandSecurity({ onSettingsClick, onMyProfileClick }
         setUsername("N/A");
         setPhoneNumber("N/A");
       } finally {
-        setLoading(false);
         setLoadingUsername(false);
         setLoadingPhoneNumber(false);
       }
@@ -221,7 +221,7 @@ export default function AccountandSecurity({ onSettingsClick, onMyProfileClick }
           >
             Username
             <span style={{ color: "#888", fontSize: 15 }}>
-              {loading ? "Loading..." : username} <span style={{ marginLeft: 8, color: "#888" }}>&gt;</span>
+              {loadingUsername ? "Loading..." : username} <span style={{ marginLeft: 8, color: "#888" }}>&gt;</span>
             </span>
           </div>
         </div>
@@ -247,7 +247,7 @@ export default function AccountandSecurity({ onSettingsClick, onMyProfileClick }
           >
             Phone
             <span style={{ color: "#888", fontSize: 15 }}>
-              {loading ? "Loading..." : phoneNumber} <span style={{ marginLeft: 8, color: "#888" }}>&gt;</span>
+              {loadingPhoneNumber ? "Loading..." : phoneNumber} <span style={{ marginLeft: 8, color: "#888" }}>&gt;</span>
             </span>
           </div>
         </div>
@@ -273,7 +273,7 @@ export default function AccountandSecurity({ onSettingsClick, onMyProfileClick }
           >
             Email
             <span style={{ color: "#888", fontSize: 15 }}>
-              {loading ? "Loading..." : email} <span style={{ marginLeft: 8, color: "#888" }}>&gt;</span>
+              {loadingUsername ? "Loading..." : email} <span style={{ marginLeft: 8, color: "#888" }}>&gt;</span>
             </span>
           </div>
         </div>

@@ -163,7 +163,7 @@ export default function Sidebar({
             onClick={() => {
               setActiveButton('home');
               window.scrollTo({ top: 0, behavior: 'smooth' });
-              onHomeClick?.();
+              navigate('/dashboard');
             }} 
             className={`flex items-center gap-2 text-[#F88379] font-semibold text-lg text-left transition ${activeButton === 'home' ? 'bg-white rounded-[23.08px] px-2 py-1' : ''}`}
           >
@@ -173,7 +173,7 @@ export default function Sidebar({
             onClick={() => {
               setActiveButton('likes');
               window.scrollTo({ top: 0, behavior: 'smooth' });
-              onLikesClick?.();
+              navigate('/dashboard/likes');
             }} 
             className={`flex items-center gap-2 text-[#F88379] font-semibold text-lg text-left transition ${activeButton === 'likes' ? 'bg-white rounded-[23.08px] px-2 py-1' : ''}`}
           >
@@ -183,7 +183,7 @@ export default function Sidebar({
             onClick={() => {
               setActiveButton('recently');
               window.scrollTo({ top: 0, behavior: 'smooth' });
-              onRecentlyClick?.();
+              navigate('/dashboard/recently-viewed');
             }} 
             className={`flex items-center gap-2 text-[#F88379] font-semibold text-lg text-left transition ${activeButton === 'recently' ? 'bg-white rounded-[23.08px] px-2 py-1' : ''}`}
           >
@@ -192,10 +192,14 @@ export default function Sidebar({
           <div className="mt-4 mb-2 font-bold text-[#F88379] text-xl flex justify-center">My Purchases</div>
           <button 
             onClick={() => {
+              if (!isVerified) {
+                onVerifyClick?.();
+                return;
+              }
               setActiveButton('orders');
+              navigate('/dashboard/orders');
               window.scrollTo({ top: 0, behavior: 'smooth' });
-              onOrdersClick?.();
-            }} 
+            }}
             className={`flex items-center gap-2 text-[#F88379] font-semibold text-lg text-left transition ${activeButton === 'orders' ? 'bg-white rounded-[23.08px] px-2 py-1' : ''}`}
           >
             <img src={purchasesIcon} alt="Orders" className="w-5 h-5" />Orders

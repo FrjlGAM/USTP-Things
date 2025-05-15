@@ -160,6 +160,30 @@ export default function SellerOrders() {
     navigate(`/dashboard/messages/${userId}`);
   };
 
+  // Sidebar navigation handler
+  const handleSidebarNav = (view: 'home' | 'likes' | 'recently' | 'seller-orders' | 'rate' | 'message') => {
+    switch (view) {
+      case 'home':
+        navigate('/dashboard');
+        break;
+      case 'likes':
+        navigate('/dashboard/likes');
+        break;
+      case 'recently':
+        navigate('/dashboard/recently-viewed');
+        break;
+      case 'seller-orders':
+        navigate('/dashboard/seller-orders');
+        break;
+      case 'rate':
+        navigate('/dashboard/to-rate');
+        break;
+      case 'message':
+        navigate('/dashboard/messages');
+        break;
+    }
+  };
+
   const isWithinCancellationWindow = (orderDate: Date) => {
     const now = new Date();
     const hourInMilliseconds = 60 * 60 * 1000; // 1 hour in milliseconds
@@ -219,21 +243,25 @@ export default function SellerOrders() {
       {/* Main Content */}
       <main className="flex-1 flex flex-col">
         {/* Header */}
-        <header className="flex items-center px-8 pr-[47px] py-4 bg-white h-[70px] shadow-[0_4px_4px_0_rgba(0,0,0,0.1)] relative">
-          <button 
-            onClick={() => navigate('/dashboard/seller')}
-            className="absolute left-0 top-0 p-2 hover:opacity-80 transition"
-          >
-            <img src={leftArrow} alt="Back" className="w-12 h-12" />
-          </button>
-          <div className="flex items-center gap-4 ml-20">
-            <img src={ustpLogo} alt="USTP Things Logo" className="w-[117px] h-[63px] object-contain" />
-            <h1 className="text-3xl font-bold text-[#F88379] pb-1">Product Orders</h1>
+        <header className="flex items-center justify-between px-8 pr-[47px] py-4 bg-white h-[70px] shadow-[0_4px_4px_0_rgba(0,0,0,0.1)]">
+          <div className="flex items-center gap-8">
+            <button 
+              onClick={() => navigate('/dashboard/seller')}
+              className="hover:opacity-80 transition-opacity"
+            >
+              <img src={leftArrow} alt="Back" className="w-6 h-6" />
+            </button>
+            <div className="flex items-center gap-4">
+              <img src={ustpLogo} alt="USTP Things Logo" className="w-[117px] h-[63px] object-contain" />
+              <h1 className="text-3xl font-bold text-[#F88379] pb-1">Product Orders</h1>
+            </div>
           </div>
         </header>
         <div className="p-10">
           {loading ? (
-            <div className="text-center text-gray-500 mt-8">Loading orders...</div>
+            <div className="flex items-center justify-center min-h-[400px]">
+              <div className="w-16 h-16 border-4 border-[#F88379] border-t-transparent rounded-full animate-spin"></div>
+            </div>
           ) : orders.length === 0 ? (
             <div className="text-center text-gray-500 mt-8">No orders found.</div>
           ) : (

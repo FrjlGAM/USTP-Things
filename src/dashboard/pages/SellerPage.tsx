@@ -102,7 +102,7 @@ const SellerPage: React.FC = () => {
     <div className="min-h-screen w-full bg-[#FFF3F2]">
       {/* Top bar with back button, flush with card, no white gap above */}
       <div className="flex items-center px-8 py-3 bg-[#FFF3F2] shadow-none sticky top-0 z-30" style={{marginTop: 0}}>
-        <button onClick={() => navigate('/dashboard/seller-orders')}>
+        <button onClick={() => navigate(-1)}>
           <img src={LeftArrow} alt="Back" className="w-8 h-8" />
         </button>
         <span className="ml-4 text-lg text-gray-400 font-semibold">Seller Page</span>

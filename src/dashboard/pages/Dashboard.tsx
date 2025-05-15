@@ -173,6 +173,7 @@ export default function Dashboard() {
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [cartItems, setCartItems] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [isVerified, setIsVerified] = useState(false);
   const [showStartSellingModal, setShowStartSellingModal] = useState(false);
   const location = useLocation();
@@ -226,6 +227,7 @@ export default function Dashboard() {
   // Fetch products from Firebase
   useEffect(() => {
     const fetchProducts = async () => {
+      setIsLoading(true);
       try {
         const productsCollection = collection(db, 'products');
         const productsSnapshot = await getDocs(productsCollection);
@@ -285,6 +287,8 @@ export default function Dashboard() {
         }
       } catch (error) {
         console.error('Error fetching products:', error);
+      } finally {
+        setIsLoading(false);
       }
     };
     fetchProducts();
@@ -510,16 +514,24 @@ export default function Dashboard() {
                 onVerifyClick={() => setShowModal(true)}
               />
             ) : (
-              <div className="flex flex-wrap gap-8">
-                {filteredProducts.map((item) => (
-                  <ProductCard
-                    key={item.id}
-                    product={item}
-                    onClick={() => handleProductView(item)}
-                    onLikeChange={(liked) => handleLikeChange(item, liked)}
-                  />
-                ))}
-              </div>
+              <>
+                {isLoading ? (
+                  <div className="flex items-center justify-center min-h-[400px]">
+                    <div className="w-16 h-16 border-4 border-[#F88379] border-t-transparent rounded-full animate-spin"></div>
+                  </div>
+                ) : (
+                  <div className="flex flex-wrap gap-8">
+                    {filteredProducts.map((item) => (
+                      <ProductCard
+                        key={item.id}
+                        product={item}
+                        onClick={() => handleProductView(item)}
+                        onLikeChange={(liked) => handleLikeChange(item, liked)}
+                      />
+                    ))}
+                  </div>
+                )}
+              </>
             )
           ) : mainView === 'likes' ? (
             <MyLikes />

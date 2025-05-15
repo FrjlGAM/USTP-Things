@@ -1,7 +1,6 @@
 import Sidebar from '../components/Sidebar';
 import ustpLogo from '../../assets/ustp-things-logo.png';
 import userAvatar from '../../assets/ustp thingS/Person.png';
-import leftArrow from '../../assets/ustp thingS/LeftArrow.png';
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { db, auth } from '../../lib/firebase';
@@ -160,6 +159,30 @@ export default function SellerOrders() {
     navigate(`/dashboard/messages/${userId}`);
   };
 
+  // Sidebar navigation handler
+  const handleSidebarNav = (view: 'home' | 'likes' | 'recently' | 'seller-orders' | 'rate' | 'message') => {
+    switch (view) {
+      case 'home':
+        navigate('/dashboard');
+        break;
+      case 'likes':
+        navigate('/dashboard/likes');
+        break;
+      case 'recently':
+        navigate('/dashboard/recently-viewed');
+        break;
+      case 'seller-orders':
+        navigate('/dashboard/seller-orders');
+        break;
+      case 'rate':
+        navigate('/dashboard/to-rate');
+        break;
+      case 'message':
+        navigate('/dashboard/messages');
+        break;
+    }
+  };
+
   const isWithinCancellationWindow = (orderDate: Date) => {
     const now = new Date();
     const hourInMilliseconds = 60 * 60 * 1000; // 1 hour in milliseconds
@@ -215,18 +238,25 @@ export default function SellerOrders() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f7f6fd]">
+    <div className="flex min-h-screen bg-[#f7f6fd]">
+      {/* Sidebar */}
+      <div className="w-[348px] flex-shrink-0">
+        <Sidebar
+          onVerifyClick={() => setShowModal(true)}
+          onHomeClick={() => handleSidebarNav('home')}
+          onLikesClick={() => handleSidebarNav('likes')}
+          onRecentlyClick={() => handleSidebarNav('recently')}
+          onOrdersClick={() => handleSidebarNav('seller-orders')}
+          onRateClick={() => handleSidebarNav('rate')}
+          onMessageClick={() => handleSidebarNav('message')}
+          activeButton="orders"
+        />
+      </div>
       {/* Main Content */}
       <main className="flex-1 flex flex-col">
         {/* Header */}
-        <header className="flex items-center px-8 pr-[47px] py-4 bg-white h-[70px] shadow-[0_4px_4px_0_rgba(0,0,0,0.1)] relative">
-          <button 
-            onClick={() => navigate('/dashboard/seller')}
-            className="absolute left-0 top-0 p-2 hover:opacity-80 transition"
-          >
-            <img src={leftArrow} alt="Back" className="w-12 h-12" />
-          </button>
-          <div className="flex items-center gap-4 ml-20">
+        <header className="flex items-center justify-between px-8 pr-[47px] py-4 bg-white h-[70px] shadow-[0_4px_4px_0_rgba(0,0,0,0.1)]">
+          <div className="flex items-center gap-4">
             <img src={ustpLogo} alt="USTP Things Logo" className="w-[117px] h-[63px] object-contain" />
             <h1 className="text-3xl font-bold text-[#F88379] pb-1">Product Orders</h1>
           </div>

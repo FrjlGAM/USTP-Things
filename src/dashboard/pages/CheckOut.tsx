@@ -143,7 +143,7 @@ export default function CheckOut({ product, onClose }: CheckOutProps) {
           onHomeClick={() => navigate('/dashboard')}
           onLikesClick={() => navigate('/dashboard/likes')}
           onRecentlyClick={() => navigate('/dashboard/recently-viewed')}
-          onPickUpClick={() => navigate('/dashboard/pickup')}
+          onOrdersClick={() => navigate('/dashboard/orders')}
           onRateClick={() => navigate('/dashboard/rate')}
           onMessageClick={() => navigate('/dashboard/message')}
         />

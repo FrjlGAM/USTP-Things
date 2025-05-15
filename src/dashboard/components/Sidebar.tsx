@@ -188,7 +188,11 @@ export default function Sidebar({
           </button>
           <div className="mt-4 mb-2 font-bold text-[#F88379] text-xl flex justify-center">My Purchases</div>
           <button 
-            onClick={() => handleRestrictedButtonClick('orders', onOrdersClick)}
+            onClick={() => {
+              setActiveButton('orders');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+              onOrdersClick?.();
+            }} 
             className={`flex items-center gap-2 text-[#F88379] font-semibold text-lg text-left transition ${activeButton === 'orders' ? 'bg-white rounded-[23.08px] px-2 py-1' : ''}`}
           >
             <img src={purchasesIcon} alt="Orders" className="w-5 h-5" />Orders

@@ -107,84 +107,42 @@ const SellerPage: React.FC = () => {
         </button>
         <span className="ml-4 text-lg text-gray-400 font-semibold">Seller Page</span>
       </div>
-      {/* Profile and stats card, with gap between profile and stats */}
-      <div className="w-full bg-[#FFF3F2] rounded-none shadow px-8 pt-4 pb-4 flex flex-col md:flex-row gap-0 md:gap-12">
-        {/* Left: Profile and actions */}
-        <div className="flex flex-col items-center md:items-start w-full md:w-[340px] md:flex md:items-center md:justify-center bg-white rounded-2xl p-6 md:mr-8 shadow" style={{minWidth: 320}}>
-          <div className="relative flex flex-col items-center ml-41">
-            <img src={profilePic} alt="Profile" className="w-24 h-24 rounded-full border-4 border-[#F88379] object-cover" />
-            {/* Optional: Pencil icon overlay */}
-            {/* <img src={pencilIcon} alt="Edit" className="absolute bottom-2 right-2 w-6 h-6 bg-white rounded-full p-1 border border-gray-200" /> */}
-            <div className="text-xl font-bold text-[#F88379] mt-2 text-center">Galdo Boutique</div>
-          </div>
-          <div className="flex justify-center gap-6 mt-8">
-            <div className="relative" ref={manageBtnRef}>
-              {/* Overlay Buttons */}
-              {showOverlay && (
-                <div className="absolute -top-32 left-1/2 -translate-x-1/2 flex gap-8 z-20">
-                  <div className="flex flex-col items-center">
-                    <button
-                      className="w-10 h-10 rounded-full bg-[#F88379] flex items-center justify-center shadow-md hover:scale-105 transition"
-                      onClick={() => setShowAddProductModal(true)}
-                    >
-                      <img src={addIcon} alt="Add Product" className="w-5 h-5" />
-                    </button>
-                    <span className="mt-2 text-[#F88379] font-semibold text-xs">Add Product</span>
-                  </div>
-                  <div className="flex flex-col items-center">
-                    <button
-                      className="w-10 h-10 rounded-full bg-[#F88379] flex items-center justify-center shadow-md hover:scale-105 transition"
-                      onClick={() => {
-                        setShowOverlay(false);
-                        setDeleteMode(true);
-                      }}
-                    >
-                      <img src={deleteIcon} alt="Delete Product" className="w-5 h-5" />
-                    </button>
-                    <span className="mt-2 text-[#F88379] font-semibold text-xs">Delete Product</span>
-                  </div>
-                </div>
-              )}
-              {/* Manage Products Button */}
-              <button
-                className="flex items-center gap-3 px-4 py-1 rounded-full bg-[#F88379] shadow-[0_2px_8px_0_rgba(248,131,121,0.15)] hover:scale-105 transition-transform"
-                style={{ minWidth: 120, fontFamily: 'Nunito, Quicksand, sans-serif', boxShadow: '0 2px 8px 0 rgba(248,131,121,0.15)' }}
-                onClick={() => setShowOverlay((prev) => !prev)}
-                type="button"
-              >
-                <img src={manageProductsIcon} alt="Manage Products" className="w-6 h-6" />
-                <span className="text-white font-bold text-sm text-left" style={{ fontFamily: 'inherit', letterSpacing: '0.5px' }}>
-                  Manage<br />Products
-                </span>
-              </button>
-            </div>
+      {/* Profile and stats card, clean two-column layout, no overlaps */}
+      <div className="w-full bg-[#FFF3F2] px-8 pt-6 pb-4 flex flex-col md:flex-row gap-8">
+        {/* Left: Profile card */}
+        <div className="bg-white rounded-2xl shadow p-8 flex flex-col items-center md:items-start w-full md:w-1/3 min-w-[300px] max-w-[350px]">
+          <img src={profilePic} alt="Profile" className="w-24 h-24 rounded-full border-4 border-[#F88379] object-cover mb-2" />
+          <div className="text-xl font-bold text-[#F88379] mt-2 text-center md:text-left">Galdo Boutique</div>
+          {/* Action Buttons */}
+          <div className="flex flex-col gap-3 w-full mt-8">
             <button
-              className="flex items-center gap-3 px-4 py-1 rounded-full bg-[#F88379] shadow-[0_2px_8px_0_rgba(248,131,121,0.15)] hover:scale-105 transition-transform"
-              style={{ minWidth: 120, fontFamily: 'Nunito, Quicksand, sans-serif', boxShadow: '0 2px 8px 0 rgba(248,131,121,0.15)' }}
+              className="flex items-center gap-3 px-4 py-2 rounded-full bg-[#F88379] text-white font-bold shadow hover:scale-105 transition-transform w-full justify-center"
+              onClick={() => setShowOverlay((prev) => !prev)}
+              type="button"
+            >
+              <img src={manageProductsIcon} alt="Manage Products" className="w-6 h-6" />
+              Manage Products
+            </button>
+            <button
+              className="flex items-center gap-3 px-4 py-2 rounded-full bg-[#F88379] text-white font-bold shadow hover:scale-105 transition-transform w-full justify-center"
               onClick={() => navigate('/dashboard/seller-orders')}
             >
               <img src={productOrdersIcon} alt="Product Orders" className="w-6 h-6" />
-              <span className="text-white font-bold text-sm text-left" style={{ fontFamily: 'inherit', letterSpacing: '0.5px' }}>
-                Product<br />Orders
-              </span>
+              Product Orders
             </button>
             <button
-              className="flex items-center gap-3 px-4 py-1 rounded-full bg-[#F88379] shadow-[0_2px_8px_0_rgba(248,131,121,0.15)] hover:scale-105 transition-transform"
-              style={{ minWidth: 140, fontFamily: 'Nunito, Quicksand, sans-serif', boxShadow: '0 2px 8px 0 rgba(248,131,121,0.15)' }}
+              className="flex items-center gap-3 px-4 py-2 rounded-full bg-[#F88379] text-white font-bold shadow hover:scale-105 transition-transform w-full justify-center"
               onClick={() => navigate('/dashboard/customer-messages')}
             >
               <img src={customerMessagesIcon} alt="Customer Messages" className="w-7 h-7" />
-              <span className="text-white font-bold text-sm text-left" style={{ fontFamily: 'inherit', letterSpacing: '0.5px' }}>
-                Customer<br />Messages
-              </span>
+              Customer Messages
             </button>
           </div>
         </div>
-        {/* Right: Stats */}
-        <div className="flex-1 grid grid-cols-2 gap-y-6 gap-x-12 items-center mt-6 md:mt-0 bg-white rounded-2xl p-8 shadow">
+        {/* Right: Stats card */}
+        <div className="flex-1 bg-white rounded-2xl shadow p-8 grid grid-cols-2 gap-y-8 gap-x-12 items-center min-w-[320px]">
           {stats.map((stat, idx) => {
             if (stat.label === 'Earnings') {
-              // Only the stat above Transaction History is clickable
               return (
                 <button
                   key={idx}

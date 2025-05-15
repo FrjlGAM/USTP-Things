@@ -1,59 +1,107 @@
 import Sidebar from '../components/Sidebar';
 import ustpLogo from '../../assets/ustp-things-logo.png';
 import userAvatar from '../../assets/ustp thingS/Person.png';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { db, auth } from '../../lib/firebase';
+import { collection, query, where, getDocs, doc, getDoc, updateDoc } from 'firebase/firestore';
 
-// Sample items to rate data
-const itemsToRate = [
-  {
-    id: 1,
-    seller: 'Galdo Boutique',
-    product: 'Uniform Set USTP (Female)',
-    image: userAvatar,
-    purchaseDate: '2 days ago',
-  },
-  {
-    id: 2,
-    seller: 'USTP Bookstore',
-    product: 'USTP Notebook',
-    image: userAvatar,
-    purchaseDate: '1 week ago',
-  },
-  {
-    id: 3,
-    seller: 'Campus Supplies',
-    product: 'USTP ID Lace',
-    image: userAvatar,
-    purchaseDate: '2 weeks ago',
-  },
-];
+interface SellerData {
+  businessName: string;
+  avatar?: string;
+}
+
+interface OrderData {
+  userId: string;
+  sellerId: string;
+  productId: string;
+  status: 'Completed';
+  schoolLocation: string;
+  pickupDate: string;
+  pickupTime: string;
+  paymentMethod: string;
+  quantity: number;
+  totalAmount: number;
+  createdAt: { toDate: () => Date };
+  completedAt: { toDate: () => Date };
+  productName: string;
+  productImage: string;
+  isRated?: boolean;
+}
+
+interface Order {
+  id: string;
+  sellerId: string;
+  productId: string;
+  status: 'Completed';
+  schoolLocation: string;
+  pickupDate: string;
+  pickupTime: string;
+  paymentMethod: string;
+  quantity: number;
+  totalAmount: number;
+  createdAt: Date;
+  completedAt: Date;
+  productName: string;
+  productImage: string;
+  sellerName?: string;
+  sellerAvatar?: string;
+  isRated?: boolean;
+}
 
 interface ToRateContentProps {
-  onProductClick?: (product: any) => void;
+  orders: Order[];
+  onRateNow: (order: Order) => void;
+  loading: boolean;
 }
 
 // Content component without header and sidebar
-export function ToRateContent({ onProductClick }: ToRateContentProps) {
-  return (
-    <div className="space-y-6">
-      {itemsToRate.map((item) => (
-        <div key={item.id} className="bg-white rounded-2xl shadow p-6">
-          <div className="flex items-center gap-4">
-            <img src={item.image} alt={item.product} className="w-24 h-24 object-cover rounded-xl" />
-            <div className="flex-1">
-              <div className="flex justify-between items-start">
-                <h3 className="text-lg font-semibold text-gray-800">{item.seller}</h3>
-                <span className="text-sm text-gray-500">{item.purchaseDate}</span>
-              </div>
-              <p className="text-gray-600 mt-1">{item.product}</p>
-              <button className="mt-4 bg-[#F88379] hover:bg-[#F88379]/90 text-white font-semibold py-2 px-6 rounded-lg shadow transition" onClick={() => onProductClick?.(item)}>
-                Rate Now
-              </button>
+export function ToRateContent({ orders, onRateNow, loading }: ToRateContentProps) {
+  const renderOrderCard = (order: Order) => (
+    <div key={order.id} className="bg-white rounded-2xl shadow p-6">
+      <div className="flex items-center gap-4">
+        <img src={order.productImage} alt={order.productName} className="w-16 h-16 rounded-full object-cover" />
+        <div className="flex-1">
+          <div className="flex justify-between items-start">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-800">{order.productName}</h3>
+              <p className="text-sm text-gray-600">Seller: {order.sellerName}</p>
             </div>
+            <span className="text-sm text-gray-500">
+              Completed on: {order.completedAt.toLocaleDateString()} {order.completedAt.toLocaleTimeString()}
+            </span>
+          </div>
+          <div className="mt-2 space-y-1">
+            <p className="text-gray-600">Quantity: {order.quantity}</p>
+            <p className="text-gray-600">Total Amount: ₱{order.totalAmount.toLocaleString()}</p>
+            <p className="text-gray-600">Pickup: {order.schoolLocation}</p>
+            <p className="text-gray-600">Date & Time: {order.pickupDate} at {order.pickupTime}</p>
+            <p className="text-gray-600">Payment: {order.paymentMethod}</p>
+          </div>
+          <div className="flex justify-end mt-4">
+            <button 
+              onClick={() => onRateNow(order)}
+              className="bg-[#F88379] hover:bg-[#F88379]/90 text-white font-semibold py-2 px-6 rounded-lg shadow transition"
+            >
+              Rate Now
+            </button>
           </div>
         </div>
-      ))}
+      </div>
+    </div>
+  );
+
+  if (loading) {
+    return <div className="text-center text-gray-500 mt-8">Loading orders to rate...</div>;
+  }
+
+  if (orders.length === 0) {
+    return <div className="text-center text-gray-500 mt-8">No orders to rate at the moment.</div>;
+  }
+
+  return (
+    <div className="space-y-6">
+      {orders.map(renderOrderCard)}
     </div>
   );
 }
@@ -61,10 +109,75 @@ export function ToRateContent({ onProductClick }: ToRateContentProps) {
 // Full page component with header and sidebar
 export default function ToRate() {
   const [showModal, setShowModal] = useState(false);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
+  useEffect(() => {
+    const fetchOrders = async () => {
+      if (!auth.currentUser) return;
+
+      try {
+        // Query completed orders that haven't been rated
+        const ordersQuery = query(
+          collection(db, 'pickupOrders'),
+          where('userId', '==', auth.currentUser.uid),
+          where('status', '==', 'Completed'),
+          where('isRated', '==', false)
+        );
+        
+        const querySnapshot = await getDocs(ordersQuery);
+        const fetchedOrders: Order[] = [];
+
+        // Fetch additional details for each order
+        for (const docSnapshot of querySnapshot.docs) {
+          const orderData = docSnapshot.data() as OrderData;
+          
+          // Get seller details
+          const sellerDoc = await getDoc(doc(db, 'users', orderData.sellerId));
+          const sellerData = sellerDoc.exists() ? sellerDoc.data() as SellerData : null;
+
+          fetchedOrders.push({
+            id: docSnapshot.id,
+            sellerId: orderData.sellerId,
+            productId: orderData.productId,
+            status: orderData.status,
+            schoolLocation: orderData.schoolLocation,
+            pickupDate: orderData.pickupDate,
+            pickupTime: orderData.pickupTime,
+            paymentMethod: orderData.paymentMethod,
+            quantity: orderData.quantity,
+            totalAmount: orderData.totalAmount,
+            createdAt: orderData.createdAt?.toDate() || new Date(),
+            completedAt: orderData.completedAt?.toDate() || new Date(),
+            productName: orderData.productName,
+            productImage: orderData.productImage,
+            sellerName: sellerData?.businessName || 'Unknown Seller',
+            sellerAvatar: sellerData?.avatar || userAvatar,
+            isRated: orderData.isRated
+          });
+        }
+
+        // Sort orders by completion date, most recent first
+        fetchedOrders.sort((a, b) => b.completedAt.getTime() - a.completedAt.getTime());
+        setOrders(fetchedOrders);
+      } catch (error) {
+        console.error('Error fetching orders:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchOrders();
+  }, []);
+
+  const handleRateNow = async (order: Order) => {
+    // Navigate to rating page with order details
+    navigate(`/dashboard/rate/${order.id}`, { state: { order } });
+  };
+
   // Sidebar navigation handler
-  const handleSidebarNav = (view: 'home' | 'likes' | 'recently' | 'pickup' | 'rate' | 'message') => {
+  const handleSidebarNav = (view: 'home' | 'likes' | 'recently' | 'orders' | 'to-rate' | 'messages') => {
     switch (view) {
       case 'home':
         navigate('/dashboard');
@@ -75,15 +188,17 @@ export default function ToRate() {
       case 'recently':
         navigate('/dashboard/recently-viewed');
         break;
-      case 'pickup':
-        navigate('/dashboard/pickup');
+      case 'orders':
+        navigate('/dashboard/orders');
         break;
-      case 'rate':
+      case 'to-rate':
         navigate('/dashboard/to-rate');
         break;
-      case 'message':
+      case 'messages':
         navigate('/dashboard/messages');
         break;
+      default:
+        navigate('/dashboard');
     }
   };
 
@@ -96,9 +211,10 @@ export default function ToRate() {
           onHomeClick={() => handleSidebarNav('home')}
           onLikesClick={() => handleSidebarNav('likes')}
           onRecentlyClick={() => handleSidebarNav('recently')}
-          onPickUpClick={() => handleSidebarNav('pickup')}
-          onRateClick={() => handleSidebarNav('rate')}
-          onMessageClick={() => handleSidebarNav('message')}
+          onOrdersClick={() => handleSidebarNav('orders')}
+          onRateClick={() => handleSidebarNav('to-rate')}
+          onMessageClick={() => handleSidebarNav('messages')}
+          activeButton="to-rate"
         />
       </div>
       {/* Main Content */}
@@ -110,7 +226,13 @@ export default function ToRate() {
             <h1 className="text-3xl font-bold text-[#F88379] pb-1">To Rate</h1>
           </div>
         </header>
-        <ToRateContent />
+        <div className="p-10">
+          <ToRateContent 
+            orders={orders}
+            onRateNow={handleRateNow}
+            loading={loading}
+          />
+        </div>
       </main>
     </div>
   );

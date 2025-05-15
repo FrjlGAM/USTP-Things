@@ -1,7 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import HeartButton from './HeartButton';
-import { db, auth } from '../../lib/firebase';
-import { doc, onSnapshot } from 'firebase/firestore';
 
 interface ProductCardProps {
   product: {
@@ -16,37 +14,6 @@ interface ProductCardProps {
 }
 
 export default function ProductCard({ product, onClick, onLikeChange }: ProductCardProps) {
-  const [isLiked, setIsLiked] = useState(product.liked || false);
-
-  // Sync with Firestore
-  useEffect(() => {
-    if (!auth.currentUser || !product.id) return;
-
-    const userRef = doc(db, 'users', auth.currentUser.uid);
-    const unsubscribe = onSnapshot(userRef, (doc) => {
-      if (doc.exists()) {
-        const userData = doc.data();
-        const likedProducts = userData?.likedProducts || [];
-        const newLikedState = likedProducts.includes(product.id);
-        if (newLikedState !== isLiked) {
-          setIsLiked(newLikedState);
-        }
-      }
-    });
-
-    return () => unsubscribe();
-  }, [product.id, auth.currentUser, isLiked]);
-
-  // Update local state when product.liked changes
-  useEffect(() => {
-    setIsLiked(product.liked || false);
-  }, [product.liked]);
-
-  const handleLikeChange = (liked: boolean) => {
-    setIsLiked(liked);
-    onLikeChange?.(liked);
-  };
-
   return (
     <div
       style={{
@@ -127,8 +94,8 @@ export default function ProductCard({ product, onClick, onLikeChange }: ProductC
         onClick={e => { e.stopPropagation(); }}
       >
         <HeartButton
-          initialLiked={isLiked}
-          onLikeChange={handleLikeChange}
+          initialLiked={product.liked}
+          onLikeChange={onLikeChange}
           productId={product.id}
         />
       </div>

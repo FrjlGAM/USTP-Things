@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import heartIcon from '../../assets/ustp thingS/Heart.png';
 import heartFilledIcon from '../../assets/ustp thingS/Heart filled.png';
 import { db, auth } from '../../lib/firebase';
-import { doc, getDoc, setDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
+import { doc, getDoc, setDoc, arrayUnion, arrayRemove, onSnapshot } from 'firebase/firestore';
 
 interface HeartButtonProps {
   initialLiked?: boolean;
@@ -16,21 +16,22 @@ export default function HeartButton({ initialLiked = false, onLikeChange, classN
 
   // Sync with Firestore
   useEffect(() => {
-    const checkLikedStatus = async () => {
-      if (auth.currentUser && productId) {
-        const userRef = doc(db, 'users', auth.currentUser.uid);
-        const userDoc = await getDoc(userRef);
-        
-        if (userDoc.exists()) {
-          const userData = userDoc.data();
-          const likedProducts = userData.likedProducts || [];
-          setIsLiked(likedProducts.includes(productId));
-        }
-      }
-    };
+    if (!auth.currentUser || !productId) return;
 
-    checkLikedStatus();
-  }, [productId]);
+    const userRef = doc(db, 'users', auth.currentUser.uid);
+    
+    // Set up real-time listener for user document
+    const unsubscribe = onSnapshot(userRef, (doc) => {
+      if (doc.exists()) {
+        const userData = doc.data();
+        const likedProducts = userData?.likedProducts || [];
+        const isProductLiked = likedProducts.includes(productId);
+        setIsLiked(isProductLiked);
+      }
+    });
+
+    return () => unsubscribe();
+  }, [productId, auth.currentUser]);
 
   const handleClick = async (e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent event from bubbling up
@@ -38,22 +39,47 @@ export default function HeartButton({ initialLiked = false, onLikeChange, classN
     if (!auth.currentUser || !productId) return;
 
     const newLikedState = !isLiked;
-    setIsLiked(newLikedState);
     
     // Update Firestore
     const userRef = doc(db, 'users', auth.currentUser.uid);
-    if (newLikedState) {
-      await setDoc(userRef, {
-        likedProducts: arrayUnion(productId)
-      }, { merge: true });
-    } else {
-      await setDoc(userRef, {
-        likedProducts: arrayRemove(productId)
-      }, { merge: true });
+    try {
+      // Get current liked products to ensure atomic update
+      const userDoc = await getDoc(userRef);
+      if (!userDoc.exists()) {
+        // Initialize user document if it doesn't exist
+        await setDoc(userRef, {
+          likedProducts: [],
+          cartProducts: [],
+          recentlyViewed: []
+        });
+      }
+      
+      const userData = userDoc.exists() ? userDoc.data() : {};
+      const currentLikedProducts = userData.likedProducts || [];
+      
+      // Perform atomic update
+      if (newLikedState && !currentLikedProducts.includes(productId)) {
+        await setDoc(userRef, {
+          likedProducts: arrayUnion(productId)
+        }, { merge: true });
+        console.log('Added product to likes:', productId);
+      } else if (!newLikedState && currentLikedProducts.includes(productId)) {
+        await setDoc(userRef, {
+          likedProducts: arrayRemove(productId)
+        }, { merge: true });
+        console.log('Removed product from likes:', productId);
+      }
+      
+      // Update local state
+      setIsLiked(newLikedState);
+      
+      // Call the parent's onLikeChange callback
+      onLikeChange?.(newLikedState);
+    } catch (error) {
+      console.error('Error updating like status:', error);
+      // Revert local state on error
+      setIsLiked(!newLikedState);
     }
-
-    // Call the parent's onLikeChange callback
-    onLikeChange?.(newLikedState);
   };
 
   return (

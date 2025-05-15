@@ -20,7 +20,15 @@ interface OrderData {
   sellerId: string;
   productId: string;
   status: 'Processing' | 'Ready for pickup' | 'Completed' | 'Cancelled';
+  schoolLocation: string;
+  pickupDate: string;
+  pickupTime: string;
+  paymentMethod: string;
+  quantity: number;
+  totalAmount: number;
   createdAt: { toDate: () => Date };
+  productName: string;
+  productImage: string;
 }
 
 interface Order {
@@ -28,9 +36,16 @@ interface Order {
   sellerId: string;
   productId: string;
   status: 'Processing' | 'Ready for pickup' | 'Completed' | 'Cancelled';
+  schoolLocation: string;
+  pickupDate: string;
+  pickupTime: string;
+  paymentMethod: string;
+  quantity: number;
+  totalAmount: number;
   createdAt: Date;
+  productName: string;
+  productImage: string;
   sellerName?: string;
-  productName?: string;
   sellerAvatar?: string;
 }
 
@@ -50,7 +65,7 @@ export default function Orders() {
       try {
         // Query all orders for the current user
         const ordersQuery = query(
-          collection(db, 'orders'),
+          collection(db, 'pickupOrders'),
           where('userId', '==', auth.currentUser.uid)
         );
         
@@ -64,19 +79,22 @@ export default function Orders() {
           // Get seller details
           const sellerDoc = await getDoc(doc(db, 'users', orderData.sellerId));
           const sellerData = sellerDoc.exists() ? sellerDoc.data() as SellerData : null;
-          
-          // Get product details
-          const productDoc = await getDoc(doc(db, 'products', orderData.productId));
-          const productData = productDoc.exists() ? productDoc.data() as ProductData : null;
 
           fetchedOrders.push({
             id: docSnapshot.id,
             sellerId: orderData.sellerId,
             productId: orderData.productId,
             status: orderData.status,
+            schoolLocation: orderData.schoolLocation,
+            pickupDate: orderData.pickupDate,
+            pickupTime: orderData.pickupTime,
+            paymentMethod: orderData.paymentMethod,
+            quantity: orderData.quantity,
+            totalAmount: orderData.totalAmount,
             createdAt: orderData.createdAt?.toDate() || new Date(),
+            productName: orderData.productName,
+            productImage: orderData.productImage,
             sellerName: sellerData?.businessName || 'Unknown Seller',
-            productName: productData?.name || 'Unknown Product',
             sellerAvatar: sellerData?.avatar || userAvatar
           });
         }
@@ -137,6 +155,10 @@ export default function Orders() {
     }
   };
 
+  const handleContactSeller = (sellerId: string) => {
+    navigate(`/dashboard/messages/${sellerId}`);
+  };
+
   // Sidebar navigation handler
   const handleSidebarNav = (view: 'home' | 'likes' | 'recently' | 'orders' | 'rate' | 'message') => {
     switch (view) {
@@ -161,50 +183,81 @@ export default function Orders() {
     }
   };
 
-  const renderOrderCard = (order: Order) => (
-    <div key={order.id} className="bg-white rounded-2xl shadow p-6">
-      <div className="flex items-center gap-4">
-        <img src={order.sellerAvatar} alt={order.sellerName} className="w-16 h-16 rounded-full object-cover" />
-        <div className="flex-1">
-          <div className="flex justify-between items-start">
-            <h3 className="text-lg font-semibold text-gray-800">{order.sellerName}</h3>
-            <span className="text-sm text-gray-500">
-              {order.createdAt.toLocaleDateString()} {order.createdAt.toLocaleTimeString()}
-            </span>
-          </div>
-          <p className="text-gray-600 mt-1">{order.productName}</p>
-          <div className="flex justify-between items-center mt-2">
-            <span className={`text-sm font-semibold ${
-              order.status === 'Ready for pickup' ? 'text-green-600' : 
-              order.status === 'Processing' ? 'text-yellow-600' :
-              'text-red-600'
-            }`}>
-              {order.status}
-            </span>
-            <div className="flex gap-2">
-              {order.status === 'Processing' && (
+  const isWithinCancellationWindow = (orderDate: Date) => {
+    const now = new Date();
+    const hourInMilliseconds = 60 * 60 * 1000; // 1 hour in milliseconds
+    const timeDifference = now.getTime() - orderDate.getTime();
+    return timeDifference <= hourInMilliseconds;
+  };
+
+  const renderOrderCard = (order: Order) => {
+    const canCancel = order.status === 'Processing' && isWithinCancellationWindow(order.createdAt);
+    
+    return (
+      <div key={order.id} className="bg-white rounded-2xl shadow p-6">
+        <div className="flex items-center gap-4">
+          <img src={order.productImage} alt={order.productName} className="w-16 h-16 rounded-full object-cover" />
+          <div className="flex-1">
+            <div className="flex justify-between items-start">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-800">{order.productName}</h3>
+                <p className="text-sm text-gray-600">Seller: {order.sellerName}</p>
+              </div>
+              <span className="text-sm text-gray-500">
+                {order.createdAt.toLocaleDateString()} {order.createdAt.toLocaleTimeString()}
+              </span>
+            </div>
+            <div className="mt-2 space-y-1">
+              <p className="text-gray-600">Quantity: {order.quantity}</p>
+              <p className="text-gray-600">Total Amount: ₱{order.totalAmount.toLocaleString()}</p>
+              <p className="text-gray-600">Pickup: {order.schoolLocation}</p>
+              <p className="text-gray-600">Date & Time: {order.pickupDate} at {order.pickupTime}</p>
+              <p className="text-gray-600">Payment: {order.paymentMethod}</p>
+            </div>
+            <div className="flex justify-between items-center mt-2">
+              <div className="flex items-center gap-2">
+                <span className={`text-sm font-semibold ${
+                  order.status === 'Ready for pickup' ? 'text-green-600' : 
+                  order.status === 'Processing' ? 'text-yellow-600' :
+                  'text-red-600'
+                }`}>
+                  {order.status}
+                </span>
+                {order.status === 'Processing' && !canCancel && (
+                  <span className="text-xs text-gray-500">(Cancellation window expired)</span>
+                )}
+              </div>
+              <div className="flex gap-2">
                 <button 
-                  onClick={() => handleCancelOrder(order.id)}
-                  disabled={cancellingOrder === order.id}
-                  className="bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-6 rounded-lg shadow transition disabled:opacity-50"
+                  onClick={() => handleContactSeller(order.sellerId)}
+                  className="bg-[#4CAF50] hover:bg-[#4CAF50]/90 text-white font-semibold py-2 px-6 rounded-lg shadow transition"
                 >
-                  {cancellingOrder === order.id ? 'Cancelling...' : 'Cancel Order'}
+                  Contact Seller
                 </button>
-              )}
-              {order.status === 'Ready for pickup' && (
-                <button 
-                  onClick={() => handlePickupNow(order.id)}
-                  className="bg-[#F88379] hover:bg-[#F88379]/90 text-white font-semibold py-2 px-6 rounded-lg shadow transition"
-                >
-                  Pick Up Now
-                </button>
-              )}
+                {canCancel && (
+                  <button 
+                    onClick={() => handleCancelOrder(order.id)}
+                    disabled={cancellingOrder === order.id}
+                    className="bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-6 rounded-lg shadow transition disabled:opacity-50"
+                  >
+                    {cancellingOrder === order.id ? 'Cancelling...' : 'Cancel Order'}
+                  </button>
+                )}
+                {order.status === 'Ready for pickup' && (
+                  <button 
+                    onClick={() => handlePickupNow(order.id)}
+                    className="bg-[#F88379] hover:bg-[#F88379]/90 text-white font-semibold py-2 px-6 rounded-lg shadow transition"
+                  >
+                    Pick Up Now
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   return isStandalone ? (
     <div className="flex min-h-screen bg-[#f7f6fd]">
@@ -218,6 +271,7 @@ export default function Orders() {
           onOrdersClick={() => handleSidebarNav('orders')}
           onRateClick={() => handleSidebarNav('rate')}
           onMessageClick={() => handleSidebarNav('message')}
+          activeButton="orders"
         />
       </div>
       {/* Main Content */}

@@ -13,6 +13,7 @@ import { useLocation, Navigate } from 'react-router-dom';
 import SellerPage from '../dashboard/pages/SellerPage';
 import TransactionHistory from '../dashboard/pages/TransactionHistory';
 import Earnings from '../dashboard/pages/Earnings';
+import CustomerMessages from '../dashboard/pages/CustomerMessages';
 
 // Wrapper component to handle checkout route with product data
 function CheckOutWrapper() {
@@ -41,6 +42,7 @@ function App() {
       <Route path="/dashboard/seller" element={<SellerPage />} />
       <Route path="/dashboard/transaction-history" element={<TransactionHistory />} />
       <Route path="/dashboard/earnings" element={<Earnings />} />
+      <Route path="/dashboard/customer-messages" element={<CustomerMessages />} />
       <Route path="/admin/login" element={<AdminLogin />} />
       <Route path="/admin/signup" element={<AdminSignup />} />
       <Route path="/admin/dashboard" element={<AdminDashboard />} />

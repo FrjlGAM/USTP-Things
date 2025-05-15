@@ -180,6 +180,8 @@ export default function Orders() {
       case 'message':
         navigate('/dashboard/messages');
         break;
+      default:
+        navigate('/dashboard');
     }
   };
 

@@ -8,6 +8,7 @@ import VerificationCodeEmail from "../components/VerficationCodeEmail";
 import { getDoc, doc, setDoc } from "firebase/firestore";
 import { auth, db } from "../../lib/firebase";
 import { updateEmail, sendEmailVerification, EmailAuthProvider, reauthenticateWithCredential } from "firebase/auth";
+import SecurityCheck from "../components/SecurityCheck";
 
 type AccountandSecurityProps = {
   onSettingsClick: () => void;
@@ -26,7 +27,7 @@ export default function AccountandSecurity({ onSettingsClick, onMyProfileClick }
   const [showVerificationCodeModal, setShowVerificationCodeModal] = useState(false);
   const [email, setEmail] = useState("N/A");
   const [verificationCode, setVerificationCode] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [showSecurityCheckModal, setShowSecurityCheckModal] = useState(false);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -284,7 +285,9 @@ export default function AccountandSecurity({ onSettingsClick, onMyProfileClick }
             padding: 0,
           }}
         >
-          <div style={{ padding: "14px 16px", display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 17, cursor: "pointer", fontFamily: "inherit" }}>
+          <div style={{ padding: "14px 16px", display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 17, cursor: "pointer", fontFamily: "inherit" }}
+            onClick={() => setShowSecurityCheckModal(true)}
+          >
             Change Password <span style={{ color: "#888" }}>&gt;</span>
           </div>
         </div>
@@ -315,6 +318,13 @@ export default function AccountandSecurity({ onSettingsClick, onMyProfileClick }
         <VerificationCodeEmail
           onClose={() => setShowVerificationCodeModal(false)}
           onCheckVerification={handleCheckVerification}
+        />
+      )}
+      {showSecurityCheckModal && (
+        <SecurityCheck
+          open={showSecurityCheckModal}
+          onClose={() => setShowSecurityCheckModal(false)}
+          onVerify={() => setShowSecurityCheckModal(false)}
         />
       )}
     </div>

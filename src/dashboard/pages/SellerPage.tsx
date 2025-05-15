@@ -15,6 +15,8 @@ import addIcon from "../../assets/ustp thingS/Add.png";
 import deleteIcon from "../../assets/ustp thingS/Delete.png";
 import productUniform from "../../assets/ustp thingS/yummy 2.png"
 import AddProductModal from "../components/AddProductModal";
+import ProductCardSeller from '../components/ProductCardSeller';
+import SellerProductDetail from './SellerProductDetail';
 
 const initialProducts = [
   {
@@ -49,6 +51,7 @@ const SellerPage: React.FC = () => {
   const [deleteMode, setDeleteMode] = useState(false);
   const [selectedProducts, setSelectedProducts] = useState<number[]>([]);
   const [products, setProducts] = useState(initialProducts);
+  const [selectedProduct, setSelectedProduct] = useState<any>(null);
 
   const collections = [
     {
@@ -110,11 +113,11 @@ const SellerPage: React.FC = () => {
       {/* Profile and stats card, clean two-column layout, no overlaps */}
       <div className="w-full bg-[#FFF3F2] px-8 pt-6 pb-4 flex flex-col md:flex-row gap-8">
         {/* Left: Profile card */}
-        <div className="relative bg-white rounded-2xl shadow p-8 flex flex-col items-center md:items-start w-full md:w-1/3 min-w-[300px] max-w-[350px]">
+        <div className="relative bg-white rounded-2xl shadow p-8 flex flex-col items-center md:items-start w-full md:w-[380px] min-w-[340px] max-w-[420px]">
           <img src={profilePic} alt="Profile" className="w-24 h-24 rounded-full border-4 border-[#F88379] object-cover mb-2" />
           <div className="text-xl font-bold text-[#F88379] mt-2 text-center md:text-left">Galdo Boutique</div>
           {/* Action Buttons */}
-          <div className="flex flex-col gap-3 w-full mt-8">
+          <div className="flex flex-row gap-6 w-full mt-8 justify-center">
             <div className="relative" ref={manageBtnRef}>
               {/* Overlay Buttons */}
               {showOverlay && (
@@ -169,7 +172,7 @@ const SellerPage: React.FC = () => {
           </div>
         </div>
         {/* Right: Stats card */}
-        <div className="flex-1 bg-white rounded-2xl shadow p-8 grid grid-cols-2 gap-y-8 gap-x-12 items-center min-w-[320px]">
+        <div className="flex-1 bg-white rounded-2xl shadow p-8 grid grid-cols-2 gap-y-8 gap-x-12 items-center min-w-[340px]">
           {stats.map((stat, idx) => {
             if (stat.label === 'Earnings') {
               return (
@@ -248,11 +251,11 @@ const SellerPage: React.FC = () => {
       {activeTab === 'all' ? (
         <div className="grid grid-cols-2 md:grid-cols-5 gap-6 px-8 pb-8 pt-2 relative">
           {products.map((product, idx) => (
-            <div key={idx} className="bg-white rounded-2xl shadow p-4 flex flex-col items-center relative">
+            <div key={idx} className="relative">
               {deleteMode && (
                 <input
                   type="checkbox"
-                  className="absolute top-2 right-2 w-6 h-6 accent-[#F88379] border-2 border-gray-300 rounded"
+                  className="absolute top-2 right-2 w-6 h-6 accent-[#F88379] border-2 border-gray-300 rounded z-10"
                   checked={selectedProducts.includes(idx)}
                   onChange={() => {
                     setSelectedProducts((prev) =>
@@ -263,9 +266,7 @@ const SellerPage: React.FC = () => {
                   }}
                 />
               )}
-              <img src={product.image} alt={product.name} className="w-32 h-32 object-cover rounded-xl mb-2" />
-              <div className="font-semibold text-gray-800 text-center truncate w-full">{product.name}</div>
-              <div className="text-[#F88379] font-bold text-center">{product.price}</div>
+              <ProductCardSeller product={product} onClick={() => setSelectedProduct(product)} />
             </div>
           ))}
           {/* Delete/Cancel Buttons */}
@@ -310,6 +311,7 @@ const SellerPage: React.FC = () => {
         </div>
       )}
       <AddProductModal open={showAddProductModal} onClose={() => setShowAddProductModal(false)} />
+      <SellerProductDetail product={selectedProduct} open={!!selectedProduct} onClose={() => setSelectedProduct(null)} />
     </div>
   );
 };

@@ -4,13 +4,16 @@ import sendIcon from '../../assets/ustp thingS/Send.png';
 import imageIcon from '../../assets/ustp thingS/Image.png';
 import cameraIcon from '../../assets/ustp thingS/Camera.png';
 import Sidebar from '../components/Sidebar';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { db, auth } from '../../lib/firebase';
+import { collection, query, where, orderBy, onSnapshot, addDoc, serverTimestamp } from 'firebase/firestore';
 
 interface Message {
-  id: number;
+  id: string;
   text: string;
   sender: 'user' | 'seller';
   timestamp: Date;
+  senderId: string;
 }
 
 export default function BuyerMessage() {
@@ -18,20 +21,57 @@ export default function BuyerMessage() {
   const { sellerId } = useParams();
   const [showModal, setShowModal] = useState(false);
   const [activeView, setActiveView] = useState<'home' | 'likes' | 'recently' | 'orders' | 'to-rate' | 'messages'>('messages');
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [newMessage, setNewMessage] = useState('');
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   
-  // Sample message for now - this would be replaced with actual messages from Firebase
-  const messages: Message[] = [
-    {
-      id: 1,
-      text: "Hi po. Naka beige top and black trousers ko po. Thnx :)",
-      sender: 'user',
-      timestamp: new Date()
-    }
-  ];
+  // Set up real-time listener for messages
+  useEffect(() => {
+    if (!auth.currentUser || !sellerId) return;
 
-  const handleSendMessage = (e: React.FormEvent<HTMLFormElement>) => {
+    const messagesRef = collection(db, 'messages');
+    const q = query(
+      messagesRef,
+      where('participants', 'array-contains', [auth.currentUser.uid, sellerId].sort().join('_')),
+      orderBy('timestamp', 'asc')
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const newMessages = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        timestamp: doc.data().timestamp?.toDate() || new Date()
+      })) as Message[];
+      setMessages(newMessages);
+    });
+
+    return () => unsubscribe();
+  }, [sellerId]);
+
+  // Auto-scroll to bottom when new messages arrive
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  const handleSendMessage = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    // TODO: Implement send message functionality
+    if (!auth.currentUser || !sellerId || !newMessage.trim()) return;
+
+    try {
+      const messageData = {
+        text: newMessage.trim(),
+        sender: 'user',
+        senderId: auth.currentUser.uid,
+        timestamp: serverTimestamp(),
+        participants: [auth.currentUser.uid, sellerId].sort().join('_')
+      };
+
+      await addDoc(collection(db, 'messages'), messageData);
+      setNewMessage('');
+    } catch (error) {
+      console.error('Error sending message:', error);
+      alert('Failed to send message. Please try again.');
+    }
   };
 
   // Sidebar navigation handler
@@ -124,6 +164,7 @@ export default function BuyerMessage() {
                 </div>
               </div>
             ))}
+            <div ref={messagesEndRef} />
           </div>
 
           {/* Message Input */}
@@ -145,6 +186,8 @@ export default function BuyerMessage() {
               </div>
               <input
                 type="text"
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
                 placeholder="Type message..."
                 className="flex-1 outline-none text-gray-700 placeholder-gray-400 bg-transparent"
               />

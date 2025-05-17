@@ -52,12 +52,14 @@ const Earnings: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Top bar */}
-      <div className="flex items-center p-4">
-        <button onClick={() => navigate(-1)}>
-          <img src={LeftArrow} alt="Back" className="w-8 h-8" />
-        </button>
-        <span className="ml-4 text-2xl font-bold text-[#F88379]">My Earnings</span>
+      {/* Top bar (copied from Seller Page) */}
+      <div className="w-full bg-[#FFF3F2] px-8 py-2 flex flex-col sticky top-0 z-30">
+        <div className="flex items-center">
+          <button onClick={() => navigate(-1)} className="mt-0">
+            <img src={LeftArrow} alt="Back" className="h-10" />
+          </button>
+          <span className="ml-4 text-xl font-bold text-[#F88379]">My Earnings</span>
+        </div>
       </div>
       <div className="p-8">
         {/* Earnings Overview and Platform Commission */}

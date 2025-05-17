@@ -167,7 +167,7 @@ function VerificationModal({ open, onClose, setVerificationRequested }: { open: 
 
 export default function Dashboard() {
   const [showModal, setShowModal] = useState(false);
-  const [mainView, setMainView] = useState<'home' | 'likes' | 'recently' | 'pickup' | 'rate' | 'message' | 'product' | 'cart'>('home');
+  const [mainView, setMainView] = useState<'home' | 'likes' | 'recently' | 'orders' | 'to-rate' | 'messages' | 'product' | 'cart' | 'verify' | 'seller' | 'settings'>();
   const [selectedCategory, setSelectedCategory] = useState('For You');
   const [search, setSearch] = useState('');
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
@@ -299,25 +299,26 @@ export default function Dashboard() {
     // Check if user is trying to access restricted pages through URL
     if (!isVerified && (
       path === '/dashboard/cart' ||
-      path === '/dashboard/pickup' ||
-      path === '/dashboard/rate' ||
-      path === '/dashboard/message'
+      path === '/dashboard/orders' ||
+      path === '/dashboard/to-rate' ||
+      path === '/dashboard/messages'
     )) {
       setShowModal(true);
       setMainView('home');
       return;
     }
 
+    // Update mainView based on current path
     if (path === '/dashboard/likes') {
       setMainView('likes');
     } else if (path === '/dashboard/recently-viewed') {
       setMainView('recently');
-    } else if (path === '/dashboard/pickup') {
-      setMainView('pickup');
-    } else if (path === '/dashboard/rate') {
-      setMainView('rate');
-    } else if (path === '/dashboard/message') {
-      setMainView('message');
+    } else if (path === '/dashboard/orders') {
+      setMainView('orders');
+    } else if (path === '/dashboard/to-rate') {
+      setMainView('to-rate');
+    } else if (path === '/dashboard/messages') {
+      setMainView('messages');
     } else if (path.startsWith('/dashboard/product/')) {
       setMainView('product');
     } else if (path === '/dashboard/cart') {
@@ -328,9 +329,9 @@ export default function Dashboard() {
   }, [location, isVerified]);
 
   // Sidebar navigation handler
-  const handleSidebarNav = (view: typeof mainView) => {
+  const handleSidebarNav = (view: NonNullable<typeof mainView>) => {
     // Check if user is trying to access restricted pages
-    if (!isVerified && ['cart', 'pickup', 'rate', 'message'].includes(view)) {
+    if (!isVerified && ['cart', 'orders', 'to-rate', 'messages'].includes(view)) {
       setShowModal(true);
       return;
     }
@@ -432,8 +433,8 @@ export default function Dashboard() {
           onHomeClick={() => handleSidebarNav('home')}
           onLikesClick={() => handleSidebarNav('likes')}
           onRecentlyClick={() => handleSidebarNav('recently')}
-          onRateClick={() => handleSidebarNav('rate')}
-          onMessageClick={() => handleSidebarNav('message')}
+          onRateClick={() => handleSidebarNav('to-rate')}
+          onMessageClick={() => handleSidebarNav('messages')}
           onStartSellingClick={() => {
             if (isVerified) {
               setShowStartSellingModal(true);
@@ -442,20 +443,21 @@ export default function Dashboard() {
             }
           }}
           verificationRequested={verificationRequested}
+          activeButton={mainView}
         />
       </div>
       {/* Main Content */}
       <main className="flex-1 flex flex-col">
         {/* Header */}
         {!selectedProduct && (
-          <header className="fixed top-0 right-0 left-[348px] z-10 flex items-center justify-between px-8 pr-[47px] py-4 bg-white h-[70px] shadow-[0_4px_4px_0_rgba(0,0,0,0.1)]">
+          <header className="flex items-center justify-between px-8 pr-[47px] py-4 bg-white h-[70px] shadow-[0_4px_4px_0_rgba(0,0,0,0.1)]">
             <div className="flex items-center gap-4">
               <img src={ustpLogo} alt="USTP Things Logo" className="w-[117px] h-[63px] object-contain" />
               {mainView === 'likes' && <h1 className="text-3xl font-bold text-[#F88379] pb-1">My Likes</h1>}
               {mainView === 'recently' && <h1 className="text-3xl font-bold text-[#F88379] pb-1">Recently Viewed</h1>}
-              {mainView === 'pickup' && <h1 className="text-3xl font-bold text-[#F88379] pb-1">Pick Up</h1>}
-              {mainView === 'rate' && <h1 className="text-3xl font-bold text-[#F88379] pb-1">Rate</h1>}
-              {mainView === 'message' && <h1 className="text-3xl font-bold text-[#F88379] pb-1">Messages</h1>}
+              {mainView === 'orders' && <h1 className="text-3xl font-bold text-[#F88379] pb-1">Orders</h1>}
+              {mainView === 'to-rate' && <h1 className="text-3xl font-bold text-[#F88379] pb-1">Rate</h1>}
+              {mainView === 'messages' && <h1 className="text-3xl font-bold text-[#F88379] pb-1">Messages</h1>}
               {mainView === 'product' && <h1 className="text-3xl font-bold text-[#F88379] pb-1">Product Details</h1>}
               {mainView === 'cart' && <h1 className="text-3xl font-bold text-[#F88379] pb-1">My Cart</h1>}
             </div>
@@ -484,7 +486,7 @@ export default function Dashboard() {
         )}
         {/* Category Chips (only on Home/Product Feed) */}
         {mainView === 'home' && !selectedProduct && (
-          <div className="flex gap-2 px-10 py-2 mt-[80px]">
+          <div className="flex gap-2 px-10 py-2">
             {categories.map((cat) => (
               <button
                 key={cat}
@@ -497,7 +499,7 @@ export default function Dashboard() {
           </div>
         )}
         {/* Main Content Switcher */}
-        <div className={`flex-1 px-10 pt-4 pb-10 ${mainView === 'home' && !selectedProduct ? 'mt-1' : selectedProduct ? 'mt-0' : 'mt-[70px]'}`}>
+        <div className={`flex-1 px-10 pt-4 pb-10`}>
           {mainView === 'home' ? (
             selectedProduct ? (
               <ProductDetail 
@@ -537,26 +539,15 @@ export default function Dashboard() {
             <MyLikes />
           ) : mainView === 'recently' ? (
             <RecentlyViewed />
-          ) : mainView === 'pickup' ? (
-            <div className="space-y-6">
-              {pickups.map((pickup, index) => (
-                <div key={index} className="bg-white rounded-2xl shadow p-6">
-                  <div className="flex items-center gap-4">
-                    <img src={pickup.image} alt={pickup.product} className="w-24 h-24 object-cover rounded-xl" />
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-800">{pickup.boutique}</h3>
-                      <p className="text-gray-600">{pickup.product}</p>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
+          ) : mainView === 'orders' ? (
+            // Implement orders view
+            <div>Orders View</div>
+          ) : mainView === 'to-rate' ? (
+            <ToRateContent orders={[]} onRateNow={() => {}} loading={false} />
+          ) : mainView === 'messages' ? (
+            <MessagesContent />
           ) : mainView === 'cart' ? (
             <MyCart />
-          ) : mainView === 'rate' ? (
-            <ToRateContent orders={[]} onRateNow={() => {}} loading={false} />
-          ) : mainView === 'message' ? (
-            <MessagesContent />
           ) : null}
         </div>
       </main>

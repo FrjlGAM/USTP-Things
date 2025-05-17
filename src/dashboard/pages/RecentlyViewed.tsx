@@ -158,7 +158,7 @@ export default function RecentlyViewed({ onProductClick }: RecentlyViewedProps) 
         <ProductCard
           key={product.id}
           product={product}
-          onClick={() => onProductClick?.(product)}
+          onClick={() => handleProductView(product)}
           onLikeChange={(liked) => handleLikeChange(product, liked)}
         />
       ))}

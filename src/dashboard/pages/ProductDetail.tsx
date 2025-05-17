@@ -48,6 +48,11 @@ export default function ProductDetail({
   const [isInCart, setIsInCart] = useState(false);
   const navigate = useNavigate();
 
+  // Scroll to top when component mounts or when product changes
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [product]);
+
   // Check if product is in cart
   useEffect(() => {
     const checkCartStatus = async () => {
@@ -140,7 +145,7 @@ export default function ProductDetail({
   };
 
   return (
-    <div className="w-full bg-white p-4 md:pl-10 md:pr-16 md:py-10 relative">
+    <div className="w-full bg-white p-4 md:pl-10 md:pr-16 md:py-10 relative rounded-xl">
       {/* X Button */}
       {onClose && (
         <button

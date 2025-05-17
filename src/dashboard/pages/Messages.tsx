@@ -152,7 +152,7 @@ function ChatWindow({ sellerId, sellerName }: { sellerId: string; sellerName: st
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {loading ? (
           <div className="flex justify-center items-center h-full">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#F88379]"></div>
+            <p className="text-gray-500">Loading...</p>
           </div>
         ) : messages.length === 0 ? (
           <div className="text-center text-gray-500 mt-8">
@@ -347,7 +347,6 @@ export function MessagesContent() {
     <div className="space-y-4 p-10">
       {loading ? (
         <div className="flex flex-col items-center justify-center space-y-4">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#F88379]"></div>
           <div className="text-gray-500">Loading conversations...</div>
         </div>
       ) : chatRooms.length === 0 ? (

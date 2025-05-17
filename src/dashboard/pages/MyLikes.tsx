@@ -19,7 +19,22 @@ export default function MyLikes({ onProductClick, isStandalone = false }: MyLike
   const [showModal, setShowModal] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isVerified, setIsVerified] = useState(false);
   const navigate = useNavigate();
+
+  // Check verification status
+  useEffect(() => {
+    const checkVerification = async () => {
+      if (auth.currentUser) {
+        const userRef = doc(db, 'users', auth.currentUser.uid);
+        const userDoc = await getDoc(userRef);
+        if (userDoc.exists()) {
+          setIsVerified(Boolean(userDoc.data().isVerified));
+        }
+      }
+    };
+    checkVerification();
+  }, []);
 
   // Set up real-time listener for liked products
   useEffect(() => {
@@ -104,11 +119,7 @@ export default function MyLikes({ onProductClick, isStandalone = false }: MyLike
   }, [auth.currentUser]);
 
   const handleProductView = (product: any) => {
-    if (onProductClick) {
-      onProductClick(product);
-    } else {
-      setSelectedProduct(product);
-    }
+    setSelectedProduct(product);
   };
 
   const handleUnlike = async (product: any) => {
@@ -166,10 +177,15 @@ export default function MyLikes({ onProductClick, isStandalone = false }: MyLike
       );
     }
 
-    if (selectedProduct && isStandalone) {
+    if (selectedProduct) {
       return (
         <div className="flex flex-wrap gap-8">
-          <ProductDetail product={selectedProduct} onClose={() => setSelectedProduct(null)} />
+          <ProductDetail 
+            product={selectedProduct} 
+            onClose={() => setSelectedProduct(null)}
+            isVerified={isVerified}
+            onVerifyClick={() => setShowModal(true)}
+          />
         </div>
       );
     }

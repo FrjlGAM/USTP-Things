@@ -122,7 +122,7 @@ const SellerPage: React.FC = () => {
             <div className="relative flex flex-col items-center">
               {/* Overlay Buttons */}
               {showOverlay && (
-                <div className="absolute -top-24 left-1/2 -translate-x-1/2 flex flex-row gap-8 z-20 items-end">
+                <div className="absolute -top-16 left-1/2 -translate-x-1/2 flex flex-row gap-8 z-20 items-end">
                   <div className="flex flex-col items-center">
                     <button
                       className="w-10 h-10 rounded-full bg-[#F88379] flex items-center justify-center shadow-md hover:scale-110 transition"
@@ -178,7 +178,7 @@ const SellerPage: React.FC = () => {
           </div>
         </div>
         {/* Right: Stats card */}
-        <div className="flex-1 bg-white rounded-2xl shadow p-8 grid grid-cols-2 gap-y-8 gap-x-12 items-center min-w-[340px]">
+        <div className="flex-1 bg-white rounded-2xl shadow p-8 grid grid-cols-2 gap-y-1 gap-x-1 items-center min-w-[340px]">
           {stats.map((stat, idx) => {
             if (stat.label === 'Earnings') {
               return (
@@ -195,26 +195,27 @@ const SellerPage: React.FC = () => {
             }
             if (stat.label === 'Product Count' || stat.label === 'Followers' || stat.label === 'Rating' || stat.label === 'Date Joined') {
               return (
-                <div key={idx} className="flex items-center gap-4 group relative">
+                <div key={idx} className="flex items-center gap-4 group relative w-full">
                   <img src={stat.icon} alt={stat.label} className="w-9 h-9" />
-                  <span className="text-[#F88379] font-semibold text-lg">{stat.label}</span>
-                  <div
-                    className="absolute left-20 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-                  >
-                    <div className="flex items-center">
-                      <span
-                        className="rounded-full px-6 py-2 text-white font-bold text-lg shadow"
-                        style={{
-                          background: '#F88379',
-                          fontStyle: stat.label === 'Date Joined' ? 'italic' : 'normal',
-                          minWidth: stat.label === 'Date Joined' ? 140 : 80,
-                          display: 'inline-block',
-                          textAlign: 'center',
-                        }}
-                      >
-                        {stat.value}
-                      </span>
-                    </div>
+                  <div className="relative flex items-center w-full">
+                    <span
+                      className="text-[#F88379] font-semibold text-lg transition-opacity duration-200 group-hover:opacity-0"
+                      style={{ position: 'relative', zIndex: 10 }}
+                    >
+                      {stat.label}
+                    </span>
+                    <span
+                      className={`absolute left-0 top-1/2 -translate-y-1/2 rounded-full px-4 py-1 text-white font-bold text-base shadow-lg bg-[#F88379] transition-opacity duration-200 opacity-0 group-hover:opacity-100 pointer-events-none${stat.label === 'Date Joined' ? ' whitespace-nowrap' : ''}`}
+                      style={{
+                        fontStyle: stat.label === 'Date Joined' ? 'italic' : 'normal',
+                        minWidth: stat.label === 'Date Joined' ? 100 : 60,
+                        display: 'inline-block',
+                        textAlign: 'center',
+                        zIndex: 20,
+                      }}
+                    >
+                      {stat.value}
+                    </span>
                   </div>
                 </div>
               );

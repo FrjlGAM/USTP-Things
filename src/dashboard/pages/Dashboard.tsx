@@ -450,7 +450,7 @@ export default function Dashboard() {
       <main className="flex-1 flex flex-col">
         {/* Header */}
         {!selectedProduct && (
-          <header className="fixed top-0 right-0 left-[348px] z-10 flex items-center justify-between px-8 pr-[47px] py-4 bg-white h-[70px] shadow-[0_4px_4px_0_rgba(0,0,0,0.1)]">
+          <header className="flex items-center justify-between px-8 pr-[47px] py-4 bg-white h-[70px] shadow-[0_4px_4px_0_rgba(0,0,0,0.1)]">
             <div className="flex items-center gap-4">
               <img src={ustpLogo} alt="USTP Things Logo" className="w-[117px] h-[63px] object-contain" />
               {mainView === 'likes' && <h1 className="text-3xl font-bold text-[#F88379] pb-1">My Likes</h1>}
@@ -486,7 +486,7 @@ export default function Dashboard() {
         )}
         {/* Category Chips (only on Home/Product Feed) */}
         {mainView === 'home' && !selectedProduct && (
-          <div className="flex gap-2 px-10 py-2 mt-[80px]">
+          <div className="flex gap-2 px-10 py-2">
             {categories.map((cat) => (
               <button
                 key={cat}
@@ -499,7 +499,7 @@ export default function Dashboard() {
           </div>
         )}
         {/* Main Content Switcher */}
-        <div className={`flex-1 px-10 pt-4 pb-10 ${mainView === 'home' && !selectedProduct ? 'mt-1' : selectedProduct ? 'mt-0' : 'mt-[70px]'}`}>
+        <div className={`flex-1 px-10 pt-4 pb-10`}>
           {mainView === 'home' ? (
             selectedProduct ? (
               <ProductDetail 

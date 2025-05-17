@@ -46,6 +46,7 @@ export default function Sidebar({
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const [activeButton, setActiveButton] = useState<SidebarProps['activeButton']>(propActiveButton);
   const [sellerPageOpened, setSellerPageOpened] = useState(propSellerPageOpened || false);
+  const [hasStartedSelling, setHasStartedSelling] = useState(false);
   const user = auth.currentUser;
   const navigate = useNavigate();
 
@@ -100,6 +101,22 @@ export default function Sidebar({
     return () => unsubscribe();
   }, [auth.currentUser]);
 
+  // Add new useEffect to check if user has started selling
+  useEffect(() => {
+    if (!auth.currentUser) return;
+    
+    const userRef = doc(db, 'users', auth.currentUser.uid);
+    const unsubscribe = onSnapshot(userRef, (userDoc) => {
+      if (userDoc.exists()) {
+        const data = userDoc.data();
+        setHasStartedSelling(!!data.hasStartedSelling);
+        setSellerPageOpened(!!data.hasStartedSelling);
+      }
+    });
+
+    return () => unsubscribe();
+  }, [auth.currentUser]);
+
   const handleRestrictedButtonClick = (buttonName: string, onClick?: () => void) => {
     if (!isVerified) {
       // Don't set active button if user is not verified
@@ -111,6 +128,33 @@ export default function Sidebar({
       setActiveButton(buttonName as SidebarProps['activeButton']);
     }
     onClick?.();
+  };
+
+  const handleSellerClick = async () => {
+    if (!isVerified) {
+      alert("Verify muna bago benta :P!");
+      return;
+    }
+
+    if (hasStartedSelling) {
+      // If they've already started selling, just navigate to seller page
+      navigate('/dashboard/seller');
+    } else {
+      // First time starting to sell
+      try {
+        const userRef = doc(db, 'users', auth.currentUser!.uid);
+        await setDoc(userRef, {
+          hasStartedSelling: true,
+          startedSellingAt: new Date()
+        }, { merge: true });
+        
+        // Show the modal and update local state
+        setSellerPageOpened(true);
+        onStartSellingClick?.();
+      } catch (error) {
+        console.error('Error updating seller status:', error);
+      }
+    }
   };
 
   return (
@@ -222,23 +266,10 @@ export default function Sidebar({
       <div className="mt-auto">
         {/* Start Selling Button */}
         <button 
-          onClick={() => {
-            if (isVerified) {
-              if (sellerPageOpened) {
-                // If seller page is already opened, directly navigate
-                navigate('/dashboard/seller');
-              } else {
-                // If starting to sell for the first time
-                setSellerPageOpened(true);
-                onStartSellingClick?.();
-              }
-            } else {
-              alert("Verify muna bago benta :P!");
-            }
-          }}
+          onClick={handleSellerClick}
           className={`w-full ${activeButton === 'seller' ? 'bg-white text-[#F88379]' : 'bg-[#F88379] text-white'} hover:bg-[#F88379]/90 font-semibold py-2 rounded-[23.08px] shadow mb-10 transition text-lg`}
         >
-          {sellerPageOpened ? "View Your Seller Page" : "Start selling now!"}
+          {hasStartedSelling ? "View Your Seller Page" : "Start selling now!"}
         </button>
         {/* Settings */}
         <button

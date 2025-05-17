@@ -105,10 +105,10 @@ const SellerPage: React.FC = () => {
   return (
     <div className="min-h-screen w-full bg-[#FFF3F2]">
       {/* Top bar with back button, flush with card, no white gap above */}
-      <div className="w-full bg-[#FFF3F2] px-8 pt-4 pb-3 flex flex-col sticky top-0 z-30" style={{marginTop: 0}}>
+      <div className="w-full bg-[#FFF3F2] px-8 py-2 flex flex-col sticky top-0 z-30">
         <div className="flex items-start">
           <button onClick={() => navigate('/dashboard')} className="mt-0">
-            <img src={LeftArrow} alt="Back" className="h-8" />
+            <img src={LeftArrow} alt="Back" className="h-10" />
           </button>
         </div>
       </div>

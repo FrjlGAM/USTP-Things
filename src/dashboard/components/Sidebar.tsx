@@ -56,6 +56,11 @@ export default function Sidebar({
     }
   }, [propActiveButton]);
 
+  // Update sellerPageOpened when prop changes
+  useEffect(() => {
+    setSellerPageOpened(propSellerPageOpened || false);
+  }, [propSellerPageOpened]);
+
   useEffect(() => {
     const checkVerified = async () => {
       if (!user) {
@@ -219,8 +224,14 @@ export default function Sidebar({
         <button 
           onClick={() => {
             if (isVerified) {
-              setSellerPageOpened(true);
-              onStartSellingClick?.();
+              if (sellerPageOpened) {
+                // If seller page is already opened, directly navigate
+                navigate('/dashboard/seller');
+              } else {
+                // If starting to sell for the first time
+                setSellerPageOpened(true);
+                onStartSellingClick?.();
+              }
             } else {
               alert("Verify muna bago benta :P!");
             }

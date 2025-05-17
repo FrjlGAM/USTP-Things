@@ -2,6 +2,8 @@ import React from "react";
 import ustpLogo from "../../assets/ustp-things-logo.png";
 import xIcon from "../../assets/ustp thingS/X button.png";
 import { useNavigate } from 'react-router-dom';
+import { auth, db } from '../../lib/firebase';
+import { doc, setDoc } from 'firebase/firestore';
 
 type Props = {
   open: boolean;
@@ -9,8 +11,25 @@ type Props = {
   onStartSelling: () => void;
 };
 
-const StartSellingModal: React.FC<Props> = ({ open, onClose }) => {
+const StartSellingModal: React.FC<Props> = ({ open, onClose, onStartSelling }) => {
   const navigate = useNavigate();
+
+  const handleStartSelling = async () => {
+    try {
+      // Update user as seller in Firestore
+      const userRef = doc(db, 'users', auth.currentUser!.uid);
+      await setDoc(userRef, {
+        isSeller: true,
+        becameSellerAt: new Date()
+      }, { merge: true });
+
+      // Close modal and navigate
+      onClose();
+      navigate('/dashboard/seller');
+    } catch (error) {
+      console.error('Error updating seller status:', error);
+    }
+  };
 
   if (!open) return null;
 
@@ -36,10 +55,7 @@ const StartSellingModal: React.FC<Props> = ({ open, onClose }) => {
         </p>
         <button
           className="bg-[#F88379] text-white font-semibold px-8 py-2 rounded-full shadow hover:bg-[#f88379cc] transition"
-          onClick={() => {
-            onClose();
-            navigate('/dashboard/seller');
-          }}
+          onClick={handleStartSelling}
         >
           Start Selling
         </button>

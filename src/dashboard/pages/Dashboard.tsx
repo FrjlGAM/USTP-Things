@@ -176,7 +176,6 @@ export default function Dashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [isVerified, setIsVerified] = useState(false);
   const [showStartSellingModal, setShowStartSellingModal] = useState(false);
-  const [sellerPageOpened, setSellerPageOpened] = useState(false);
   const location = useLocation();
   const [verificationRequested, setVerificationRequested] = useState(false);
   const navigate = useNavigate();
@@ -327,37 +326,7 @@ export default function Dashboard() {
     } else if (path === '/dashboard') {
       setMainView('home');
     }
-
-    // Update sellerPageOpened based on current path
-    if (path === '/dashboard/seller') {
-      setSellerPageOpened(true);
-    }
   }, [location, isVerified]);
-
-  // Add new useEffect to persist sellerPageOpened state
-  useEffect(() => {
-    const currentUser = auth.currentUser;
-    if (!currentUser) return;
-
-    const userRef = doc(db, 'users', currentUser.uid);
-    const unsubscribe = onSnapshot(userRef, (doc) => {
-      if (doc.exists()) {
-        const data = doc.data();
-        setSellerPageOpened(!!data.isSellerPageOpened);
-      }
-    });
-
-    return () => unsubscribe();
-  }, []);
-
-  // Update user document when sellerPageOpened changes
-  useEffect(() => {
-    const currentUser = auth.currentUser;
-    if (!currentUser) return;
-
-    const userRef = doc(db, 'users', currentUser.uid);
-    setDoc(userRef, { isSellerPageOpened: sellerPageOpened }, { merge: true });
-  }, [sellerPageOpened]);
 
   // Sidebar navigation handler
   const handleSidebarNav = (view: NonNullable<typeof mainView>) => {
@@ -469,14 +438,12 @@ export default function Dashboard() {
           onStartSellingClick={() => {
             if (isVerified) {
               setShowStartSellingModal(true);
-              setSellerPageOpened(true);
             } else {
-              alert("Verify muna bago benta :P!");
+              setShowModal(true);
             }
           }}
           verificationRequested={verificationRequested}
           activeButton={mainView}
-          sellerPageOpened={sellerPageOpened}
         />
       </div>
       {/* Main Content */}

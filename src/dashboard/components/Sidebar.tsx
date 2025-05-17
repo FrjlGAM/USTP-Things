@@ -24,7 +24,6 @@ type SidebarProps = {
   onStartSellingClick?: () => void;
   verificationRequested?: boolean;
   activeButton?: 'home' | 'likes' | 'recently' | 'orders' | 'to-rate' | 'messages' | 'product' | 'cart' | 'verify' | 'seller' | 'settings';
-  sellerPageOpened?: boolean;
 };
 
 export default function Sidebar({ 
@@ -38,15 +37,13 @@ export default function Sidebar({
   onStartSellingClick,
   verificationRequested,
   activeButton: propActiveButton,
-  sellerPageOpened: propSellerPageOpened
 }: SidebarProps) {
   const [isVerified, setIsVerified] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
   const [username, setUsername] = useState<string>('Username');
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const [activeButton, setActiveButton] = useState<SidebarProps['activeButton']>(propActiveButton);
-  const [sellerPageOpened, setSellerPageOpened] = useState(propSellerPageOpened || false);
-  const [hasStartedSelling, setHasStartedSelling] = useState(false);
+  const [isSeller, setIsSeller] = useState(false);
   const user = auth.currentUser;
   const navigate = useNavigate();
 
@@ -56,11 +53,6 @@ export default function Sidebar({
       setActiveButton(propActiveButton);
     }
   }, [propActiveButton]);
-
-  // Update sellerPageOpened when prop changes
-  useEffect(() => {
-    setSellerPageOpened(propSellerPageOpened || false);
-  }, [propSellerPageOpened]);
 
   useEffect(() => {
     const checkVerified = async () => {
@@ -74,6 +66,7 @@ export default function Sidebar({
         const userDoc = await getDoc(doc(db, 'users', user.uid));
         const userData = userDoc.data();
         setIsVerified(Boolean(userData?.isVerified));
+        setIsSeller(Boolean(userData?.isSeller));
       } catch (error) {
         console.error('Error checking verification:', error);
         setIsVerified(false);
@@ -95,22 +88,7 @@ export default function Sidebar({
         const data = userDoc.data();
         setUsername(data.username || 'Username');
         setProfileImage(data.profileImage || null);
-      }
-    });
-
-    return () => unsubscribe();
-  }, [auth.currentUser]);
-
-  // Add new useEffect to check if user has started selling
-  useEffect(() => {
-    if (!auth.currentUser) return;
-    
-    const userRef = doc(db, 'users', auth.currentUser.uid);
-    const unsubscribe = onSnapshot(userRef, (userDoc) => {
-      if (userDoc.exists()) {
-        const data = userDoc.data();
-        setHasStartedSelling(!!data.hasStartedSelling);
-        setSellerPageOpened(!!data.hasStartedSelling);
+        setIsSeller(Boolean(data.isSeller));
       }
     });
 
@@ -119,41 +97,27 @@ export default function Sidebar({
 
   const handleRestrictedButtonClick = (buttonName: string, onClick?: () => void) => {
     if (!isVerified) {
-      // Don't set active button if user is not verified
       onVerifyClick?.();
       return;
     }
-    // Don't update active button if it's already set to this value
     if (activeButton !== buttonName) {
       setActiveButton(buttonName as SidebarProps['activeButton']);
     }
     onClick?.();
   };
 
-  const handleSellerClick = async () => {
+  const handleSellerClick = () => {
     if (!isVerified) {
-      alert("Verify muna bago benta :P!");
+      onVerifyClick?.();
       return;
     }
 
-    if (hasStartedSelling) {
-      // If they've already started selling, just navigate to seller page
+    if (isSeller) {
+      // If already a seller, just navigate to seller page
       navigate('/dashboard/seller');
     } else {
-      // First time starting to sell
-      try {
-        const userRef = doc(db, 'users', auth.currentUser!.uid);
-        await setDoc(userRef, {
-          hasStartedSelling: true,
-          startedSellingAt: new Date()
-        }, { merge: true });
-        
-        // Show the modal and update local state
-        setSellerPageOpened(true);
-        onStartSellingClick?.();
-      } catch (error) {
-        console.error('Error updating seller status:', error);
-      }
+      // Show modal for first-time sellers
+      onStartSellingClick?.();
     }
   };
 
@@ -269,7 +233,7 @@ export default function Sidebar({
           onClick={handleSellerClick}
           className={`w-full ${activeButton === 'seller' ? 'bg-white text-[#F88379]' : 'bg-[#F88379] text-white'} hover:bg-[#F88379]/90 font-semibold py-2 rounded-[23.08px] shadow mb-10 transition text-lg`}
         >
-          {hasStartedSelling ? "View Your Seller Page" : "Start selling now!"}
+          {isSeller ? "View Your Seller Page" : "Start selling now!"}
         </button>
         {/* Settings */}
         <button

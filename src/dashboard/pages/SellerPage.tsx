@@ -217,6 +217,19 @@ const SellerPage: React.FC = () => {
                 </button>
               );
             }
+            if (stat.label === 'Transaction History') {
+              return (
+                <button
+                  key={idx}
+                  className="flex items-center gap-4 group relative bg-transparent border-none outline-none cursor-pointer"
+                  onClick={() => navigate('/dashboard/transaction-history')}
+                  style={{ boxShadow: 'none', background: 'none', padding: 0 }}
+                >
+                  <img src={stat.icon} alt={stat.label} className="w-9 h-9" />
+                  <span className="text-[#F88379] font-semibold text-lg">{stat.label}</span>
+                </button>
+              );
+            }
             if (stat.label === 'Product Count' || stat.label === 'Followers' || stat.label === 'Rating' || stat.label === 'Date Joined') {
               return (
                 <div key={idx} className="flex items-center gap-4 group relative w-full">

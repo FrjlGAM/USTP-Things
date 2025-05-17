@@ -3,7 +3,7 @@ import { auth, db } from '../../lib/firebase';
 import { useNavigate } from 'react-router-dom';
 import Logo from '../../landing/components/Logo';
 import userAvatar from '../../assets/ustp thingS/Person.png';
-import { collection, getDocs, deleteDoc, doc, setDoc, query, orderBy, limit } from 'firebase/firestore';
+import { collection, getDocs, deleteDoc, doc, setDoc, query, orderBy, limit, getDoc } from 'firebase/firestore';
 
 type Transaction = {
   id: string;
@@ -58,17 +58,47 @@ export default function AdminDashboard() {
 
   const fetchVerifications = async () => {
     setLoadingVerifications(true);
-    const querySnapshot = await getDocs(collection(db, 'verifications'));
-    const data = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    setVerifications(data);
+    try {
+      const querySnapshot = await getDocs(collection(db, 'verifications'));
+      const verificationPromises = querySnapshot.docs.map(async (docSnapshot) => {
+        const verificationData = docSnapshot.data();
+        // Get the user document to ensure we have the latest name
+        const userDoc = await getDoc(doc(db, 'users', verificationData.userId));
+        const userData = userDoc.data();
+        return {
+          id: docSnapshot.id,
+          ...verificationData,
+          name: userData?.name || verificationData.name || 'Unknown'
+        };
+      });
+      const data = await Promise.all(verificationPromises);
+      setVerifications(data);
+    } catch (error) {
+      console.error('Error fetching verifications:', error);
+    }
     setLoadingVerifications(false);
   };
 
   const fetchVerifiedAccounts = async () => {
     setLoadingVerified(true);
-    const querySnapshot = await getDocs(collection(db, 'verifiedAccounts'));
-    const data = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    setVerifiedAccounts(data);
+    try {
+      const querySnapshot = await getDocs(collection(db, 'verifiedAccounts'));
+      const accountPromises = querySnapshot.docs.map(async (docSnapshot) => {
+        const accountData = docSnapshot.data();
+        // Get the user document to ensure we have the latest name
+        const userDoc = await getDoc(doc(db, 'users', accountData.userId));
+        const userData = userDoc.data();
+        return {
+          id: docSnapshot.id,
+          ...accountData,
+          name: userData?.name || accountData.name || 'Unknown'
+        };
+      });
+      const data = await Promise.all(accountPromises);
+      setVerifiedAccounts(data);
+    } catch (error) {
+      console.error('Error fetching verified accounts:', error);
+    }
     setLoadingVerified(false);
   };
 
@@ -275,11 +305,11 @@ export default function AdminDashboard() {
           <div className="overflow-x-auto">
             <table className="min-w-full">
               <thead>
-                <tr className="text-left text-gray-700 text-base">
-                  <th className="py-2 px-4 font-semibold" style={{background: '#F88379', color: 'white', borderTopLeftRadius: '9999px'}}>Username</th>
-                  <th className="py-2 px-4 font-semibold" style={{background: '#F88379', color: 'white'}}>ID Number and Email</th>
-                  <th className="py-2 px-4 font-semibold" style={{background: '#F88379', color: 'white'}}>Date Applied</th>
-                  <th className="py-2 px-4 font-semibold" style={{background: '#F88379', color: 'white', borderTopRightRadius: '9999px'}}>Confirm</th>
+                <tr className="text-left text-white bg-[#F88379]">
+                  <th className="py-3 px-4 font-semibold rounded-tl-2xl">Name</th>
+                  <th className="py-3 px-4 font-semibold">ID Number and Email</th>
+                  <th className="py-3 px-4 font-semibold">Date Applied</th>
+                  <th className="py-3 px-4 font-semibold rounded-tr-2xl">Confirm</th>
                 </tr>
               </thead>
               <tbody>
@@ -289,10 +319,12 @@ export default function AdminDashboard() {
                   <tr><td colSpan={4} className="text-center py-8 text-gray-400">No pending accounts.</td></tr>
                 ) : (
                   pendingVerifications.map((v) => (
-                    <tr key={v.id} className="bg-yellow-50 rounded-full my-2">
-                      <td className="flex items-center gap-3 py-4 px-4 rounded-l-full">
-                        <img src={userAvatar} alt="Avatar" className="w-10 h-10 rounded-full border border-pink-200" />
-                        <span className="font-semibold text-gray-800">{v.name || 'Unknown'}</span>
+                    <tr key={v.id} className="bg-[#FDF3E7] border-b border-pink-100 last:border-0">
+                      <td className="py-4 px-4">
+                        <div className="flex items-center gap-3">
+                          <img src={userAvatar} alt="Avatar" className="w-10 h-10 rounded-full border border-pink-200" />
+                          <span className="font-semibold text-gray-800">{v.name || 'Unknown'}</span>
+                        </div>
                       </td>
                       <td className="py-4 px-4">
                         <div className="font-medium text-gray-700">{v.studentId || 'N/A'}</div>
@@ -301,17 +333,21 @@ export default function AdminDashboard() {
                       <td className="py-4 px-4">
                         {(() => {
                           const dateObj = v.createdAt?.toDate ? v.createdAt.toDate() : new Date(v.createdAt);
-                          return (
+                          return !isNaN(dateObj) ? (
                             <>
-                              <div>{!isNaN(dateObj) ? dateObj.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' }) : 'N/A'}</div>
-                              <div className="text-xs text-gray-500">{!isNaN(dateObj) ? dateObj.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' }) : ''}</div>
+                              <div>{dateObj.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}</div>
+                              <div className="text-sm text-gray-500">{dateObj.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}</div>
                             </>
+                          ) : (
+                            <div>N/A</div>
                           );
                         })()}
                       </td>
-                      <td className="py-4 px-4 rounded-r-full flex gap-2">
-                        <button onClick={() => handleConfirm(v.id)} className="bg-yellow-400 hover:bg-yellow-500 text-white font-bold px-4 py-1 rounded shadow">CONFIRM</button>
-                        <button onClick={() => handleReject(v.id)} className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold px-4 py-1 rounded shadow">REJECT</button>
+                      <td className="py-4 px-4">
+                        <div className="flex gap-2">
+                          <button onClick={() => handleConfirm(v.id)} className="bg-yellow-400 hover:bg-yellow-500 text-white font-bold px-4 py-1 rounded shadow">CONFIRM</button>
+                          <button onClick={() => handleReject(v.id)} className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold px-4 py-1 rounded shadow">REJECT</button>
+                        </div>
                       </td>
                     </tr>
                   ))
@@ -329,27 +365,28 @@ export default function AdminDashboard() {
           <div className="overflow-x-auto">
             <table className="min-w-full">
               <thead>
-                <tr className="text-left text-gray-700 text-base">
-                  <th className="py-2 px-4 font-semibold" style={{background: '#F88379', color: 'white', borderTopLeftRadius: '9999px'}}>Username</th>
-                  <th className="py-2 px-4 font-semibold" style={{background: '#F88379', color: 'white'}}>ID Number and Email</th>
-                  <th className="py-2 px-4 font-semibold" style={{background: '#F88379', color: 'white'}}>Date</th>
-                  <th className="py-2 px-4 font-semibold" style={{background: '#F88379', color: 'white'}}>Status</th>
-                  <th className="py-2 px-4 font-semibold" style={{background: '#F88379', color: 'white', borderTopRightRadius: '9999px'}}>Email</th>
+                <tr className="text-left text-white bg-[#F88379]">
+                  <th className="py-3 px-4 font-semibold rounded-tl-2xl">Name</th>
+                  <th className="py-3 px-4 font-semibold">Student Details</th>
+                  <th className="py-3 px-4 font-semibold">Verification Date</th>
+                  <th className="py-3 px-4 font-semibold rounded-tr-2xl">Status</th>
                 </tr>
               </thead>
               <tbody>
                 {loadingVerified || loadingVerifications ? (
-                  <tr><td colSpan={5} className="text-center py-8">Loading...</td></tr>
+                  <tr><td colSpan={4} className="text-center py-8">Loading...</td></tr>
                 ) : verifiedAccounts.length === 0 && verifications.length === 0 ? (
-                  <tr><td colSpan={5} className="text-center py-8 text-gray-400">No users found.</td></tr>
+                  <tr><td colSpan={4} className="text-center py-8 text-gray-400">No users found.</td></tr>
                 ) : (
                   <>
                     {/* Verified Users */}
                     {verifiedAccounts.map((v) => (
-                      <tr key={v.id} className="bg-yellow-50 rounded-full my-2">
-                        <td className="flex items-center gap-3 py-4 px-4 rounded-l-full">
-                          <img src={userAvatar} alt="Avatar" className="w-10 h-10 rounded-full border border-pink-200" />
-                          <span className="font-semibold text-gray-800">{v.name || 'Unknown'}</span>
+                      <tr key={v.id} className="bg-[#FDF3E7] border-b border-pink-100 last:border-0">
+                        <td className="py-4 px-4">
+                          <div className="flex items-center gap-3">
+                            <img src={userAvatar} alt="Avatar" className="w-10 h-10 rounded-full border border-pink-200" />
+                            <span className="font-semibold text-gray-800">{v.name || 'Unknown'}</span>
+                          </div>
                         </td>
                         <td className="py-4 px-4">
                           <div className="font-medium text-gray-700">{v.studentId || 'N/A'}</div>
@@ -357,20 +394,19 @@ export default function AdminDashboard() {
                         </td>
                         <td className="py-4 px-4">
                           {(() => {
-                            const dateObj = v.createdAt?.toDate ? v.createdAt.toDate() : new Date(v.createdAt);
-                            return (
+                            const dateObj = v.verifiedAt?.toDate ? v.verifiedAt.toDate() : new Date(v.verifiedAt);
+                            return !isNaN(dateObj) ? (
                               <>
-                                <div>{!isNaN(dateObj) ? dateObj.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' }) : 'N/A'}</div>
-                                <div className="text-xs text-gray-500">{!isNaN(dateObj) ? dateObj.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' }) : ''}</div>
+                                <div>{dateObj.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}</div>
+                                <div className="text-sm text-gray-500">{dateObj.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}</div>
                               </>
+                            ) : (
+                              <div>N/A</div>
                             );
                           })()}
                         </td>
                         <td className="py-4 px-4">
-                          <span className="bg-green-200 text-green-800 px-3 py-1 rounded-full text-xs font-bold">Verified</span>
-                        </td>
-                        <td className="py-4 px-4 rounded-r-full">
-                          <div className="text-gray-700">{v.email}</div>
+                          <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-bold">VERIFIED</span>
                         </td>
                       </tr>
                     ))}

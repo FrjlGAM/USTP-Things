@@ -117,7 +117,7 @@ export default function ProductCard({ product, onClick, onLikeChange }: ProductC
         style={{
           width: 28,
           height: 28,
-          right: 33,
+          right: 20,
           top: 324, // Adjusted for new height
           position: 'absolute',
           display: 'flex',

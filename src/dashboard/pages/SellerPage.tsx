@@ -13,10 +13,14 @@ import dateIcon from "../../assets/ustp thingS/DateJoined.png";
 import LeftArrow from "../../assets/ustp thingS/LeftArrow.png";
 import addIcon from "../../assets/ustp thingS/Add.png";
 import deleteIcon from "../../assets/ustp thingS/Delete.png";
+import pencilIcon from "../../assets/ustp thingS/Pencil.png";
 import productUniform from "../../assets/ustp thingS/yummy 2.png"
 import AddProductModal from "../components/AddProductModal";
 import ProductCardSeller from '../components/ProductCardSeller';
 import SellerProductDetail from './SellerProductDetail';
+import SellerName from '../components/SellerName';
+import { auth, db } from "../../lib/firebase";
+import { doc, getDoc, onSnapshot } from "firebase/firestore";
 
 const initialProducts = [
   {
@@ -53,6 +57,25 @@ const SellerPage: React.FC = () => {
   const [products, setProducts] = useState(initialProducts);
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [selectedAction, setSelectedAction] = useState<string | null>(null);
+  const [profileImage, setProfileImage] = useState<string | null>(null);
+  const [businessName, setBusinessName] = useState<string>("Galdo Boutique");
+  const [showSellerNameModal, setShowSellerNameModal] = useState(false);
+
+  useEffect(() => {
+    if (!auth.currentUser) return;
+    const userRef = doc(db, "users", auth.currentUser.uid);
+
+    // Listen for real-time updates
+    const unsubscribe = onSnapshot(userRef, (userDoc) => {
+      if (userDoc.exists()) {
+        const data = userDoc.data();
+        setProfileImage(data.profileImage || null);
+        setBusinessName(data.businessName || "Galdo Boutique");
+      }
+    });
+
+    return () => unsubscribe();
+  }, [auth.currentUser]);
 
   const collections = [
     {
@@ -114,8 +137,16 @@ const SellerPage: React.FC = () => {
       <div className="w-full bg-[#FFF3F2] px-8 pt-6 pb-4 flex flex-col md:flex-row gap-4">
         {/* Left: Profile card */}
         <div className="relative bg-white rounded-2xl shadow p-4 flex flex-col items-center flex-[2] min-w-[260px] max-w-[600px]">
-          <img src={profilePic} alt="Profile" className="w-20 h-20 rounded-full border-4 border-[#F88379] object-cover mb-2" />
-          <div className="text-lg font-bold text-[#F88379] mt-1 mb-4 text-center">Galdo Boutique</div>
+          <img src={profileImage || profilePic} alt="Profile" className="w-20 h-20 rounded-full border-4 border-[#F88379] object-cover mb-2" />
+          <div className="flex items-center gap-2">
+            <div className="text-lg font-bold text-[#F88379] text-center">{businessName}</div>
+            <img
+              src={pencilIcon}
+              alt="Edit"
+              className="w-5 h-5 cursor-pointer hover:opacity-80 transition-opacity mt-[2px]"
+              onClick={() => setShowSellerNameModal(true)}
+            />
+          </div>
           {/* Main Action Buttons */}
           <div className="flex flex-row gap-3 w-full justify-center mt-4">
             {/* Only this div is relative, for overlaying above Manage Products */}
@@ -342,6 +373,13 @@ const SellerPage: React.FC = () => {
       )}
       <AddProductModal open={showAddProductModal} onClose={() => setShowAddProductModal(false)} />
       <SellerProductDetail product={selectedProduct} open={!!selectedProduct} onClose={() => setSelectedProduct(null)} />
+      {showSellerNameModal && (
+        <SellerName
+          onClose={() => setShowSellerNameModal(false)}
+          onSave={(newName) => setBusinessName(newName)}
+          initialName={businessName}
+        />
+      )}
     </div>
   );
 };

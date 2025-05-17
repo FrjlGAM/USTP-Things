@@ -54,7 +54,7 @@ const Earnings: React.FC = () => {
   return (
     <div className="min-h-screen bg-white">
       {/* Top bar (copied from Seller Page) */}
-      <header className="flex items-center gap-4 px-8 pr-[47px] py-4 bg-white h-[70px] shadow-[0_4px_4px_0_rgba(0,0,0,0.1)] sticky top-0 z-30">
+      <header className="flex items-center gap-4 px-8 pr-[47px] py-4 bg-[#FFF3F2] h-[70px] shadow-[0_4px_4px_0_rgba(0,0,0,0.1)] sticky top-0 z-30">
         <button onClick={() => navigate(-1)}>
           <img src={LeftArrow} alt="Back" className="h-10" />
         </button>

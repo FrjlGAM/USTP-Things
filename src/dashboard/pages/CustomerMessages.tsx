@@ -1,5 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import ustpLogo from '../../assets/ustp-things-logo.png';
+import LeftArrow from '../../assets/ustp thingS/LeftArrow.png';
 
 const customerMessages = [
   {
@@ -27,13 +29,12 @@ const CustomerMessages: React.FC = () => {
   return (
     <div className="min-h-screen w-full bg-[#FFF3F2]">
       {/* Top bar with back button and header */}
-      <header className="flex items-center justify-between px-8 pr-[47px] py-4 bg-white h-[70px] shadow-[0_4px_4px_0_rgba(0,0,0,0.1)]">
-        <div className="flex items-center gap-4">
-          <button onClick={() => navigate(-1)}>
-            <span className="text-[#F88379] text-3xl font-bold">&#8592;</span>
-          </button>
-          <h1 className="text-3xl font-bold text-[#F88379] pb-1">Customer Messages</h1>
-        </div>
+      <header className="flex items-center gap-4 px-8 pr-[47px] py-4 bg-white h-[70px] shadow-[0_4px_4px_0_rgba(0,0,0,0.1)] sticky top-0 z-30">
+        <button onClick={() => navigate(-1)}>
+          <img src={LeftArrow} alt="Back" className="h-10" />
+        </button>
+        <img src={ustpLogo} alt="USTP Things Logo" className="w-[117px] h-[63px] object-contain" />
+        <span className="text-3xl font-bold text-[#F88379] pb-1">Customer Messages</span>
       </header>
       <div className="p-8 space-y-6">
         {customerMessages.map((msg) => (

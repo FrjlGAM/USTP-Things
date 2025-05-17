@@ -105,12 +105,10 @@ const SellerPage: React.FC = () => {
   return (
     <div className="min-h-screen w-full bg-[#FFF3F2]">
       {/* Top bar with back button, flush with card, no white gap above */}
-      <div className="w-full bg-[#FFF3F2] px-8 py-2 flex flex-col sticky top-0 z-30">
-        <div className="flex items-start">
-          <button onClick={() => navigate('/dashboard')} className="mt-0">
-            <img src={LeftArrow} alt="Back" className="h-10" />
-          </button>
-        </div>
+      <div className="flex items-center px-8 pr-[47px] py-4 bg-white h-[70px] shadow-[0_4px_4px_0_rgba(0,0,0,0.1)] sticky top-0 z-30">
+        <button onClick={() => navigate('/dashboard')} className="mt-0">
+          <img src={LeftArrow} alt="Back" className="h-10" />
+        </button>
       </div>
       {/* Profile and stats card, clean two-column layout, no overlaps */}
       <div className="w-full bg-[#FFF3F2] px-8 pt-6 pb-4 flex flex-col md:flex-row gap-4">

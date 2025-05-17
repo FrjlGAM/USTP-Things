@@ -243,19 +243,12 @@ export default function SellerOrders() {
       {/* Main Content */}
       <main className="flex-1 flex flex-col">
         {/* Header */}
-        <header className="flex items-center justify-between px-8 pr-[47px] py-4 bg-white h-[70px] shadow-[0_4px_4px_0_rgba(0,0,0,0.1)]">
-          <div className="flex items-center gap-8">
-            <button 
-              onClick={() => navigate('/dashboard/seller')}
-              className="hover:opacity-80 transition-opacity"
-            >
-              <img src={leftArrow} alt="Back" className="w-6 h-6" />
-            </button>
-            <div className="flex items-center gap-4">
-              <img src={ustpLogo} alt="USTP Things Logo" className="w-[117px] h-[63px] object-contain" />
-              <h1 className="text-3xl font-bold text-[#F88379] pb-1">Product Orders</h1>
-            </div>
-          </div>
+        <header className="flex items-center px-8 pr-[47px] py-4 bg-[#FFF3F2] h-[70px] shadow-[0_4px_4px_0_rgba(0,0,0,0.1)] sticky top-0 z-30">
+          <button onClick={() => navigate('/dashboard/seller')} className="mt-0">
+            <img src={leftArrow} alt="Back" className="h-10" />
+          </button>
+          <img src={ustpLogo} alt="USTP Things Logo" className="w-[117px] h-[63px] object-contain ml-4" />
+          <span className="ml-4 text-3xl font-bold text-[#F88379]">Product Orders</span>
         </header>
         <div className="p-10">
           {loading ? (

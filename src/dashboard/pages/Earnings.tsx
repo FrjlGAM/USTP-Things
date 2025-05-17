@@ -2,6 +2,7 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import productUniform from "../../assets/ustp thingS/yummy 2.png";
 import LeftArrow from "../../assets/ustp thingS/LeftArrow.png";
+import ustpLogo from '../../assets/ustp-things-logo.png';
 
 const earningsOverview = {
   total: "₱1,000,000",
@@ -52,13 +53,14 @@ const Earnings: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Top bar */}
-      <div className="flex items-center p-4">
+      {/* Top bar (copied from Seller Page) */}
+      <header className="flex items-center gap-4 px-8 pr-[47px] py-4 bg-white h-[70px] shadow-[0_4px_4px_0_rgba(0,0,0,0.1)] sticky top-0 z-30">
         <button onClick={() => navigate(-1)}>
-          <img src={LeftArrow} alt="Back" className="w-8 h-8" />
+          <img src={LeftArrow} alt="Back" className="h-10" />
         </button>
-        <span className="ml-4 text-2xl font-bold text-[#F88379]">My Earnings</span>
-      </div>
+        <img src={ustpLogo} alt="USTP Things Logo" className="w-[117px] h-[63px] object-contain" />
+        <span className="text-3xl font-bold text-[#F88379] pb-1">My Earnings</span>
+      </header>
       <div className="p-8">
         {/* Earnings Overview and Platform Commission */}
         <div className="flex flex-col md:flex-row gap-8 mb-8">

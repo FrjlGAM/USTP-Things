@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef, useState } from "react";
 
 interface AddProductModalProps {
   open: boolean;
@@ -6,7 +6,37 @@ interface AddProductModalProps {
 }
 
 const AddProductModal: React.FC<AddProductModalProps> = ({ open, onClose }) => {
+  const [productImage, setProductImage] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   if (!open) return null;
+
+  // Handle image upload (Cloudinary, like MyProfile)
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files) return;
+    const file = e.target.files[0];
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('upload_preset', 'profile_picture'); // your unsigned preset name
+      const response = await fetch(
+        'https://api.cloudinary.com/v1_1/dr7t6evpc/image/upload',
+        {
+          method: 'POST',
+          body: formData,
+        }
+      );
+      const data = await response.json();
+      if (!data.secure_url) throw new Error("No secure_url returned from Cloudinary");
+      setProductImage(data.secure_url);
+    } catch (error) {
+      alert("Failed to upload image. Check console for details.");
+      console.error("Image upload error:", error);
+    }
+    setUploading(false);
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#FFF3F2]/80 backdrop-blur-[2px]">
@@ -14,9 +44,12 @@ const AddProductModal: React.FC<AddProductModalProps> = ({ open, onClose }) => {
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-3xl text-[#F88379] hover:bg-[#F88379]/10 rounded-full w-10 h-10 flex items-center justify-center border-2 border-[#F88379]"
+          className="absolute top-4 right-4 text-[#F88379] hover:bg-[#F88379]/10 rounded-full w-10 h-10 flex items-center justify-center border-2 border-[#F88379]"
         >
-          <span style={{ fontSize: 32, fontWeight: "bold" }}>×</span>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#F88379" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="6" y1="6" x2="18" y2="18"/>
+            <line x1="6" y1="18" x2="18" y2="6"/>
+          </svg>
         </button>
         <div className="flex gap-8">
           {/* Left Side */}
@@ -42,8 +75,25 @@ const AddProductModal: React.FC<AddProductModalProps> = ({ open, onClose }) => {
           </div>
           {/* Center Image Upload */}
           <div className="flex flex-col items-center justify-center pt-6">
-            <div className="w-48 h-48 bg-gray-200 rounded-lg flex items-center justify-center cursor-pointer">
-              <span className="text-7xl text-gray-400 font-light">+</span>
+            <input
+              type="file"
+              accept="image/*"
+              style={{ display: "none" }}
+              ref={fileInputRef}
+              onChange={handleImageChange}
+            />
+            <div
+              className="w-48 h-48 bg-gray-200 rounded-lg flex items-center justify-center cursor-pointer overflow-hidden border-2 border-gray-300"
+              onClick={() => !uploading && fileInputRef.current?.click()}
+              style={{ position: 'relative' }}
+            >
+              {uploading ? (
+                <span className="text-2xl text-gray-400 font-light animate-pulse">Uploading...</span>
+              ) : productImage ? (
+                <img src={productImage} alt="Product" className="object-cover w-full h-full" />
+              ) : (
+                <span className="text-7xl text-gray-400 font-light">+</span>
+              )}
             </div>
           </div>
           {/* Right Side */}

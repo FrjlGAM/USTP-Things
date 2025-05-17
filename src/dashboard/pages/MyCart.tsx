@@ -120,7 +120,7 @@ export default function MyCart({ onProductClick }: MyCartProps) {
         <ProductCard
           key={product.id}
           product={product}
-          onClick={() => onProductClick?.(product)}
+          onClick={() => handleProductView(product)}
           onLikeChange={(liked) => {
             if (!liked) {
               handleRemoveFromCart(product);

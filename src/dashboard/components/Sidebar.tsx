@@ -44,7 +44,7 @@ export default function Sidebar({
   const [loading, setLoading] = useState(true);
   const [username, setUsername] = useState<string>('Username');
   const [profileImage, setProfileImage] = useState<string | null>(null);
-  const [activeButton, setActiveButton] = useState<SidebarProps['activeButton']>(propActiveButton || 'home');
+  const [activeButton, setActiveButton] = useState<SidebarProps['activeButton']>(propActiveButton);
   const [sellerPageOpened, setSellerPageOpened] = useState(propSellerPageOpened || false);
   const user = auth.currentUser;
   const navigate = useNavigate();
@@ -52,10 +52,6 @@ export default function Sidebar({
   // Update activeButton when prop changes
   useEffect(() => {
     if (propActiveButton) {
-      // Don't update active button if viewing product details
-      if (propActiveButton === 'product') {
-        return;
-      }
       setActiveButton(propActiveButton);
     }
   }, [propActiveButton]);
@@ -161,9 +157,9 @@ export default function Sidebar({
         <nav className="flex flex-col gap-4">
           <button 
             onClick={() => {
+              navigate('/dashboard');
               setActiveButton('home');
               window.scrollTo({ top: 0, behavior: 'smooth' });
-              navigate('/dashboard');
             }} 
             className={`flex items-center gap-2 text-[#F88379] font-semibold text-lg text-left transition ${activeButton === 'home' ? 'bg-white rounded-[23.08px] px-2 py-1' : ''}`}
           >
@@ -171,9 +167,9 @@ export default function Sidebar({
           </button>
           <button 
             onClick={() => {
+              navigate('/dashboard/likes');
               setActiveButton('likes');
               window.scrollTo({ top: 0, behavior: 'smooth' });
-              navigate('/dashboard/likes');
             }} 
             className={`flex items-center gap-2 text-[#F88379] font-semibold text-lg text-left transition ${activeButton === 'likes' ? 'bg-white rounded-[23.08px] px-2 py-1' : ''}`}
           >
@@ -181,9 +177,9 @@ export default function Sidebar({
           </button>
           <button 
             onClick={() => {
+              navigate('/dashboard/recently-viewed');
               setActiveButton('recently');
               window.scrollTo({ top: 0, behavior: 'smooth' });
-              navigate('/dashboard/recently-viewed');
             }} 
             className={`flex items-center gap-2 text-[#F88379] font-semibold text-lg text-left transition ${activeButton === 'recently' ? 'bg-white rounded-[23.08px] px-2 py-1' : ''}`}
           >

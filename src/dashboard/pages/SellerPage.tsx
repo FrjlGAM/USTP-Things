@@ -52,6 +52,7 @@ const SellerPage: React.FC = () => {
   const [selectedProducts, setSelectedProducts] = useState<number[]>([]);
   const [products, setProducts] = useState(initialProducts);
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
+  const [selectedAction, setSelectedAction] = useState<string | null>(null);
 
   const collections = [
     {
@@ -104,11 +105,12 @@ const SellerPage: React.FC = () => {
   return (
     <div className="min-h-screen w-full bg-[#FFF3F2]">
       {/* Top bar with back button, flush with card, no white gap above */}
-      <div className="flex items-center px-8 py-3 bg-[#FFF3F2] shadow-none sticky top-0 z-30" style={{marginTop: 0}}>
-        <button onClick={() => navigate('/dashboard')}>
-          <img src={LeftArrow} alt="Back" className="w-8 h-8" />
-        </button>
-        <span className="ml-4 text-lg text-gray-400 font-semibold">Seller Page</span>
+      <div className="w-full bg-[#FFF3F2] px-8 pt-4 pb-3 flex flex-col sticky top-0 z-30" style={{marginTop: 0}}>
+        <div className="flex items-start">
+          <button onClick={() => navigate('/dashboard')} className="mt-0">
+            <img src={LeftArrow} alt="Back" className="h-8" />
+          </button>
+        </div>
       </div>
       {/* Profile and stats card, clean two-column layout, no overlaps */}
       <div className="w-full bg-[#FFF3F2] px-8 pt-6 pb-4 flex flex-col md:flex-row gap-4">
@@ -122,10 +124,10 @@ const SellerPage: React.FC = () => {
             <div className="relative flex flex-col items-center">
               {/* Overlay Buttons */}
               {showOverlay && (
-                <div className="absolute -top-16 left-1/2 -translate-x-1/2 flex flex-row gap-8 z-20 items-end">
+                <div className="absolute -top-24 left-1/2 -translate-x-1/2 flex flex-row gap-8 z-20 items-end">
                   <div className="flex flex-col items-center">
                     <button
-                      className="w-10 h-10 rounded-full bg-[#F88379] flex items-center justify-center shadow-md hover:scale-110 transition"
+                      className="w-10 h-10 rounded-full bg-[#F88379] flex items-center justify-center shadow-md hover:scale-110 transition hover:bg-white hover:border hover:border-[#F88379] active:bg-white active:border active:border-[#F88379]"
                       onClick={() => setShowAddProductModal(true)}
                     >
                       <img src={addIcon} alt="Add Product" className="w-5 h-5" />
@@ -136,7 +138,7 @@ const SellerPage: React.FC = () => {
                   </div>
                   <div className="flex flex-col items-center">
                     <button
-                      className="w-10 h-10 rounded-full bg-[#F88379] flex items-center justify-center shadow-md hover:scale-110 transition"
+                      className="w-10 h-10 rounded-full bg-[#F88379] flex items-center justify-center shadow-md hover:scale-110 transition hover:bg-white hover:border hover:border-[#F88379] active:bg-white active:border active:border-[#F88379]"
                       onClick={() => {
                         setShowOverlay(false);
                         setDeleteMode(true);
@@ -152,8 +154,16 @@ const SellerPage: React.FC = () => {
               )}
               {/* Manage Products Button */}
               <button
-                className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#F88379] text-white font-bold text-sm shadow hover:scale-105 transition"
-                onClick={() => setShowOverlay((prev) => !prev)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-full font-bold text-sm shadow hover:scale-105 transition
+                  ${selectedAction === 'manage'
+                    ? 'bg-white text-[#F88379] border border-[#F88379]'
+                    : 'bg-[#F88379] text-white'}
+                  hover:bg-white hover:text-[#F88379] hover:border hover:border-[#F88379]'
+                `}
+                onClick={() => {
+                  setShowOverlay((prev) => !prev);
+                  setSelectedAction('manage');
+                }}
                 type="button"
               >
                 <img src={manageProductsIcon} alt="Manage Products" className="w-5 h-5" />
@@ -162,15 +172,31 @@ const SellerPage: React.FC = () => {
             </div>
             {/* Other buttons remain unchanged */}
             <button
-              className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#F88379] text-white font-bold text-sm shadow hover:scale-105 transition"
-              onClick={() => navigate('/dashboard/seller-orders')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-full font-bold text-sm shadow hover:scale-105 transition
+                ${selectedAction === 'orders'
+                  ? 'bg-white text-[#F88379] border border-[#F88379]'
+                  : 'bg-[#F88379] text-white'}
+                hover:bg-white hover:text-[#F88379] hover:border hover:border-[#F88379]'
+              `}
+              onClick={() => {
+                navigate('/dashboard/seller-orders');
+                setSelectedAction('orders');
+              }}
             >
               <img src={productOrdersIcon} alt="Product Orders" className="w-5 h-5" />
               Product Orders
             </button>
             <button
-              className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#F88379] text-white font-bold text-sm shadow hover:scale-105 transition"
-              onClick={() => navigate('/dashboard/customer-messages')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-full font-bold text-sm shadow hover:scale-105 transition
+                ${selectedAction === 'messages'
+                  ? 'bg-white text-[#F88379] border border-[#F88379]'
+                  : 'bg-[#F88379] text-white'}
+                hover:bg-white hover:text-[#F88379] hover:border hover:border-[#F88379]'
+              `}
+              onClick={() => {
+                navigate('/dashboard/customer-messages');
+                setSelectedAction('messages');
+              }}
             >
               <img src={customerMessagesIcon} alt="Customer Messages" className="w-5 h-5" />
               Customer Messages

@@ -113,18 +113,54 @@ const SellerPage: React.FC = () => {
       {/* Profile and stats card, clean two-column layout, no overlaps */}
       <div className="w-full bg-[#FFF3F2] px-8 pt-6 pb-4 flex flex-col md:flex-row gap-4">
         {/* Left: Profile card */}
-        <div className="relative bg-white rounded-2xl shadow p-4 flex flex-col items-center flex-[1.5] min-w-[260px] max-w-[500px]">
+        <div className="relative bg-white rounded-2xl shadow p-4 flex flex-col items-center flex-[2] min-w-[260px] max-w-[600px]">
           <img src={profilePic} alt="Profile" className="w-20 h-20 rounded-full border-4 border-[#F88379] object-cover mb-2" />
           <div className="text-lg font-bold text-[#F88379] mt-1 mb-4 text-center">Galdo Boutique</div>
-          <div className="flex flex-row gap-3 w-full justify-center">
-            <button
-              className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#F88379] text-white font-bold text-sm shadow hover:scale-105 transition"
-              onClick={() => setShowOverlay((prev) => !prev)}
-              type="button"
-            >
-              <img src={manageProductsIcon} alt="Manage Products" className="w-5 h-5" />
-              Manage Products
-            </button>
+          {/* Main Action Buttons */}
+          <div className="flex flex-row gap-3 w-full justify-center mt-4">
+            {/* Only this div is relative, for overlaying above Manage Products */}
+            <div className="relative flex flex-col items-center">
+              {/* Overlay Buttons */}
+              {showOverlay && (
+                <div className="absolute -top-24 left-1/2 -translate-x-1/2 flex flex-row gap-8 z-20 items-end">
+                  <div className="flex flex-col items-center">
+                    <button
+                      className="w-10 h-10 rounded-full bg-[#F88379] flex items-center justify-center shadow-md hover:scale-110 transition"
+                      onClick={() => setShowAddProductModal(true)}
+                    >
+                      <img src={addIcon} alt="Add Product" className="w-5 h-5" />
+                    </button>
+                    <span className="text-xs text-[#F88379] font-semibold mt-1 text-center block">
+                      Add<br />Product
+                    </span>
+                  </div>
+                  <div className="flex flex-col items-center">
+                    <button
+                      className="w-10 h-10 rounded-full bg-[#F88379] flex items-center justify-center shadow-md hover:scale-110 transition"
+                      onClick={() => {
+                        setShowOverlay(false);
+                        setDeleteMode(true);
+                      }}
+                    >
+                      <img src={deleteIcon} alt="Delete Product" className="w-5 h-5" />
+                    </button>
+                    <span className="text-xs text-[#F88379] font-semibold mt-1 text-center block">
+                      Delete<br />Product
+                    </span>
+                  </div>
+                </div>
+              )}
+              {/* Manage Products Button */}
+              <button
+                className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#F88379] text-white font-bold text-sm shadow hover:scale-105 transition"
+                onClick={() => setShowOverlay((prev) => !prev)}
+                type="button"
+              >
+                <img src={manageProductsIcon} alt="Manage Products" className="w-5 h-5" />
+                Manage Products
+              </button>
+            </div>
+            {/* Other buttons remain unchanged */}
             <button
               className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#F88379] text-white font-bold text-sm shadow hover:scale-105 transition"
               onClick={() => navigate('/dashboard/seller-orders')}

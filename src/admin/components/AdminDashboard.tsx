@@ -59,7 +59,7 @@ export default function AdminDashboard() {
   const fetchVerifications = async () => {
     setLoadingVerifications(true);
     try {
-      const querySnapshot = await getDocs(collection(db, 'verifications'));
+    const querySnapshot = await getDocs(collection(db, 'verifications'));
       const verificationPromises = querySnapshot.docs.map(async (docSnapshot) => {
         const verificationData = docSnapshot.data();
         // Get the user document to ensure we have the latest name
@@ -72,7 +72,7 @@ export default function AdminDashboard() {
         };
       });
       const data = await Promise.all(verificationPromises);
-      setVerifications(data);
+    setVerifications(data);
     } catch (error) {
       console.error('Error fetching verifications:', error);
     }
@@ -85,13 +85,14 @@ export default function AdminDashboard() {
       const querySnapshot = await getDocs(collection(db, 'verifiedAccounts'));
       const accountPromises = querySnapshot.docs.map(async (docSnapshot) => {
         const accountData = docSnapshot.data();
-        // Get the user document to ensure we have the latest name
+        // Get the user document to ensure we have the latest data
         const userDoc = await getDoc(doc(db, 'users', accountData.userId));
         const userData = userDoc.data();
         return {
           id: docSnapshot.id,
           ...accountData,
-          name: userData?.name || accountData.name || 'Unknown'
+          name: userData?.name || accountData.name || 'Unknown',
+          profileImage: userData?.profileImage || userAvatar // Get profile image from user document
         };
       });
       const data = await Promise.all(accountPromises);
@@ -322,8 +323,8 @@ export default function AdminDashboard() {
                     <tr key={v.id} className="bg-[#FDF3E7] border-b border-pink-100 last:border-0">
                       <td className="py-4 px-4">
                         <div className="flex items-center gap-3">
-                          <img src={userAvatar} alt="Avatar" className="w-10 h-10 rounded-full border border-pink-200" />
-                          <span className="font-semibold text-gray-800">{v.name || 'Unknown'}</span>
+                        <img src={userAvatar} alt="Avatar" className="w-10 h-10 rounded-full border border-pink-200" />
+                        <span className="font-semibold text-gray-800">{v.name || 'Unknown'}</span>
                         </div>
                       </td>
                       <td className="py-4 px-4">
@@ -345,8 +346,8 @@ export default function AdminDashboard() {
                       </td>
                       <td className="py-4 px-4">
                         <div className="flex gap-2">
-                          <button onClick={() => handleConfirm(v.id)} className="bg-yellow-400 hover:bg-yellow-500 text-white font-bold px-4 py-1 rounded shadow">CONFIRM</button>
-                          <button onClick={() => handleReject(v.id)} className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold px-4 py-1 rounded shadow">REJECT</button>
+                        <button onClick={() => handleConfirm(v.id)} className="bg-yellow-400 hover:bg-yellow-500 text-white font-bold px-4 py-1 rounded shadow">CONFIRM</button>
+                        <button onClick={() => handleReject(v.id)} className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold px-4 py-1 rounded shadow">REJECT</button>
                         </div>
                       </td>
                     </tr>
@@ -384,7 +385,11 @@ export default function AdminDashboard() {
                       <tr key={v.id} className="bg-[#FDF3E7] border-b border-pink-100 last:border-0">
                         <td className="py-4 px-4">
                           <div className="flex items-center gap-3">
-                            <img src={userAvatar} alt="Avatar" className="w-10 h-10 rounded-full border border-pink-200" />
+                            <img 
+                              src={v.profileImage || userAvatar} 
+                              alt="Avatar" 
+                              className="w-10 h-10 rounded-full border border-pink-200 object-cover"
+                            />
                             <span className="font-semibold text-gray-800">{v.name || 'Unknown'}</span>
                           </div>
                         </td>

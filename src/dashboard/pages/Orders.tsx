@@ -59,57 +59,9 @@ export default function Orders() {
   const isStandalone = location.pathname === '/dashboard/orders';
 
   useEffect(() => {
-    const fetchOrders = async () => {
-      if (!auth.currentUser) return;
-
-      try {
-        // Query all orders for the current user
-        const ordersQuery = query(
-          collection(db, 'pickupOrders'),
-          where('userId', '==', auth.currentUser.uid)
-        );
-        
-        const querySnapshot = await getDocs(ordersQuery);
-        const fetchedOrders: Order[] = [];
-
-        // Fetch additional details for each order
-        for (const docSnapshot of querySnapshot.docs) {
-          const orderData = docSnapshot.data() as OrderData;
-          
-          // Get seller details
-          const sellerDoc = await getDoc(doc(db, 'users', orderData.sellerId));
-          const sellerData = sellerDoc.exists() ? sellerDoc.data() as SellerData : null;
-
-          fetchedOrders.push({
-            id: docSnapshot.id,
-            sellerId: orderData.sellerId,
-            productId: orderData.productId,
-            status: orderData.status,
-            schoolLocation: orderData.schoolLocation,
-            pickupDate: orderData.pickupDate,
-            pickupTime: orderData.pickupTime,
-            paymentMethod: orderData.paymentMethod,
-            quantity: orderData.quantity,
-            totalAmount: orderData.totalAmount,
-            createdAt: orderData.createdAt?.toDate() || new Date(),
-            productName: orderData.productName,
-            productImage: orderData.productImage,
-            sellerName: sellerData?.businessName || 'Unknown Seller',
-            sellerAvatar: sellerData?.avatar || userAvatar
-          });
-        }
-
-        // Sort orders by date, most recent first
-        fetchedOrders.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-        setOrders(fetchedOrders);
-      } catch (error) {
-        console.error('Error fetching orders:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchOrders();
+    // Removed pickupOrders fetching logic
+    setLoading(false);
+    setOrders([]);
   }, []);
 
   const handlePickupNow = async (orderId: string) => {
@@ -285,36 +237,18 @@ export default function Orders() {
         </header>
         {/* Orders List */}
         <div className="flex-1 p-10">
-          {loading ? (
-            <div className="text-center text-gray-500 mt-8">
-              Loading orders...
-            </div>
-          ) : orders.length === 0 ? (
-            <div className="text-center text-gray-500 mt-8">
-              No orders found. Items you purchase will appear here.
-            </div>
-          ) : (
-            <div className="space-y-6">
-              {orders.map(renderOrderCard)}
-            </div>
-          )}
+          <div className="text-center text-gray-500 mt-8">
+            No orders found. Items you purchase will appear here.
+          </div>
         </div>
       </main>
     </div>
   ) : (
     // Embedded version (when used inside Dashboard)
     <div className="space-y-6">
-      {loading ? (
-        <div className="text-center text-gray-500 mt-8">
-          Loading orders...
-        </div>
-      ) : orders.length === 0 ? (
-        <div className="text-center text-gray-500 mt-8">
-          No orders found. Items you purchase will appear here.
-        </div>
-      ) : (
-        orders.map(renderOrderCard)
-      )}
+      <div className="text-center text-gray-500 mt-8">
+        No orders found. Items you purchase will appear here.
+      </div>
     </div>
   );
 } 

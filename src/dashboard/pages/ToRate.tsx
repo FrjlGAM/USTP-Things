@@ -114,61 +114,9 @@ export default function ToRate() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchOrders = async () => {
-      if (!auth.currentUser) return;
-
-      try {
-        // Query completed orders that haven't been rated
-        const ordersQuery = query(
-          collection(db, 'pickupOrders'),
-          where('userId', '==', auth.currentUser.uid),
-          where('status', '==', 'Completed'),
-          where('isRated', '==', false)
-        );
-        
-        const querySnapshot = await getDocs(ordersQuery);
-        const fetchedOrders: Order[] = [];
-
-        // Fetch additional details for each order
-        for (const docSnapshot of querySnapshot.docs) {
-          const orderData = docSnapshot.data() as OrderData;
-          
-          // Get seller details
-          const sellerDoc = await getDoc(doc(db, 'users', orderData.sellerId));
-          const sellerData = sellerDoc.exists() ? sellerDoc.data() as SellerData : null;
-
-          fetchedOrders.push({
-            id: docSnapshot.id,
-            sellerId: orderData.sellerId,
-            productId: orderData.productId,
-            status: orderData.status,
-            schoolLocation: orderData.schoolLocation,
-            pickupDate: orderData.pickupDate,
-            pickupTime: orderData.pickupTime,
-            paymentMethod: orderData.paymentMethod,
-            quantity: orderData.quantity,
-            totalAmount: orderData.totalAmount,
-            createdAt: orderData.createdAt?.toDate() || new Date(),
-            completedAt: orderData.completedAt?.toDate() || new Date(),
-            productName: orderData.productName,
-            productImage: orderData.productImage,
-            sellerName: sellerData?.businessName || 'Unknown Seller',
-            sellerAvatar: sellerData?.avatar || userAvatar,
-            isRated: orderData.isRated
-          });
-        }
-
-        // Sort orders by completion date, most recent first
-        fetchedOrders.sort((a, b) => b.completedAt.getTime() - a.completedAt.getTime());
-        setOrders(fetchedOrders);
-      } catch (error) {
-        console.error('Error fetching orders:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchOrders();
+    // Removed pickupOrders fetching logic
+    setLoading(false);
+    setOrders([]);
   }, []);
 
   const handleRateNow = async (order: Order) => {

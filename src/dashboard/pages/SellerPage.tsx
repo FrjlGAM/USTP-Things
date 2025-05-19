@@ -48,7 +48,6 @@ const stats = [
 const SellerPage: React.FC = () => {
   const navigate = useNavigate();
   const { sellerId } = useParams();
-  const [activeTab, setActiveTab] = useState<'all' | 'collections'>('all');
   const [showOverlay, setShowOverlay] = useState(false);
   const manageBtnRef = useRef<HTMLDivElement>(null);
   const [showAddProductModal, setShowAddProductModal] = useState(false);
@@ -181,34 +180,6 @@ const SellerPage: React.FC = () => {
     };
   }, [sellerId, auth.currentUser]);
 
-  const collections = [
-    {
-      id: 1,
-      name: "Frijiel's Top Favorites",
-      image: productOrdersIcon,
-    },
-    {
-      id: 2,
-      name: "John Martil's Favorite Rubber Colors",
-      image: "https://static.wikia.nocookie.net/spongebob/images/7/7e/Nat_Peterson_29.png",
-    },
-    {
-      id: 3,
-      name: "Carl Syker Favorite Color",
-      image: "https://static.wikia.nocookie.net/spongebob/images/7/7e/Nat_Peterson_29.png",
-    },
-    {
-      id: 4,
-      name: "Karla's Favorite Boy",
-      image: "https://static.wikia.nocookie.net/spongebob/images/7/7e/Nat_Peterson_29.png",
-    },
-    {
-      id: 5,
-      name: "Frijiel's Top Favorites",
-      image: "https://static.wikia.nocookie.net/spongebob/images/7/7e/Nat_Peterson_29.png",
-    },
-  ];
-
   // Close overlay if clicked outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -225,27 +196,6 @@ const SellerPage: React.FC = () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [showOverlay]);
-
-  // Filter products for Collections tab (example: only 'Genevieve Galdo')
-  const collectionProducts = products.filter((p) => p.name === 'Genevieve Galdo');
-
-  // Update the business name in both collections
-  const handleBusinessNameUpdate = async (newName: string) => {
-    if (!auth.currentUser) return;
-    
-    const userRef = doc(db, "users", auth.currentUser.uid);
-    const sellerRef = doc(db, "sellers", auth.currentUser.uid);
-    
-    try {
-      await Promise.all([
-        updateDoc(userRef, { businessName: newName }),
-        updateDoc(sellerRef, { businessName: newName })
-      ]);
-      setBusinessName(newName);
-    } catch (error) {
-      console.error('Error updating business name:', error);
-    }
-  };
 
   // Helper: filter valid products
   const isValidProduct = (product: any) => {
@@ -447,107 +397,68 @@ const SellerPage: React.FC = () => {
           })}
         </div>
       </div>
-      {/* Tabs, minimal margin above, reduce gap below */}
-      <div className="flex border-b-2 border-[#F88379] mt-2 mb-2">
-        <button
-          className={`flex-1 py-3 text-center font-bold text-lg ${
-            activeTab === 'all'
-              ? 'text-[#F88379] border-b-4 border-[#F88379] bg-[#FFF3F2]'
-              : 'text-[#F88379] bg-[#FFF3F2]'
-          }`}
-          onClick={() => setActiveTab('all')}
-        >
-          All
-        </button>
-        <button
-          className={`flex-1 py-3 text-center font-bold text-lg ${
-            activeTab === 'collections'
-              ? 'text-[#F88379] border-b-4 border-[#F88379] bg-[#FFF3F2]'
-              : 'text-[#F88379] bg-[#FFF3F2]'
-          }`}
-          onClick={() => setActiveTab('collections')}
-        >
-          Collections
-        </button>
-      </div>
-
-      {/* Tab Content */}
-      {activeTab === 'all' ? (
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-6 px-8 pb-8 pt-2 relative">
-          {products.filter(isValidProduct).map((product, idx) => (
-            <div key={product.id || idx} className="relative group">
-              <ProductCardSeller product={product} onClick={() => setSelectedProduct(product)} />
-              {/* Delete button only in seller view */}
-              {!isBuyerView && (
-                <button
-                  className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 shadow-lg opacity-0 group-hover:opacity-100 transition-opacity z-10"
-                  title="Delete Product"
-                  onClick={async (e) => {
-                    e.stopPropagation();
-                    if (window.confirm('Are you sure you want to delete this product?')) {
-                      try {
-                        await deleteDoc(doc(db, 'products', product.id));
-                      } catch (err) {
-                        alert('Failed to delete product.');
-                        console.error(err);
-                      }
+      {/* Show all products immediately */}
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-6 px-8 pb-8 pt-2 relative">
+        {products.filter(isValidProduct).map((product, idx) => (
+          <div key={product.id || idx} className="relative group">
+            <ProductCardSeller product={product} onClick={() => setSelectedProduct(product)} />
+            {/* Delete button only in seller view */}
+            {!isBuyerView && (
+              <button
+                className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 shadow-lg opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                title="Delete Product"
+                onClick={async (e) => {
+                  e.stopPropagation();
+                  if (window.confirm('Are you sure you want to delete this product?')) {
+                    try {
+                      await deleteDoc(doc(db, 'products', product.id));
+                    } catch (err) {
+                      alert('Failed to delete product.');
+                      console.error(err);
                     }
-                  }}
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              )}
-            </div>
-          ))}
-          {/* Delete/Cancel Buttons */}
-          {deleteMode && (
-            <div className="fixed bottom-8 right-8 flex gap-4 z-30">
-              <button
-                className="flex items-center gap-2 px-8 py-2 rounded-full bg-[#F88379]/20 text-[#F88379] font-bold text-lg border border-[#F88379] hover:bg-[#F88379]/40 transition"
-                onClick={() => {
-                  setProducts((prev) => prev.filter((_, idx) => !selectedProducts.includes(idx)));
-                  setDeleteMode(false);
-                  setSelectedProducts([]);
+                  }
                 }}
               >
-                <img src={deleteIcon} alt="Delete" className="w-5 h-5" />
-                Delete
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
               </button>
-              <button
-                className="flex items-center gap-2 px-8 py-2 rounded-full bg-[#F88379]/20 text-[#F88379] font-bold text-lg border border-[#F88379] hover:bg-[#F88379]/40 transition"
-                onClick={() => {
-                  setDeleteMode(false);
-                  setSelectedProducts([]);
-                }}
-              >
-                <span className="text-xl">×</span>
-                Cancel
-              </button>
-            </div>
-          )}
-        </div>
-      ) : (
-        <div className="bg-[#FFF3F2] p-8 pt-2">
-          {collections.map((col, idx) => (
-            <div
-              key={col.id}
-              className="flex items-center bg-white/60 rounded mb-2 px-4 py-3"
-              style={{ borderBottom: idx !== collections.length - 1 ? '1px solid #F88379' : undefined }}
+            )}
+          </div>
+        ))}
+        {/* Delete/Cancel Buttons */}
+        {deleteMode && (
+          <div className="fixed bottom-8 right-8 flex gap-4 z-30">
+            <button
+              className="flex items-center gap-2 px-8 py-2 rounded-full bg-[#F88379]/20 text-[#F88379] font-bold text-lg border border-[#F88379] hover:bg-[#F88379]/40 transition"
+              onClick={() => {
+                setProducts((prev) => prev.filter((_, idx) => !selectedProducts.includes(idx)));
+                setDeleteMode(false);
+                setSelectedProducts([]);
+              }}
             >
-              <img src={col.image} alt={col.name} className="w-12 h-12 object-cover rounded mr-4" />
-              <span className="text-[#F88379] font-semibold">{col.name}</span>
-            </div>
-          ))}
-        </div>
-      )}
+              <img src={deleteIcon} alt="Delete" className="w-5 h-5" />
+              Delete
+            </button>
+            <button
+              className="flex items-center gap-2 px-8 py-2 rounded-full bg-[#F88379]/20 text-[#F88379] font-bold text-lg border border-[#F88379] hover:bg-[#F88379]/40 transition"
+              onClick={() => {
+                setDeleteMode(false);
+                setSelectedProducts([]);
+              }}
+            >
+              <span className="text-xl">×</span>
+              Cancel
+            </button>
+          </div>
+        )}
+      </div>
       <AddProductModal open={showAddProductModal} onClose={() => setShowAddProductModal(false)} />
       <SellerProductDetail product={selectedProduct} open={!!selectedProduct} onClose={() => setSelectedProduct(null)} />
       {showSellerNameModal && (
         <SellerName
           onClose={() => setShowSellerNameModal(false)}
-          onSave={handleBusinessNameUpdate}
+          onSave={(newName) => setBusinessName(newName)}
           initialName={businessName}
         />
       )}

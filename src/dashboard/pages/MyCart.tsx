@@ -34,9 +34,17 @@ export default function MyCart({ onProductClick }: MyCartProps) {
             const productRef = doc(db, 'products', productId);
             const productDoc = await getDoc(productRef);
             if (productDoc.exists()) {
+              const productData = productDoc.data();
+              // If product is out of stock, remove it from cart
+              if ((productData.stock ?? 0) <= 0) {
+                await setDoc(userRef, {
+                  cartProducts: arrayRemove(productId)
+                }, { merge: true });
+                return null;
+              }
               return {
                 id: productDoc.id,
-                ...productDoc.data()
+                ...productData
               };
             }
             return null;

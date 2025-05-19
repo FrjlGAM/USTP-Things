@@ -68,58 +68,9 @@ export default function SellerOrders() {
   const isStandalone = location.pathname === '/dashboard/seller-orders';
 
   useEffect(() => {
-    const fetchOrders = async () => {
-      if (!auth.currentUser) return;
-      try {
-        const ordersQuery = query(
-          collection(db, 'purchaseOrders'),
-          where('sellerId', '==', auth.currentUser.uid)
-        );
-        const querySnapshot = await getDocs(ordersQuery);
-        const fetchedOrders: Order[] = [];
-        for (const docSnapshot of querySnapshot.docs) {
-          const orderData = docSnapshot.data() as any;
-          // Fetch buyer info
-          let buyerName = '';
-          let buyerEmail = '';
-          if (orderData.buyerId) {
-            const buyerDoc = await getDoc(doc(db, 'users', orderData.buyerId));
-            if (buyerDoc.exists()) {
-              const buyerData = buyerDoc.data() as BuyerData;
-              buyerName = buyerData.displayName || '';
-              buyerEmail = buyerData.email || '';
-            }
-          }
-          fetchedOrders.push({
-            id: docSnapshot.id,
-            sellerId: orderData.sellerId,
-            productId: orderData.productId,
-            status: orderData.status ?? 'pending',
-            schoolLocation: orderData.schoolLocation ?? '',
-            pickupDate: orderData.pickupDate ?? '',
-            pickupTime: orderData.pickupTime ?? '',
-            paymentMethod: orderData.paymentMethod ?? '',
-            quantity: orderData.quantity,
-            totalAmount: orderData.totalAmount ?? (orderData.price * orderData.quantity),
-            createdAt: orderData.createdAt?.toDate ? orderData.createdAt.toDate() : new Date(),
-            productName: orderData.productName,
-            productImage: orderData.productImage,
-            sellerName: '',
-            sellerAvatar: '',
-            buyerId: orderData.buyerId,
-            buyerName,
-            buyerEmail
-          });
-        }
-        fetchedOrders.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-        setOrders(fetchedOrders);
-      } catch (error) {
-        console.error('Error fetching orders:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchOrders();
+    // Removed purchaseOrders fetching logic
+    setLoading(false);
+    setOrders([]);
   }, []);
 
   const handlePickupNow = async (orderId: string) => {

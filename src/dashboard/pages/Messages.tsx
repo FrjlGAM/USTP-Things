@@ -4,7 +4,7 @@ import userAvatar from '../../assets/ustp thingS/Person.png';
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import homeLogo from "../../assets/ustp thingS/Home.png";
-import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, where, getDocs, doc, setDoc } from 'firebase/firestore';
+import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, where, getDocs, doc, setDoc, increment } from 'firebase/firestore';
 import { auth, db } from '../../lib/firebase';
 import React from 'react';
 
@@ -15,6 +15,10 @@ interface Message {
   text: string;
   timestamp: any;
   sender: string;
+  status: 'sent' | 'delivered' | 'read';
+  type: 'text' | 'image' | 'file';
+  fileUrl?: string;
+  fileName?: string;
 }
 
 interface ChatRoom {
@@ -24,6 +28,8 @@ interface ChatRoom {
   lastMessageTime: any;
   sellerName: string;
   sellerAvatar: string;
+  isTyping?: boolean;
+  unreadCount?: number;
 }
 
 // Dummy seller data
@@ -34,11 +40,14 @@ const DUMMY_SELLER = {
 };
 
 // Chat component for individual conversations
-function ChatWindow({ sellerId, sellerName }: { sellerId: string; sellerName: string }) {
+function ChatWindow({ userId }: { userId: string }) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
+  const [isTyping, setIsTyping] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const messagesEndRef = React.useRef<HTMLDivElement>(null);
+  const typingTimeoutRef = React.useRef<NodeJS.Timeout>();
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -48,101 +57,142 @@ function ChatWindow({ sellerId, sellerName }: { sellerId: string; sellerName: st
     scrollToBottom();
   }, [messages]);
 
+  // Handle typing indicator
+  const handleTyping = () => {
+    if (!auth.currentUser) return;
+    
+    // Clear existing timeout
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+
+    // Set typing status
+    setIsTyping(true);
+    const chatRoomRef = doc(db, 'chatRooms', `${auth.currentUser.uid}_${userId}`);
+    setDoc(chatRoomRef, { isTyping: true }, { merge: true });
+
+    // Clear typing status after 3 seconds
+    typingTimeoutRef.current = setTimeout(() => {
+      setIsTyping(false);
+      setDoc(chatRoomRef, { isTyping: false }, { merge: true });
+    }, 3000);
+  };
+
   useEffect(() => {
     if (!auth.currentUser) return;
-
     setLoading(true);
-    console.log("Setting up message listener for chat between:", auth.currentUser.uid, "and", sellerId);
+    setError(null);
 
-    // Query messages for this specific chat
-    const messagesRef = collection(db, 'messages');
-    const q = query(
-      messagesRef,
-      where('participants', 'array-contains', auth.currentUser.uid),
-      orderBy('timestamp', 'asc')
-    );
+    try {
+      // Query messages for this specific chat
+      const messagesRef = collection(db, 'messages');
+      const q = query(
+        messagesRef,
+        where('participants', 'array-contains', auth.currentUser.uid),
+        orderBy('timestamp', 'asc')
+      );
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const fetchedMessages: Message[] = [];
-      snapshot.forEach((doc) => {
-        const data = doc.data();
-        // Only include messages between the current user and this seller
-        if ((data.senderId === auth.currentUser?.uid && data.receiverId === sellerId) ||
-            (data.senderId === sellerId && data.receiverId === auth.currentUser?.uid)) {
-          fetchedMessages.push({
-            id: doc.id,
-            ...data,
-          } as Message);
+      const unsubscribe = onSnapshot(q, (snapshot) => {
+        const fetchedMessages: Message[] = [];
+        snapshot.forEach((doc) => {
+          const data = doc.data();
+          // Only include messages between the current user and this user
+          if ((data.senderId === auth.currentUser?.uid && data.receiverId === userId) ||
+              (data.senderId === userId && data.receiverId === auth.currentUser?.uid)) {
+            fetchedMessages.push({
+              id: doc.id,
+              ...data,
+              status: data.status || 'sent',
+              type: data.type || 'text'
+            } as Message);
+          }
+        });
+        setMessages(fetchedMessages);
+        setLoading(false);
+        scrollToBottom();
+
+        // Mark messages as read
+        const unreadMessages = fetchedMessages.filter(
+          msg => msg.senderId === userId && msg.status !== 'read'
+        );
+        if (unreadMessages.length > 0) {
+          unreadMessages.forEach(msg => {
+            const messageRef = doc(db, 'messages', msg.id);
+            setDoc(messageRef, { status: 'read' }, { merge: true });
+          });
         }
+      }, (error) => {
+        console.error('Error fetching messages:', error);
+        setError('Failed to load messages. Please try again.');
+        setLoading(false);
       });
-      console.log("Fetched messages:", fetchedMessages.length);
-      setMessages(fetchedMessages);
-      setLoading(false);
-      scrollToBottom();
-    }, (error) => {
-      console.error("Error fetching messages:", error);
-      setLoading(false);
-    });
 
-    return () => unsubscribe();
-  }, [sellerId]);
+      return () => unsubscribe();
+    } catch (err) {
+      console.error('Error in message listener:', err);
+      setError('Failed to load messages. Please try again.');
+      setLoading(false);
+    }
+  }, [userId]);
 
-  const sendMessage = async (e: React.FormEvent) => {
+  const sendMessage = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!newMessage.trim() || !auth.currentUser) return;
 
     try {
-      console.log("Sending message to:", sellerId);
       const messageData = {
         text: newMessage,
         senderId: auth.currentUser.uid,
-        receiverId: sellerId,
+        receiverId: userId,
         sender: auth.currentUser.email,
         timestamp: serverTimestamp(),
-        participants: [auth.currentUser.uid, sellerId]
+        participants: [auth.currentUser.uid, userId],
+        status: 'sent',
+        type: 'text'
       };
 
-      // Add the message
       const messageRef = await addDoc(collection(db, 'messages'), messageData);
-      console.log("Message sent with ID:", messageRef.id);
+      
+      // Update message status to delivered
+      setTimeout(() => {
+        setDoc(doc(db, 'messages', messageRef.id), { status: 'delivered' }, { merge: true });
+      }, 1000);
 
-      // Update chat room
+      // Update or create chat room
       const chatRoomRef = collection(db, 'chatRooms');
       const q = query(
         chatRoomRef,
         where('participants', 'array-contains', auth.currentUser.uid)
       );
       const snapshot = await getDocs(q);
-
       let chatRoomId: string | null = null;
       snapshot.forEach((doc) => {
         const data = doc.data();
-        if (data.participants.includes(sellerId)) {
+        if (data.participants.includes(userId)) {
           chatRoomId = doc.id;
         }
       });
 
       if (chatRoomId) {
-        // Update existing chat room
         const docRef = doc(db, 'chatRooms', chatRoomId);
         await setDoc(docRef, {
           lastMessage: newMessage,
-          lastMessageTime: serverTimestamp()
+          lastMessageTime: serverTimestamp(),
+          unreadCount: increment(1)
         }, { merge: true });
       } else {
-        // Create new chat room
         await addDoc(chatRoomRef, {
-          participants: [auth.currentUser.uid, sellerId],
+          participants: [auth.currentUser.uid, userId],
           lastMessage: newMessage,
           lastMessageTime: serverTimestamp(),
-          sellerName: sellerName,
-          sellerAvatar: DUMMY_SELLER.avatar
+          unreadCount: 1
         });
       }
 
       setNewMessage('');
     } catch (error) {
-      console.error("Error sending message:", error);
+      console.error('Error sending message:', error);
+      setError('Failed to send message. Please try again.');
     }
   };
 
@@ -153,6 +203,10 @@ function ChatWindow({ sellerId, sellerName }: { sellerId: string; sellerName: st
         {loading ? (
           <div className="flex justify-center items-center h-full">
             <p className="text-gray-500">Loading...</p>
+          </div>
+        ) : error ? (
+          <div className="flex justify-center items-center h-full">
+            <p className="text-red-500">{error}</p>
           </div>
         ) : messages.length === 0 ? (
           <div className="text-center text-gray-500 mt-8">
@@ -174,13 +228,45 @@ function ChatWindow({ sellerId, sellerName }: { sellerId: string; sellerName: st
                       : 'bg-gray-200 text-gray-800'
                   }`}
                 >
-                  <p className="break-words">{message.text}</p>
-                  <span className="text-xs opacity-75 block mt-1">
-                    {message.timestamp?.toDate().toLocaleTimeString()}
-                  </span>
+                  {message.type === 'text' ? (
+                    <p className="break-words">{message.text}</p>
+                  ) : message.type === 'image' ? (
+                    <img src={message.fileUrl} alt="Shared image" className="max-w-full rounded-lg" />
+                  ) : (
+                    <a
+                      href={message.fileUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 text-blue-500 hover:underline"
+                    >
+                      <span>📎</span>
+                      <span>{message.fileName}</span>
+                    </a>
+                  )}
+                  <div className="flex items-center justify-end gap-1 mt-1">
+                    <span className="text-xs opacity-75">
+                      {message.timestamp?.toDate().toLocaleTimeString()}
+                    </span>
+                    {message.senderId === auth.currentUser?.uid && (
+                      <span className="text-xs">
+                        {message.status === 'read' ? '✓✓' : message.status === 'delivered' ? '✓✓' : '✓'}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
             ))}
+            {isTyping && (
+              <div className="flex justify-start">
+                <div className="bg-gray-200 text-gray-800 rounded-lg p-3">
+                  <div className="flex gap-1">
+                    <span className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" />
+                    <span className="w-2 h-2 bg-gray-500 rounded-full animate-bounce delay-100" />
+                    <span className="w-2 h-2 bg-gray-500 rounded-full animate-bounce delay-200" />
+                  </div>
+                </div>
+              </div>
+            )}
             <div ref={messagesEndRef} />
           </>
         )}
@@ -192,7 +278,10 @@ function ChatWindow({ sellerId, sellerName }: { sellerId: string; sellerName: st
           <input
             type="text"
             value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
+            onChange={(e) => {
+              setNewMessage(e.target.value);
+              handleTyping();
+            }}
             placeholder="Type a message..."
             className="flex-1 p-2 border rounded-lg focus:outline-none focus:border-[#F88379]"
             onKeyPress={(e) => {
@@ -364,7 +453,11 @@ export function MessagesContent() {
           <div 
             key={room.id} 
             className="bg-white rounded-xl p-4 shadow cursor-pointer hover:shadow-md transition"
-            onClick={() => navigate(`/dashboard/messages/${room.sellerName.replace(/\s+/g, '-').toLowerCase()}`)}
+            onClick={() => {
+              // Find the other participant
+              const otherUserId = room.participants.find((id) => id !== auth.currentUser?.uid);
+              if (otherUserId) navigate(`/dashboard/messages/${otherUserId}`);
+            }}
           >
             <div className="flex items-center gap-4">
               <img src={room.sellerAvatar} alt={room.sellerName} className="w-16 h-16 rounded-full object-cover" />
@@ -387,9 +480,8 @@ export function MessagesContent() {
 
 // Individual chat page component
 function ChatPage() {
-  const { sellerId } = useParams();
+  const { userId } = useParams();
   const navigate = useNavigate();
-
   return (
     <div className="flex min-h-screen bg-[#f7f6fd]">
       <div className="w-[348px] flex-shrink-0">
@@ -413,11 +505,11 @@ function ChatPage() {
               ← Back
             </button>
             <h1 className="text-2xl font-bold text-[#F88379]">
-              Chat with {DUMMY_SELLER.name}
+              Chat
             </h1>
           </div>
         </header>
-        <ChatWindow sellerId={DUMMY_SELLER.id} sellerName={DUMMY_SELLER.name} />
+        {userId && <ChatWindow userId={userId} />}
       </main>
     </div>
   );
@@ -427,9 +519,9 @@ function ChatPage() {
 export default function Messages() {
   const [showModal, setShowModal] = useState(false);
   const navigate = useNavigate();
-  const { sellerId } = useParams();
+  const { userId } = useParams();
 
-  if (sellerId) {
+  if (userId) {
     return <ChatPage />;
   }
 

@@ -106,72 +106,33 @@ export default function Dashboard() {
 
   // Fetch products from Firebase
   useEffect(() => {
-    const fetchProducts = async () => {
-      setIsLoading(true);
-      try {
-        const productsCollection = collection(db, 'products');
-        const productsSnapshot = await getDocs(productsCollection);
-        if (productsSnapshot.empty) {
-          const sampleProducts = [
-            {
-              name: 'Uniform Set USTP (Female)',
-              price: '₱1,000',
-              image: uniformImg,
-              category: 'Uniform',
-              description: 'Complete USTP uniform set for female students including blouse, skirt, and necktie.'
-            },
-            {
-              name: 'USTP ID Lace',
-              price: '₱50',
-              image: uniformImg,
-              category: 'Accessories',
-              description: 'High-quality ID lace for USTP student ID.'
-            },
-            {
-              name: 'USTP Ballpen',
-              price: '₱20',
-              image: uniformImg,
-              category: 'School Supplies',
-              description: 'Official USTP ballpen with school logo.'
-            }
-          ];
-          for (const product of sampleProducts) {
-            await addDoc(productsCollection, product);
-          }
-          const newSnapshot = await getDocs(productsCollection);
-          const productsList = newSnapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
+    setIsLoading(true);
+    const productsCollection = collection(db, 'products');
+    // Real-time listener for products
+    const unsubscribe = onSnapshot(productsCollection, async (productsSnapshot) => {
+      let productsList = productsSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      if (auth.currentUser) {
+        const userRef = doc(db, 'users', auth.currentUser.uid);
+        const userDoc = await getDoc(userRef);
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          const likedProducts = userData.likedProducts || [];
+          productsList = productsList.map(product => ({
+            ...product,
+            liked: likedProducts.includes(product.id)
           }));
-          setProducts(productsList);
-        } else {
-          const productsList = productsSnapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-          }));
-          if (auth.currentUser) {
-            const userRef = doc(db, 'users', auth.currentUser.uid);
-            const userDoc = await getDoc(userRef);
-            if (userDoc.exists()) {
-              const userData = userDoc.data();
-              const likedProducts = userData.likedProducts || [];
-              const productsWithLikes = productsList.map(product => ({
-                ...product,
-                liked: likedProducts.includes(product.id)
-              }));
-              setProducts(productsWithLikes);
-              return;
-            }
-          }
-          setProducts(productsList);
         }
-      } catch (error) {
-        console.error('Error fetching products:', error);
-      } finally {
-        setIsLoading(false);
       }
-    };
-    fetchProducts();
+      setProducts(productsList);
+      setIsLoading(false);
+    }, (error) => {
+      console.error('Error fetching products:', error);
+      setIsLoading(false);
+    });
+    return () => unsubscribe();
   }, []);
 
   useEffect(() => {

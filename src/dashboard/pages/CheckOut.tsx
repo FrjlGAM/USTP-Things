@@ -28,6 +28,7 @@ export default function CheckOut({ product, onClose }: CheckOutProps) {
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedTime, setSelectedTime] = useState('');
   const [quantity, setQuantity] = useState(1);
+  const orderingDisabled = false; // or from props/config
 
   // Validate product data on mount
   useEffect(() => {
@@ -81,8 +82,32 @@ export default function CheckOut({ product, onClose }: CheckOutProps) {
   };
 
   const handleConfirmOrder = async () => {
-    // Place order logic goes here
-    setShowConfirmModal(false);
+    setLoading(true);
+    try {
+      const orderData = {
+        userId: auth.currentUser?.uid,
+        sellerId: product.sellerId,
+        productId: product.id,
+        status: 'Processing',
+        schoolLocation: product.campusLocation || '',
+        pickupDate: selectedDate,
+        pickupTime: selectedTime,
+        paymentMethod: selectedPaymentMethod,
+        quantity,
+        totalAmount: calculateSubtotal(),
+        createdAt: serverTimestamp(),
+        productName: product.name,
+        productImage: product.image,
+      };
+      await addDoc(collection(db, 'orders'), orderData);
+      setShowConfirmModal(false);
+      navigate('/dashboard/orders');
+    } catch (error) {
+      alert('Failed to place order. Please try again.');
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

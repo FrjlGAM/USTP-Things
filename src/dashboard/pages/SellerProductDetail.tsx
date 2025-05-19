@@ -67,11 +67,17 @@ export default function SellerProductDetail({ product, open, onClose }: SellerPr
               <div className="mt-6">
                 <h3 className="font-bold text-lg mb-2">Product Description:</h3>
                 <div className="bg-[#f7f6fd] rounded-xl p-4">
-                  <ul className="list-disc pl-6 text-gray-700">
-                    {productDetails.description.map((desc, i) => (
-                      <li key={i}>{desc}</li>
-                    ))}
-                  </ul>
+                  {Array.isArray(product.description) ? (
+                    <ul className="list-disc pl-6 text-gray-700">
+                      {product.description.map((desc: string, i: number) => (
+                        <li key={i}>{desc}</li>
+                      ))}
+                    </ul>
+                  ) : product.description && typeof product.description === 'string' ? (
+                    <span className="text-gray-700">{product.description}</span>
+                  ) : (
+                    <span className="italic text-gray-400">No description provided.</span>
+                  )}
                 </div>
               </div>
             </div>

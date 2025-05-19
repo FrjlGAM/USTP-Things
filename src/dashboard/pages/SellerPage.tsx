@@ -20,7 +20,7 @@ import ProductCardSeller from '../components/ProductCardSeller';
 import SellerProductDetail from './SellerProductDetail';
 import SellerName from '../components/SellerName';
 import { auth, db } from "../../lib/firebase";
-import { doc, getDoc, onSnapshot, collection, query, where, getDocs, updateDoc, increment, arrayUnion, Timestamp, setDoc, addDoc } from "firebase/firestore";
+import { doc, getDoc, onSnapshot, collection, query, where, getDocs, updateDoc, increment, arrayUnion, Timestamp, setDoc, addDoc, deleteDoc } from "firebase/firestore";
 
 interface Seller {
   businessName: string;
@@ -247,6 +247,18 @@ const SellerPage: React.FC = () => {
     }
   };
 
+  // Helper: filter valid products
+  const isValidProduct = (product: any) => {
+    return (
+      typeof product.name === 'string' &&
+      product.name.trim() !== '' &&
+      (typeof product.price === 'string' || typeof product.price === 'number') &&
+      typeof product.image === 'string' && product.image.trim() !== '' &&
+      typeof product.sellerId === 'string' && product.sellerId.trim() !== '' &&
+      (typeof product.stock === 'number' || !isNaN(Number(product.stock)))
+    );
+  };
+
   return (
     <div className="min-h-screen w-full bg-[#FFF3F2]">
       {/* Top bar with back button, flush with card, no white gap above */}
@@ -462,9 +474,31 @@ const SellerPage: React.FC = () => {
       {/* Tab Content */}
       {activeTab === 'all' ? (
         <div className="grid grid-cols-2 md:grid-cols-5 gap-6 px-8 pb-8 pt-2 relative">
-          {products.map((product, idx) => (
-            <div key={idx} className="relative">
+          {products.filter(isValidProduct).map((product, idx) => (
+            <div key={product.id || idx} className="relative group">
               <ProductCardSeller product={product} onClick={() => setSelectedProduct(product)} />
+              {/* Delete button only in seller view */}
+              {!isBuyerView && (
+                <button
+                  className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 shadow-lg opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                  title="Delete Product"
+                  onClick={async (e) => {
+                    e.stopPropagation();
+                    if (window.confirm('Are you sure you want to delete this product?')) {
+                      try {
+                        await deleteDoc(doc(db, 'products', product.id));
+                      } catch (err) {
+                        alert('Failed to delete product.');
+                        console.error(err);
+                      }
+                    }
+                  }}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              )}
             </div>
           ))}
           {/* Delete/Cancel Buttons */}

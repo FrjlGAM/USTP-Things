@@ -7,12 +7,10 @@ import { auth } from "../../lib/firebase";
 
 type SettingsProps = {
   onAccountSecurityClick: () => void;
-  onPrivacySettingsClick: () => void;
-  onBlockedUsersClick: () => void;
   onCommunityRulesClick: () => void;
 };
 
-export default function Settings({ onAccountSecurityClick, onPrivacySettingsClick, onBlockedUsersClick, onCommunityRulesClick }: SettingsProps) {
+export default function Settings({ onAccountSecurityClick, onCommunityRulesClick }: SettingsProps) {
   const navigate = useNavigate();
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
@@ -86,64 +84,6 @@ export default function Settings({ onAccountSecurityClick, onPrivacySettingsClic
             onClick={onAccountSecurityClick}
           >
             Account & Security <span style={{ color: "#888" }}>&gt;</span>
-          </div>
-        </div>
-        {/* Settings */}
-        <div
-          style={{
-            color: "#7A8A8D",
-            fontWeight: 700,
-            marginBottom: 8,
-            fontSize: 18,
-            fontFamily: "inherit",
-          }}
-        >
-          Settings
-        </div>
-        <div
-          style={{
-            background: "#FFF3F3",
-            borderRadius: 6,
-            marginBottom: 8,
-            padding: 0,
-          }}
-        >
-          <div
-            style={{
-              padding: "14px 16px",
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              fontSize: 17,
-              cursor: "pointer",
-              fontFamily: "inherit",
-            }}
-            onClick={onPrivacySettingsClick}
-          >
-            Privacy Settings <span style={{ color: "#888" }}>&gt;</span>
-          </div>
-        </div>
-        <div
-          style={{
-            background: "#FFF3F3",
-            borderRadius: 6,
-            marginBottom: 24,
-            padding: 0,
-          }}
-        >
-          <div
-            style={{
-              padding: "14px 16px",
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              fontSize: 17,
-              cursor: "pointer",
-              fontFamily: "inherit",
-            }}
-            onClick={onBlockedUsersClick}
-          >
-            Blocked Users <span style={{ color: "#888" }}>&gt;</span>
           </div>
         </div>
         {/* Support */}

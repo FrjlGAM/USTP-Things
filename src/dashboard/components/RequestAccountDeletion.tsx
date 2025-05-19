@@ -1,12 +1,80 @@
-import React from "react";
+import React, { useState } from "react";
 import ustpLogo from "../../assets/ustp-things-logo.png";
 import closeIcon from "../../assets/ustp thingS/X button.png";
+import { deleteUser } from "firebase/auth";
+import { auth, db } from "../../lib/firebase";
+import { useNavigate } from "react-router-dom";
+import { deleteDoc, doc, collection, getDocs, query, where } from "firebase/firestore";
 
 type RequestAccountDeletionProps = {
   onClose: () => void;
 };
 
 export default function RequestAccountDeletion({ onClose }: RequestAccountDeletionProps) {
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
+
+  const handleDeleteAccount = async () => {
+    try {
+      setIsDeleting(true);
+      setError(null);
+
+      const user = auth.currentUser;
+      if (!user) throw new Error("No user is currently signed in");
+
+      const userId = user.uid;
+
+      // Delete from users collection
+      try {
+        await deleteDoc(doc(db, "users", userId));
+        console.log("Deleted from users:", userId);
+      } catch (err) {
+        console.log("No user document found to delete", err);
+      }
+
+      // Delete from verifiedAccounts collection by doc ID (userId)
+      try {
+        await deleteDoc(doc(db, "verifiedAccounts", userId));
+        console.log("Deleted from verifiedAccounts by doc ID:", userId);
+      } catch (err) {
+        console.log("No verifiedAccounts doc with userId as ID", err);
+      }
+
+      // Delete from verifiedAccounts collection by userId field (in case doc ID is not userId)
+      try {
+        const q = query(collection(db, "verifiedAccounts"), where("userId", "==", userId));
+        const snapshot = await getDocs(q);
+        for (const docSnap of snapshot.docs) {
+          await deleteDoc(doc(db, "verifiedAccounts", docSnap.id));
+          console.log("Deleted from verifiedAccounts by userId field:", docSnap.id);
+        }
+      } catch (err) {
+        console.log("No verifiedAccounts doc with userId field", err);
+      }
+
+      // Delete from admin collection if exists
+      try {
+        await deleteDoc(doc(db, "admin", userId));
+        console.log("Deleted from admin:", userId);
+      } catch (err) {
+        console.log("No admin document found to delete", err);
+      }
+
+      // Delete the Firebase Auth account
+      await deleteUser(user);
+      console.log("Deleted user from Auth:", userId);
+
+      // Redirect to home
+      navigate("/");
+    } catch (err) {
+      console.error("Error deleting account:", err);
+      setError(err instanceof Error ? err.message : "Failed to delete account. Please try again.");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   return (
     <div
       style={{
@@ -16,7 +84,7 @@ export default function RequestAccountDeletion({ onClose }: RequestAccountDeleti
         left: 0,
         width: "100vw",
         height: "100vh",
-        background: "rgba(180, 180, 255, 0.25)", // light overlay
+        background: "rgba(180, 180, 255, 0.25)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -36,7 +104,6 @@ export default function RequestAccountDeletion({ onClose }: RequestAccountDeleti
           alignItems: "center",
         }}
       >
-        {/* Close Button */}
         <button
           onClick={onClose}
           style={{ position: "absolute", top: 18, right: 18, background: "none", border: "none", padding: 0, cursor: "pointer" }}
@@ -44,9 +111,7 @@ export default function RequestAccountDeletion({ onClose }: RequestAccountDeleti
         >
           <img src={closeIcon} alt="Close" style={{ width: 32, height: 32 }} />
         </button>
-        {/* Logo */}
         <img src={ustpLogo} alt="USTP Things" style={{ width: 90, marginBottom: 8 }} />
-        {/* Title */}
         <div
           style={{
             color: "#F88379",
@@ -58,7 +123,6 @@ export default function RequestAccountDeletion({ onClose }: RequestAccountDeleti
         >
           Request Account Deletion
         </div>
-        {/* Message */}
         <div
           style={{
             background: "#FFF3F3",
@@ -73,9 +137,21 @@ export default function RequestAccountDeletion({ onClose }: RequestAccountDeleti
         >
           We are sad that you want to leave us, but please note that account deletion is irreversible
         </div>
-        {/* OK Button */}
+        {error && (
+          <div
+            style={{
+              color: "#dc3545",
+              marginBottom: 16,
+              textAlign: "center",
+              fontSize: 14,
+            }}
+          >
+            {error}
+          </div>
+        )}
         <button
-          onClick={onClose}
+          onClick={handleDeleteAccount}
+          disabled={isDeleting}
           style={{
             border: "2px solid #F88379",
             color: "#F88379",
@@ -84,11 +160,30 @@ export default function RequestAccountDeletion({ onClose }: RequestAccountDeleti
             borderRadius: 6,
             padding: "8px 64px",
             background: "transparent",
-            cursor: "pointer",
+            cursor: isDeleting ? "not-allowed" : "pointer",
             fontFamily: "inherit",
+            opacity: isDeleting ? 0.7 : 1,
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
           }}
         >
-          OK
+          {isDeleting ? (
+            <>
+              <span className="loader" style={{
+                display: "inline-block",
+                width: 18,
+                height: 18,
+                border: "3px solid #F88379",
+                borderTop: "3px solid transparent",
+                borderRadius: "50%",
+                animation: "spin 1s linear infinite",
+              }} />
+              Deleting...
+            </>
+          ) : (
+            "Delete"
+          )}
         </button>
       </div>
     </div>

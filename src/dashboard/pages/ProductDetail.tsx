@@ -5,7 +5,7 @@ import cartIcon from '../../assets/ustp thingS/Shopping cart.png';
 import greenCartIcon from '../../assets/ustp thingS/Shopping green.png';
 import xIcon from '../../assets/ustp thingS/X button.png';
 import { db, auth } from '../../lib/firebase';
-import { doc, getDoc, setDoc, arrayUnion, arrayRemove, onSnapshot, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, arrayUnion, arrayRemove, onSnapshot, updateDoc, runTransaction, collection, addDoc } from 'firebase/firestore';
 import React from 'react';
 
 const productDetails = {
@@ -56,6 +56,11 @@ export default function ProductDetail({
   const [submittingRating, setSubmittingRating] = useState(false);
   const [localRating, setLocalRating] = useState(product.rating ?? 0);
   const [hasRated, setHasRated] = useState(false);
+  const [showCheckout, setShowCheckout] = useState(false);
+  const [checkoutQty, setCheckoutQty] = useState(1);
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [checkoutError, setCheckoutError] = useState('');
+  const [checkoutSuccess, setCheckoutSuccess] = useState(false);
 
   // Scroll to top when component mounts or when product changes
   useEffect(() => {
@@ -137,18 +142,50 @@ export default function ProductDetail({
       alert('Cannot proceed with purchase. Product seller information is missing.');
       return;
     }
-    try {
-      const productRef = doc(db, 'products', product.id);
-      await updateDoc(productRef, {
-        sold: (product.sold ?? 0) + 1,
-        stock: (product.stock ?? 1) - 1
-      });
-      // Only show rating modal if user hasn't rated yet
-      if (!hasRated) setShowRatingModal(true);
-    } catch (err) {
-      alert('Failed to update product after purchase.');
-      console.error(err);
+    if (product.stock === 0) {
+      setCheckoutError('This product is out of stock.');
+      return;
     }
+    setShowCheckout(true);
+  };
+
+  // Confirm checkout
+  const handleConfirmCheckout = async () => {
+    setCheckoutLoading(true);
+    setCheckoutError('');
+    try {
+      await runTransaction(db, async (transaction) => {
+        const productRef = doc(db, 'products', product.id);
+        const productSnap = await transaction.get(productRef);
+        if (!productSnap.exists()) throw new Error('Product not found');
+        const data = productSnap.data();
+        if ((data.stock ?? 0) < checkoutQty) throw new Error('Not enough stock');
+        // Update product
+        transaction.update(productRef, {
+          sold: (data.sold ?? 0) + checkoutQty,
+          stock: (data.stock ?? 0) - checkoutQty
+        });
+        // Create order
+        const orderRef = doc(collection(db, 'purchaseOrders'));
+        transaction.set(orderRef, {
+          productId: product.id,
+          productName: product.name,
+          productImage: product.image,
+          sellerId: product.sellerId,
+          buyerId: auth.currentUser?.uid ?? '',
+          quantity: checkoutQty,
+          price: product.price,
+          status: 'pending',
+          createdAt: new Date(),
+        });
+      });
+      setCheckoutSuccess(true);
+      setShowCheckout(false);
+      setShowRatingModal(!hasRated); // Show rating if not already rated
+    } catch (err: any) {
+      setCheckoutError(err.message || 'Failed to complete purchase.');
+    }
+    setCheckoutLoading(false);
   };
 
   // Rating submission logic
@@ -279,6 +316,14 @@ export default function ProductDetail({
                 View Shop
               </button>
             </div>
+            <div className="mb-2 text-lg text-gray-600 font-semibold">
+              Stocks left: {product.stock ?? 0}
+            </div>
+            {(product.stock ?? 0) > 0 && (product.stock ?? 0) <= 5 && (
+              <div className="mb-2 text-md font-semibold text-orange-500 animate-pulse">
+                Hurry! Only {product.stock ?? 0} left in stock!
+              </div>
+            )}
             <div className="flex flex-col mb-4">
               <div className="flex items-center gap-3">
                 <span className="text-xl text-blue-400 font-bold">{product.sold ?? 0}</span> <span className="text-xl text-gray-500">Sold</span>
@@ -302,12 +347,13 @@ export default function ProductDetail({
               onClick={handleBuyNow}
               className={`flex-1 font-bold py-3 rounded-xl shadow transition text-lg ${
                 isVerified 
-                ? 'bg-[#F88379] hover:bg-[#F88379]/90 text-white' 
+                ? (product.stock === 0 ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : 'bg-[#F88379] hover:bg-[#F88379]/90 text-white')
                 : 'bg-gray-100 text-gray-500 cursor-help'
               }`}
-              title={!isVerified ? "Account verification required to purchase" : ""}
+              title={!isVerified ? "Account verification required to purchase" : (product.stock === 0 ? 'Out of Stock' : '')}
+              disabled={!isVerified || product.stock === 0}
             >
-              {isVerified ? 'Buy Now' : 'Verify Account to Buy'}
+              {isVerified ? (product.stock === 0 ? 'Out of Stock' : 'Buy Now') : 'Verify Account to Buy'}
             </button>
           </div>
         </div>
@@ -351,6 +397,48 @@ export default function ProductDetail({
             >
               {submittingRating ? 'Submitting...' : 'Submit Rating'}
             </button>
+          </div>
+        </div>
+      )}
+      {/* Checkout Modal */}
+      {showCheckout && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
+          <div className="bg-white rounded-2xl shadow-lg p-8 w-full max-w-md flex flex-col items-center">
+            <h2 className="text-2xl font-bold mb-4 text-[#F88379]">Checkout</h2>
+            <img src={product.image} alt={product.name} className="w-32 h-32 object-cover rounded mb-2" />
+            <div className="font-bold text-lg mb-2">{product.name}</div>
+            <div className="mb-2">Price: <span className="font-semibold">{product.price}</span></div>
+            <div className="mb-2">Available: <span className="font-semibold">{product.stock}</span></div>
+            <div className="mb-4 flex items-center gap-2">Quantity: 
+              <button onClick={() => setCheckoutQty(q => Math.max(1, q-1))} disabled={checkoutQty <= 1 || checkoutLoading} className="px-2 py-1 bg-gray-200 rounded">-</button>
+              <span className="font-semibold">{checkoutQty}</span>
+              <button onClick={() => setCheckoutQty(q => Math.min(product.stock ?? 1, q+1))} disabled={checkoutQty >= (product.stock ?? 1) || checkoutLoading} className="px-2 py-1 bg-gray-200 rounded">+</button>
+            </div>
+            {/* Payment method and delivery info can be added here */}
+            {checkoutError && <div className="text-red-500 mb-2">{checkoutError}</div>}
+            <div className="flex gap-4 mt-2">
+              <button
+                className="bg-[#F88379] text-white px-6 py-2 rounded-full font-bold text-lg hover:bg-[#F88379]/90 transition disabled:opacity-60"
+                onClick={handleConfirmCheckout}
+                disabled={checkoutLoading}
+              >
+                {checkoutLoading ? 'Processing...' : 'Confirm Purchase'}
+              </button>
+              <button
+                className="bg-gray-200 text-gray-700 px-6 py-2 rounded-full font-bold text-lg hover:bg-gray-300 transition"
+                onClick={() => setShowCheckout(false)}
+                disabled={checkoutLoading}
+              >Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Success Message */}
+      {checkoutSuccess && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
+          <div className="bg-white rounded-2xl shadow-lg p-8 w-full max-w-xs flex flex-col items-center">
+            <h2 className="text-2xl font-bold mb-4 text-green-600">Purchase Successful!</h2>
+            <button className="bg-[#F88379] text-white px-6 py-2 rounded-full font-bold text-lg mt-2" onClick={() => setCheckoutSuccess(false)}>Close</button>
           </div>
         </div>
       )}

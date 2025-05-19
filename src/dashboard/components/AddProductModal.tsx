@@ -1,14 +1,34 @@
 import React, { useRef, useState } from "react";
+import { db, auth } from '../../lib/firebase';
+import { collection, addDoc } from 'firebase/firestore';
 
 interface AddProductModalProps {
   open: boolean;
   onClose: () => void;
+  onProductAdded?: () => void; // callback to refresh dashboard
 }
 
-const AddProductModal: React.FC<AddProductModalProps> = ({ open, onClose }) => {
+const REQUIRED_FIELDS = [
+  'productName', 'price', 'stock', 'productImage',
+];
+
+const AddProductModal: React.FC<AddProductModalProps> = ({ open, onClose, onProductAdded }) => {
   const [productImage, setProductImage] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [productName, setProductName] = useState('');
+  const [price, setPrice] = useState('');
+  const [stock, setStock] = useState('');
+  const [tagInput, setTagInput] = useState('');
+  const [tags, setTags] = useState<string[]>([]);
+  const [description, setDescription] = useState('');
+  const [dateSlot, setDateSlot] = useState('');
+  const [timeSlot, setTimeSlot] = useState('');
+  const [campusLocation, setCampusLocation] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [errors, setErrors] = useState<{[key:string]: string}>({});
+  const [showSuccess, setShowSuccess] = useState(false);
 
   if (!open) return null;
 
@@ -20,7 +40,7 @@ const AddProductModal: React.FC<AddProductModalProps> = ({ open, onClose }) => {
     try {
       const formData = new FormData();
       formData.append('file', file);
-      formData.append('upload_preset', 'profile_picture'); // your unsigned preset name
+      formData.append('upload_preset', 'profile_picture');
       const response = await fetch(
         'https://api.cloudinary.com/v1_1/dr7t6evpc/image/upload',
         {
@@ -31,6 +51,7 @@ const AddProductModal: React.FC<AddProductModalProps> = ({ open, onClose }) => {
       const data = await response.json();
       if (!data.secure_url) throw new Error("No secure_url returned from Cloudinary");
       setProductImage(data.secure_url);
+      setErrors(prev => ({...prev, productImage: ''}));
     } catch (error) {
       alert("Failed to upload image. Check console for details.");
       console.error("Image upload error:", error);
@@ -38,9 +59,90 @@ const AddProductModal: React.FC<AddProductModalProps> = ({ open, onClose }) => {
     setUploading(false);
   };
 
+  // Tag chip logic
+  const handleTagAdd = () => {
+    const val = tagInput.trim();
+    if (val && !tags.includes(val)) {
+      setTags([...tags, val]);
+      setTagInput('');
+    }
+  };
+  const handleTagRemove = (tag: string) => {
+    setTags(tags.filter(t => t !== tag));
+  };
+
+  // Validation
+  const validate = () => {
+    const newErrors: {[key:string]: string} = {};
+    if (!productName) newErrors.productName = 'Product name is required.';
+    if (!price || isNaN(Number(price)) || Number(price) <= 0) newErrors.price = 'Valid price is required.';
+    if (!stock || isNaN(Number(stock)) || Number(stock) < 0) newErrors.stock = 'Valid stock is required.';
+    if (!productImage) newErrors.productImage = 'Product image is required.';
+    return newErrors;
+  };
+
+  // Reset form
+  const resetForm = () => {
+    setProductName('');
+    setPrice('');
+    setStock('');
+    setTags([]);
+    setTagInput('');
+    setDescription('');
+    setDateSlot('');
+    setTimeSlot('');
+    setCampusLocation('');
+    setPaymentMethod('');
+    setProductImage(null);
+    setErrors({});
+  };
+
+  // Handle submit
+  const handleAddProduct = async () => {
+    const validationErrors = validate();
+    setErrors(validationErrors);
+    if (Object.keys(validationErrors).length > 0) return;
+    setSaving(true);
+    try {
+      const productData = {
+        name: productName,
+        price,
+        stock: Number(stock),
+        tags,
+        image: productImage,
+        description,
+        dateSlot,
+        timeSlot,
+        campusLocation,
+        paymentMethod,
+        sellerId: auth.currentUser?.uid || null,
+        createdAt: new Date(),
+      };
+      await addDoc(collection(db, 'products'), productData);
+      setShowSuccess(true);
+      setSaving(false);
+      resetForm();
+      if (onProductAdded) onProductAdded();
+      setTimeout(() => {
+        setShowSuccess(false);
+        onClose();
+      }, 1200);
+    } catch (error) {
+      setSaving(false);
+      alert('Failed to add product. Check console for details.');
+      console.error('Add product error:', error);
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#FFF3F2]/80 backdrop-blur-[2px]">
       <div className="bg-white rounded-2xl shadow-lg p-10 w-[900px] max-w-full relative border-2 border-black">
+        {/* Success Toast */}
+        {showSuccess && (
+          <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-green-500 text-white px-6 py-2 rounded-full shadow-lg z-50 animate-fade-in">
+            Product added successfully!
+          </div>
+        )}
         {/* Close Button */}
         <button
           onClick={onClose}
@@ -55,22 +157,32 @@ const AddProductModal: React.FC<AddProductModalProps> = ({ open, onClose }) => {
           {/* Left Side */}
           <div className="flex-1 flex flex-col gap-6 pr-2">
             <h2 className="text-4xl font-bold mb-2 text-black italic">Delivery Details</h2>
-            <select className="border-b-2 border-gray-300 py-2 focus:outline-none font-semibold">
-              <option>Enter Date Slots</option>
+            <select className="border-b-2 border-gray-300 py-2 focus:outline-none font-semibold" value={dateSlot} onChange={e => setDateSlot(e.target.value)}>
+              <option value="">Enter Date Slots (optional)</option>
+              <option value="Today">Today</option>
+              <option value="Tomorrow">Tomorrow</option>
             </select>
-            <select className="border-b-2 border-gray-300 py-2 focus:outline-none font-semibold">
-              <option>Enter Time Slots</option>
+            <select className="border-b-2 border-gray-300 py-2 focus:outline-none font-semibold" value={timeSlot} onChange={e => setTimeSlot(e.target.value)}>
+              <option value="">Enter Time Slots (optional)</option>
+              <option value="Morning">Morning</option>
+              <option value="Afternoon">Afternoon</option>
             </select>
-            <select className="border-b-2 border-gray-300 py-2 focus:outline-none font-semibold text-gray-400">
-              <option>Choose Campus Location</option>
+            <select className="border-b-2 border-gray-300 py-2 focus:outline-none font-semibold text-gray-400" value={campusLocation} onChange={e => setCampusLocation(e.target.value)}>
+              <option value="">Choose Campus Location (optional)</option>
+              <option value="Main">Main</option>
+              <option value="Annex">Annex</option>
             </select>
-            <select className="border-b-2 border-gray-300 py-2 focus:outline-none font-semibold text-gray-400">
-              <option>Choose Payment Method</option>
+            <select className="border-b-2 border-gray-300 py-2 focus:outline-none font-semibold text-gray-400" value={paymentMethod} onChange={e => setPaymentMethod(e.target.value)}>
+              <option value="">Choose Payment Method (optional)</option>
+              <option value="Cash">Cash</option>
+              <option value="GCash">GCash</option>
             </select>
             <textarea
               className="border-b-2 border-gray-300 py-2 focus:outline-none resize-none font-semibold mt-2"
-              placeholder="Enter Product Description"
+              placeholder="Enter Product Description (optional)"
               rows={3}
+              value={description}
+              onChange={e => setDescription(e.target.value)}
             />
           </div>
           {/* Center Image Upload */}
@@ -83,7 +195,7 @@ const AddProductModal: React.FC<AddProductModalProps> = ({ open, onClose }) => {
               onChange={handleImageChange}
             />
             <div
-              className="w-48 h-48 bg-gray-200 rounded-lg flex items-center justify-center cursor-pointer overflow-hidden border-2 border-gray-300"
+              className={`w-48 h-48 bg-gray-200 rounded-lg flex items-center justify-center cursor-pointer overflow-hidden border-2 ${errors.productImage ? 'border-red-500' : 'border-gray-300'}`}
               onClick={() => !uploading && fileInputRef.current?.click()}
               style={{ position: 'relative' }}
             >
@@ -95,33 +207,72 @@ const AddProductModal: React.FC<AddProductModalProps> = ({ open, onClose }) => {
                 <span className="text-7xl text-gray-400 font-light">+</span>
               )}
             </div>
+            {errors.productImage && <span className="text-red-500 text-xs mt-1">{errors.productImage}</span>}
           </div>
           {/* Right Side */}
           <div className="flex-1 flex flex-col gap-6 pl-2 pt-2">
+            <label className="font-semibold">Product Name <span className="text-red-500">*</span></label>
             <input
-              className="border-b-2 border-gray-300 py-2 focus:outline-none font-semibold"
+              className={`border-b-2 py-2 focus:outline-none font-semibold ${errors.productName ? 'border-red-500' : 'border-gray-300'}`}
               placeholder="Enter Product Name"
+              value={productName}
+              onChange={e => { setProductName(e.target.value); setErrors(prev => ({...prev, productName: ''})); }}
             />
+            {errors.productName && <span className="text-red-500 text-xs">{errors.productName}</span>}
+            <label className="font-semibold">Price <span className="text-red-500">*</span></label>
             <input
-              className="border-b-2 border-gray-300 py-2 focus:outline-none font-semibold"
+              className={`border-b-2 py-2 focus:outline-none font-semibold ${errors.price ? 'border-red-500' : 'border-gray-300'}`}
               placeholder="Enter Price"
               type="number"
+              value={price}
+              onChange={e => { setPrice(e.target.value); setErrors(prev => ({...prev, price: ''})); }}
             />
+            {errors.price && <span className="text-red-500 text-xs">{errors.price}</span>}
+            <label className="font-semibold">Stock <span className="text-red-500">*</span></label>
             <input
-              className="border-b-2 border-gray-300 py-2 focus:outline-none font-semibold"
+              className={`border-b-2 py-2 focus:outline-none font-semibold ${errors.stock ? 'border-red-500' : 'border-gray-300'}`}
               placeholder="Enter Number of Stock"
               type="number"
+              value={stock}
+              onChange={e => { setStock(e.target.value); setErrors(prev => ({...prev, stock: ''})); }}
             />
-            <input
-              className="border-b-2 border-gray-300 py-2 focus:outline-none font-semibold"
-              placeholder="Enter Product Tags"
-            />
+            {errors.stock && <span className="text-red-500 text-xs">{errors.stock}</span>}
+            <label className="font-semibold">Tags <span className="text-gray-400">(optional)</span></label>
+            <div className="flex gap-2 items-center">
+              <input
+                className="border-b-2 border-gray-300 py-2 focus:outline-none font-semibold flex-1"
+                placeholder="Add a tag and press Enter"
+                value={tagInput}
+                onChange={e => setTagInput(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleTagAdd(); } }}
+              />
+              <button
+                type="button"
+                className="bg-[#F88379] text-white px-3 py-1 rounded-full text-sm font-bold"
+                onClick={handleTagAdd}
+                disabled={!tagInput.trim()}
+              >Add</button>
+            </div>
+            <div className="flex flex-wrap gap-2 mt-1">
+              {tags.map(tag => (
+                <span key={tag} className="bg-[#F88379] text-white px-3 py-1 rounded-full text-xs flex items-center gap-1">
+                  {tag}
+                  <button type="button" className="ml-1 text-white hover:text-gray-200" onClick={() => handleTagRemove(tag)}>&times;</button>
+                </span>
+              ))}
+            </div>
           </div>
         </div>
         {/* Add Product Button */}
         <div className="flex justify-center mt-8">
-          <button className="bg-black text-white px-10 py-2 rounded-full font-bold text-lg hover:bg-[#F88379] transition">
-            Add Product
+          <button
+            className="bg-black text-white px-10 py-2 rounded-full font-bold text-lg hover:bg-[#F88379] transition disabled:opacity-60 flex items-center gap-2"
+            disabled={saving || uploading}
+            onClick={handleAddProduct}
+          >
+            {saving ? (
+              <span className="flex items-center gap-2"><svg className="animate-spin h-5 w-5 mr-2 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path></svg>Adding...</span>
+            ) : 'Add Product'}
           </button>
         </div>
       </div>

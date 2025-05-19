@@ -36,21 +36,6 @@ interface Seller {
   }[];
 }
 
-const initialProducts = [
-  {
-    id: 1,
-    name: "Uniform Set USTP ...",
-    price: "₱1,000,000",
-    image: productUniform,
-  },
-  ...Array(9).fill({
-    id: 2,
-    name: "Genevieve Galdo",
-    price: "₱1,000,000",
-    image: "https://static.wikia.nocookie.net/spongebob/images/7/7e/Nat_Peterson_29.png",
-  }),
-];
-
 const stats = [
   { icon: productCountIcon, label: "Product Count", value: "1,000" },
   { icon: earningsIcon, label: "Earnings" },
@@ -69,7 +54,7 @@ const SellerPage: React.FC = () => {
   const [showAddProductModal, setShowAddProductModal] = useState(false);
   const [deleteMode, setDeleteMode] = useState(false);
   const [selectedProducts, setSelectedProducts] = useState<number[]>([]);
-  const [products, setProducts] = useState(initialProducts);
+  const [products, setProducts] = useState<any[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [selectedAction, setSelectedAction] = useState<string | null>(null);
   const [profileImage, setProfileImage] = useState<string | null>(null);
@@ -79,6 +64,7 @@ const SellerPage: React.FC = () => {
   const [visitCount, setVisitCount] = useState(0);
 
   useEffect(() => {
+    let unsubscribeProducts: (() => void) | null = null;
     // If sellerId is provided in URL, we're in buyer's view
     if (sellerId && sellerId !== auth.currentUser?.uid) {
       setIsBuyerView(true);
@@ -95,7 +81,6 @@ const SellerPage: React.FC = () => {
 
           if (userDoc.exists()) {
             const userData = userDoc.data();
-            
             // If seller doc doesn't exist, create it
             if (!sellerDoc.exists() && userData.role === 'seller') {
               await setDoc(sellerRef, {
@@ -108,64 +93,49 @@ const SellerPage: React.FC = () => {
                 isVerified: userData.isVerified || false
               });
             }
-
             const sellerData = sellerDoc.exists() ? sellerDoc.data() : userData;
             setProfileImage(sellerData.profileImage || null);
             setBusinessName(sellerData.businessName || "Galdo Boutique");
             setVisitCount(sellerData.visitCount || 0);
-            
             // Record visit if authenticated user
             if (auth.currentUser && auth.currentUser.uid !== sellerId) {
               // Update visit count in sellers collection
               await updateDoc(sellerRef, {
                 visitCount: increment(1)
               });
-
               // Record visit details in visits subcollection
               const visitsCollectionRef = collection(sellerRef, "visits");
               await addDoc(visitsCollectionRef, {
                 visitorId: auth.currentUser.uid,
                 timestamp: Timestamp.now()
               });
-
               // Update local visit count
               setVisitCount(prev => prev + 1);
             }
-            
-            // Fetch seller's products
-            const productsQuery = query(
-              collection(db, "products"),
-              where("sellerId", "==", sellerId)
-            );
-            const productsSnapshot = await getDocs(productsQuery);
-            const fetchedProducts = productsSnapshot.docs.map(doc => ({
-              id: doc.id,
-              ...doc.data()
-            }));
-            setProducts(fetchedProducts);
-
-            // Update product count in seller document
-            await updateDoc(sellerRef, {
-              productCount: fetchedProducts.length
-            });
           }
         } catch (error) {
           console.error('Error fetching seller data:', error);
         }
       };
       fetchSellerData();
+      // Real-time products for this seller
+      const productsQuery = query(
+        collection(db, "products"),
+        where("sellerId", "==", sellerId)
+      );
+      unsubscribeProducts = onSnapshot(productsQuery, (snapshot) => {
+        const fetchedProducts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        setProducts(fetchedProducts);
+      });
     } else {
       // We're in seller's own view
       if (!auth.currentUser) return;
-
       const userRef = doc(db, "users", auth.currentUser.uid);
       const sellerRef = doc(db, "sellers", auth.currentUser.uid);
-
       // Listen for real-time updates from both collections
       const unsubscribeUser = onSnapshot(userRef, async (userDoc) => {
         if (userDoc.exists()) {
           const userData = userDoc.data();
-          
           // Create or update seller document if user is a seller
           if (userData.role === 'seller') {
             const sellerDoc = await getDoc(sellerRef);
@@ -183,7 +153,6 @@ const SellerPage: React.FC = () => {
           }
         }
       });
-
       const unsubscribeSeller = onSnapshot(sellerRef, (sellerDoc) => {
         if (sellerDoc.exists()) {
           const sellerData = sellerDoc.data();
@@ -192,12 +161,24 @@ const SellerPage: React.FC = () => {
           setVisitCount(sellerData.visitCount || 0);
         }
       });
-
+      // Real-time products for this seller
+      const productsQuery = query(
+        collection(db, "products"),
+        where("sellerId", "==", auth.currentUser.uid)
+      );
+      unsubscribeProducts = onSnapshot(productsQuery, (snapshot) => {
+        const fetchedProducts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        setProducts(fetchedProducts);
+      });
       return () => {
         unsubscribeUser();
         unsubscribeSeller();
+        if (unsubscribeProducts) unsubscribeProducts();
       };
     }
+    return () => {
+      if (unsubscribeProducts) unsubscribeProducts();
+    };
   }, [sellerId, auth.currentUser]);
 
   const collections = [

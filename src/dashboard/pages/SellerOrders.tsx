@@ -68,9 +68,44 @@ export default function SellerOrders() {
   const isStandalone = location.pathname === '/dashboard/seller-orders';
 
   useEffect(() => {
-    // Removed purchaseOrders fetching logic
-    setLoading(false);
-    setOrders([]);
+    const fetchSellerOrders = async () => {
+      setLoading(true);
+      try {
+        const q = query(
+          collection(db, 'orders'),
+          where('sellerId', '==', auth.currentUser?.uid)
+        );
+        const querySnapshot = await getDocs(q);
+        const ordersList: Order[] = [];
+        for (const docSnap of querySnapshot.docs) {
+          const data = docSnap.data();
+          // Optionally fetch buyer info
+          let buyerName = '';
+          let buyerEmail = '';
+          try {
+            const buyerDoc = await getDoc(doc(db, 'users', data.userId));
+            if (buyerDoc.exists()) {
+              const buyerData = buyerDoc.data();
+              buyerName = buyerData?.name || '';
+              buyerEmail = buyerData?.email || '';
+            }
+          } catch {}
+          ordersList.push({
+            id: docSnap.id,
+            ...data,
+            createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(),
+            buyerId: data.userId,
+            buyerName,
+            buyerEmail,
+          } as Order);
+        }
+        setOrders(ordersList);
+      } catch (error) {
+        console.error('Error fetching seller orders:', error);
+      }
+      setLoading(false);
+    };
+    fetchSellerOrders();
   }, []);
 
   const handlePickupNow = async (orderId: string) => {
@@ -161,8 +196,10 @@ export default function SellerOrders() {
       Cancelled: 'bg-red-200 text-red-800',
       'Ready for pickup': 'bg-blue-200 text-blue-800',
     };
+    // Card background color for completed
+    const cardBg = order.status === 'Completed' ? 'bg-green-100' : 'bg-white';
     return (
-      <div key={order.id} className="bg-white rounded-2xl shadow p-6">
+      <div key={order.id} className={`${cardBg} rounded-2xl shadow p-6 transition-colors duration-300`}>
         <div className="flex items-center gap-4">
           <img src={order.productImage} alt={order.productName} className="w-16 h-16 rounded-full object-cover" />
           <div className="flex-1">
@@ -171,7 +208,7 @@ export default function SellerOrders() {
                 <h3 className="text-lg font-semibold text-gray-800">{order.productName}</h3>
                 <p className="text-sm text-gray-600">Buyer: {order.buyerName || 'Unknown'} {order.buyerEmail && (<span className='text-xs text-gray-400'>({order.buyerEmail})</span>)}</p>
               </div>
-              <span className={`text-xs px-3 py-1 rounded-full font-bold ${statusColors[order.status] || 'bg-gray-200 text-gray-700'}`}>{order.status}</span>
+              <span className={`text-xs px-3 py-1 rounded-full font-bold ${statusColors[order.status] || 'bg-gray-200 text-gray-700'}`}>{order.status === 'Processing' ? 'Processing' : order.status}</span>
             </div>
             <div className="mt-2 space-y-1">
               <p className="text-gray-600">Quantity: {order.quantity}</p>
@@ -190,8 +227,8 @@ export default function SellerOrders() {
               {canComplete && (
                 <button
                   onClick={async () => {
-                    await updateDoc(doc(db, 'purchaseOrders', order.id), { status: 'Completed', completedAt: new Date() });
-                    setOrders(prev => prev.map(o => o.id === order.id ? { ...o, status: 'Completed' } : o));
+                    await updateDoc(doc(db, 'orders', order.id), { status: 'Completed', completedAt: new Date(), isRated: false });
+                    setOrders(prev => prev.map(o => o.id === order.id ? { ...o, status: 'Completed', isRated: false } : o));
                   }}
                   className="bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-6 rounded-lg shadow transition"
                   disabled={order.status === 'Completed'}

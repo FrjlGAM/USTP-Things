@@ -114,9 +114,46 @@ export default function ToRate() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Removed pickupOrders fetching logic
-    setLoading(false);
-    setOrders([]);
+    const fetchToRateOrders = async () => {
+      setLoading(true);
+      try {
+        const q = query(
+          collection(db, 'orders'),
+          where('userId', '==', auth.currentUser?.uid),
+          where('status', '==', 'Completed'),
+          where('isRated', '==', false)
+        );
+        const querySnapshot = await getDocs(q);
+        const ordersList: Order[] = [];
+        for (const docSnap of querySnapshot.docs) {
+          const data = docSnap.data();
+          // Optionally fetch seller info
+          let sellerName = '';
+          let sellerAvatar = '';
+          try {
+            const sellerDoc = await getDoc(doc(db, 'users', data.sellerId));
+            if (sellerDoc.exists()) {
+              const sellerData = sellerDoc.data();
+              sellerName = sellerData?.name || '';
+              sellerAvatar = sellerData?.avatar || '';
+            }
+          } catch {}
+          ordersList.push({
+            id: docSnap.id,
+            ...data,
+            createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(),
+            completedAt: data.completedAt?.toDate ? data.completedAt.toDate() : new Date(),
+            sellerName,
+            sellerAvatar,
+          } as Order);
+        }
+        setOrders(ordersList);
+      } catch (error) {
+        console.error('Error fetching to-rate orders:', error);
+      }
+      setLoading(false);
+    };
+    fetchToRateOrders();
   }, []);
 
   const handleRateNow = async (order: Order) => {

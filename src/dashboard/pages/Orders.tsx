@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { db, auth } from '../../lib/firebase';
 import { collection, query, where, getDocs, doc, getDoc, updateDoc } from 'firebase/firestore';
+import StarRatingButton from '../components/StarRatingButton';
 
 interface SellerData {
   businessName: string;
@@ -47,6 +48,8 @@ interface Order {
   productImage: string;
   sellerName?: string;
   sellerAvatar?: string;
+  rating?: number;
+  isRated?: boolean;
 }
 
 export default function Orders() {
@@ -54,6 +57,8 @@ export default function Orders() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [cancellingOrder, setCancellingOrder] = useState<string | null>(null);
+  const [ratingLoading, setRatingLoading] = useState<{ [orderId: string]: boolean }>({});
+  const [ratings, setRatings] = useState<{ [orderId: string]: number }>({});
   const navigate = useNavigate();
   const location = useLocation();
   const isStandalone = location.pathname === '/dashboard/orders';
@@ -90,7 +95,8 @@ export default function Orders() {
       const orderRef = doc(db, 'orders', orderId);
       await updateDoc(orderRef, {
         status: 'Completed',
-        completedAt: new Date()
+        completedAt: new Date(),
+        isRated: false
       });
       setOrders(prevOrders => 
         prevOrders.filter(order => order.id !== orderId)
@@ -157,6 +163,27 @@ export default function Orders() {
     return timeDifference <= hourInMilliseconds;
   };
 
+  const handleRateOrder = async (orderId: string, rating: number) => {
+    setRatingLoading(prev => ({ ...prev, [orderId]: true }));
+    try {
+      await updateDoc(doc(db, 'orders', orderId), {
+        rating,
+        isRated: true
+      });
+      setRatings(prev => ({ ...prev, [orderId]: rating }));
+      setOrders(prevOrders =>
+        prevOrders.map(order =>
+          order.id === orderId ? { ...order, rating, isRated: true } : order
+        )
+      );
+    } catch (error) {
+      alert('Failed to submit rating. Please try again.');
+      console.error(error);
+    } finally {
+      setRatingLoading(prev => ({ ...prev, [orderId]: false }));
+    }
+  };
+
   const renderOrderCard = (order: Order) => {
     const canCancel = order.status === 'Processing' && isWithinCancellationWindow(order.createdAt);
     return (
@@ -219,6 +246,28 @@ export default function Orders() {
                 )}
               </div>
             </div>
+            {order.status === 'Completed' && !order.isRated && (
+              <div className="flex items-center gap-2 mt-2">
+                <span className="text-gray-700 font-medium">Rate:</span>
+                <StarRatingButton
+                  value={ratings[order.id] || order.rating || 0}
+                  onChange={val => handleRateOrder(order.id, val)}
+                  size={32}
+                />
+                {ratingLoading[order.id] && <span className="text-xs text-gray-500 ml-2">Saving...</span>}
+              </div>
+            )}
+            {order.status === 'Completed' && order.isRated && (
+              <div className="flex items-center gap-2 mt-2">
+                <span className="text-gray-700 font-medium">Your Rating:</span>
+                <StarRatingButton
+                  value={order.rating || ratings[order.id] || 0}
+                  onChange={() => {}}
+                  size={32}
+                />
+                <span className="text-xs text-green-600 ml-2">Thank you for rating!</span>
+              </div>
+            )}
           </div>
         </div>
       </div>

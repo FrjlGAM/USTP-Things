@@ -56,11 +56,6 @@ export default function ProductDetail({
   const [submittingRating, setSubmittingRating] = useState(false);
   const [localRating, setLocalRating] = useState(product.rating ?? 0);
   const [hasRated, setHasRated] = useState(false);
-  const [showCheckout, setShowCheckout] = useState(false);
-  const [checkoutQty, setCheckoutQty] = useState(1);
-  const [checkoutLoading, setCheckoutLoading] = useState(false);
-  const [checkoutError, setCheckoutError] = useState('');
-  const [checkoutSuccess, setCheckoutSuccess] = useState(false);
 
   // Scroll to top when component mounts or when product changes
   useEffect(() => {
@@ -143,16 +138,9 @@ export default function ProductDetail({
       return;
     }
     if (product.stock === 0) {
-      setCheckoutError('This product is out of stock.');
       return;
     }
-    setShowCheckout(true);
-  };
-
-  // Confirm checkout
-  const handleConfirmCheckout = async () => {
-    setCheckoutLoading(false);
-    setCheckoutError('Checkout is currently disabled.');
+    navigate('/dashboard/checkout', { state: { product } });
   };
 
   // Rating submission logic
@@ -370,48 +358,6 @@ export default function ProductDetail({
             >
               {submittingRating ? 'Submitting...' : 'Submit Rating'}
             </button>
-          </div>
-        </div>
-      )}
-      {/* Checkout Modal */}
-      {showCheckout && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
-          <div className="bg-white rounded-2xl shadow-lg p-8 w-full max-w-md flex flex-col items-center">
-            <h2 className="text-2xl font-bold mb-4 text-[#F88379]">Checkout</h2>
-            <img src={product.image} alt={product.name} className="w-32 h-32 object-cover rounded mb-2" />
-            <div className="font-bold text-lg mb-2">{product.name}</div>
-            <div className="mb-2">Price: <span className="font-semibold">{product.price}</span></div>
-            <div className="mb-2">Available: <span className="font-semibold">{product.stock}</span></div>
-            <div className="mb-4 flex items-center gap-2">Quantity: 
-              <button onClick={() => setCheckoutQty(q => Math.max(1, q-1))} disabled={checkoutQty <= 1 || checkoutLoading} className="px-2 py-1 bg-gray-200 rounded">-</button>
-              <span className="font-semibold">{checkoutQty}</span>
-              <button onClick={() => setCheckoutQty(q => Math.min(product.stock ?? 1, q+1))} disabled={checkoutQty >= (product.stock ?? 1) || checkoutLoading} className="px-2 py-1 bg-gray-200 rounded">+</button>
-            </div>
-            {/* Payment method and delivery info can be added here */}
-            {checkoutError && <div className="text-red-500 mb-2">{checkoutError}</div>}
-            <div className="flex gap-4 mt-2">
-              <button
-                className="bg-[#F88379] text-white px-6 py-2 rounded-full font-bold text-lg hover:bg-[#F88379]/90 transition disabled:opacity-60"
-                onClick={handleConfirmCheckout}
-                disabled={checkoutLoading}
-              >
-                {checkoutLoading ? 'Processing...' : 'Confirm Purchase'}
-              </button>
-              <button
-                className="bg-gray-200 text-gray-700 px-6 py-2 rounded-full font-bold text-lg hover:bg-gray-300 transition"
-                onClick={() => setShowCheckout(false)}
-                disabled={checkoutLoading}
-              >Cancel</button>
-            </div>
-          </div>
-        </div>
-      )}
-      {/* Success Message */}
-      {checkoutSuccess && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
-          <div className="bg-white rounded-2xl shadow-lg p-8 w-full max-w-xs flex flex-col items-center">
-            <h2 className="text-2xl font-bold mb-4 text-green-600">Purchase Successful!</h2>
-            <button className="bg-[#F88379] text-white px-6 py-2 rounded-full font-bold text-lg mt-2" onClick={() => setCheckoutSuccess(false)}>Close</button>
           </div>
         </div>
       )}

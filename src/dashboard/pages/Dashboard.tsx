@@ -132,26 +132,34 @@ export default function Dashboard() {
     )) {
       setShowModal(true);
       setMainView('home');
+      setSelectedProduct(null);
       return;
     }
 
     // Update mainView based on current path
     if (path === '/dashboard/likes') {
       setMainView('likes');
+      setSelectedProduct(null);
     } else if (path === '/dashboard/recently-viewed') {
       setMainView('recently');
+      setSelectedProduct(null);
     } else if (path === '/dashboard/orders') {
       setMainView('orders');
+      setSelectedProduct(null);
     } else if (path === '/dashboard/to-rate') {
       setMainView('to-rate');
+      setSelectedProduct(null);
     } else if (path === '/dashboard/messages') {
       setMainView('messages');
+      setSelectedProduct(null);
     } else if (path.startsWith('/dashboard/product/')) {
       setMainView('product');
     } else if (path === '/dashboard/cart') {
       setMainView('cart');
+      setSelectedProduct(null);
     } else if (path === '/dashboard') {
       setMainView('home');
+      setSelectedProduct(null);
     }
   }, [location, isVerified]);
 

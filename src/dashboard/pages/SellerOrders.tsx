@@ -16,6 +16,11 @@ interface ProductData {
   name: string;
 }
 
+interface BuyerData {
+  displayName?: string;
+  email?: string;
+}
+
 interface OrderData {
   userId: string;
   sellerId: string;
@@ -48,6 +53,9 @@ interface Order {
   productImage: string;
   sellerName?: string;
   sellerAvatar?: string;
+  buyerId?: string;
+  buyerName?: string;
+  buyerEmail?: string;
 }
 
 export default function SellerOrders() {
@@ -62,45 +70,47 @@ export default function SellerOrders() {
   useEffect(() => {
     const fetchOrders = async () => {
       if (!auth.currentUser) return;
-
       try {
-        // Query all orders for the current seller
         const ordersQuery = query(
-          collection(db, 'pickupOrders'),
+          collection(db, 'purchaseOrders'),
           where('sellerId', '==', auth.currentUser.uid)
         );
-        
         const querySnapshot = await getDocs(ordersQuery);
         const fetchedOrders: Order[] = [];
-
-        // Fetch additional details for each order
         for (const docSnapshot of querySnapshot.docs) {
-          const orderData = docSnapshot.data() as OrderData;
-          
-          // Get seller details
-          const sellerDoc = await getDoc(doc(db, 'users', orderData.sellerId));
-          const sellerData = sellerDoc.exists() ? sellerDoc.data() as SellerData : null;
-
+          const orderData = docSnapshot.data() as any;
+          // Fetch buyer info
+          let buyerName = '';
+          let buyerEmail = '';
+          if (orderData.buyerId) {
+            const buyerDoc = await getDoc(doc(db, 'users', orderData.buyerId));
+            if (buyerDoc.exists()) {
+              const buyerData = buyerDoc.data() as BuyerData;
+              buyerName = buyerData.displayName || '';
+              buyerEmail = buyerData.email || '';
+            }
+          }
           fetchedOrders.push({
             id: docSnapshot.id,
             sellerId: orderData.sellerId,
             productId: orderData.productId,
-            status: orderData.status,
-            schoolLocation: orderData.schoolLocation,
-            pickupDate: orderData.pickupDate,
-            pickupTime: orderData.pickupTime,
-            paymentMethod: orderData.paymentMethod,
+            status: orderData.status ?? 'pending',
+            schoolLocation: orderData.schoolLocation ?? '',
+            pickupDate: orderData.pickupDate ?? '',
+            pickupTime: orderData.pickupTime ?? '',
+            paymentMethod: orderData.paymentMethod ?? '',
             quantity: orderData.quantity,
-            totalAmount: orderData.totalAmount,
-            createdAt: orderData.createdAt?.toDate() || new Date(),
+            totalAmount: orderData.totalAmount ?? (orderData.price * orderData.quantity),
+            createdAt: orderData.createdAt?.toDate ? orderData.createdAt.toDate() : new Date(),
             productName: orderData.productName,
             productImage: orderData.productImage,
-            sellerName: sellerData?.businessName || 'Unknown Seller',
-            sellerAvatar: sellerData?.avatar || userAvatar
+            sellerName: '',
+            sellerAvatar: '',
+            buyerId: orderData.buyerId,
+            buyerName,
+            buyerEmail
           });
         }
-
-        // Sort orders by date, most recent first
         fetchedOrders.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
         setOrders(fetchedOrders);
       } catch (error) {
@@ -109,7 +119,6 @@ export default function SellerOrders() {
         setLoading(false);
       }
     };
-
     fetchOrders();
   }, []);
 
@@ -192,8 +201,15 @@ export default function SellerOrders() {
   };
 
   const renderOrderCard = (order: Order) => {
+    const canComplete = order.status === 'Processing';
     const canCancel = order.status === 'Processing' && isWithinCancellationWindow(order.createdAt);
-    
+    const statusColors: Record<string, string> = {
+      pending: 'bg-yellow-200 text-yellow-800',
+      Processing: 'bg-yellow-200 text-yellow-800',
+      Completed: 'bg-green-200 text-green-800',
+      Cancelled: 'bg-red-200 text-red-800',
+      'Ready for pickup': 'bg-blue-200 text-blue-800',
+    };
     return (
       <div key={order.id} className="bg-white rounded-2xl shadow p-6">
         <div className="flex items-center gap-4">
@@ -202,11 +218,9 @@ export default function SellerOrders() {
             <div className="flex justify-between items-start">
               <div>
                 <h3 className="text-lg font-semibold text-gray-800">{order.productName}</h3>
-                <p className="text-sm text-gray-600">Buyer: {order.sellerName}</p>
+                <p className="text-sm text-gray-600">Buyer: {order.buyerName || 'Unknown'} {order.buyerEmail && (<span className='text-xs text-gray-400'>({order.buyerEmail})</span>)}</p>
               </div>
-              <span className="text-sm text-gray-500">
-                Ordered on: {order.createdAt.toLocaleDateString()} {order.createdAt.toLocaleTimeString()}
-              </span>
+              <span className={`text-xs px-3 py-1 rounded-full font-bold ${statusColors[order.status] || 'bg-gray-200 text-gray-700'}`}>{order.status}</span>
             </div>
             <div className="mt-2 space-y-1">
               <p className="text-gray-600">Quantity: {order.quantity}</p>
@@ -217,11 +231,23 @@ export default function SellerOrders() {
             </div>
             <div className="flex justify-end mt-4 gap-2">
               <button 
-                onClick={() => handleContactBuyer(order.sellerId)}
+                onClick={() => handleContactBuyer(order.buyerId || '')}
                 className="bg-[#F88379] hover:bg-[#F88379]/90 text-white font-semibold py-2 px-6 rounded-lg shadow transition"
               >
                 Contact Buyer
               </button>
+              {canComplete && (
+                <button
+                  onClick={async () => {
+                    await updateDoc(doc(db, 'purchaseOrders', order.id), { status: 'Completed', completedAt: new Date() });
+                    setOrders(prev => prev.map(o => o.id === order.id ? { ...o, status: 'Completed' } : o));
+                  }}
+                  className="bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-6 rounded-lg shadow transition"
+                  disabled={order.status === 'Completed'}
+                >
+                  Mark as Completed
+                </button>
+              )}
               {canCancel && (
                 <button
                   onClick={() => handleCancelOrder(order.id)}

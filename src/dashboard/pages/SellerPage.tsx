@@ -1,12 +1,12 @@
 import React, { useState, useRef, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import profilePic from "../../assets/ustp thingS/Person.png";
 import manageProductsIcon from "../../assets/ustp thingS/Product.png";
 import productOrdersIcon from "../../assets/ustp thingS/Bag.png";
 import customerMessagesIcon from "../../assets/ustp thingS/Chat Bubble.png";
 import productCountIcon from "../../assets/ustp thingS/productCount.png";
 import earningsIcon from "../../assets/ustp thingS/Earnings.png";
-import followersIcon from "../../assets/ustp thingS/Followers.png";
+import visitedIcon from "../../assets/ustp thingS/Followers.png";
 import transactionHistoryIcon from "../../assets/ustp thingS/TransactionHistory.png";
 import ratingIcon from "../../assets/ustp thingS/Rating.png";
 import dateIcon from "../../assets/ustp thingS/DateJoined.png";
@@ -20,7 +20,21 @@ import ProductCardSeller from '../components/ProductCardSeller';
 import SellerProductDetail from './SellerProductDetail';
 import SellerName from '../components/SellerName';
 import { auth, db } from "../../lib/firebase";
-import { doc, getDoc, onSnapshot } from "firebase/firestore";
+import { doc, getDoc, onSnapshot, collection, query, where, getDocs, updateDoc, increment, arrayUnion, Timestamp, setDoc, addDoc } from "firebase/firestore";
+
+interface Seller {
+  businessName: string;
+  profileImage: string | null;
+  visitCount: number;
+  rating: string;
+  productCount: number;
+  dateJoined: Timestamp;
+  isVerified: boolean;
+  visits: {
+    visitorId: string;
+    timestamp: Timestamp;
+  }[];
+}
 
 const initialProducts = [
   {
@@ -40,7 +54,7 @@ const initialProducts = [
 const stats = [
   { icon: productCountIcon, label: "Product Count", value: "1,000" },
   { icon: earningsIcon, label: "Earnings" },
-  { icon: followersIcon, label: "Followers", value: "9,999" },
+  { icon: visitedIcon, label: "Visits", value: "0" },
   { icon: transactionHistoryIcon, label: "Transaction History" },
   { icon: ratingIcon, label: "Rating", value: "5/5" },
   { icon: dateIcon, label: "Date Joined", value: "March 1, 2025" },
@@ -48,6 +62,7 @@ const stats = [
 
 const SellerPage: React.FC = () => {
   const navigate = useNavigate();
+  const { sellerId } = useParams();
   const [activeTab, setActiveTab] = useState<'all' | 'collections'>('all');
   const [showOverlay, setShowOverlay] = useState(false);
   const manageBtnRef = useRef<HTMLDivElement>(null);
@@ -60,22 +75,130 @@ const SellerPage: React.FC = () => {
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const [businessName, setBusinessName] = useState<string>("Galdo Boutique");
   const [showSellerNameModal, setShowSellerNameModal] = useState(false);
+  const [isBuyerView, setIsBuyerView] = useState(false);
+  const [visitCount, setVisitCount] = useState(0);
 
   useEffect(() => {
-    if (!auth.currentUser) return;
-    const userRef = doc(db, "users", auth.currentUser.uid);
+    // If sellerId is provided in URL, we're in buyer's view
+    if (sellerId && sellerId !== auth.currentUser?.uid) {
+      setIsBuyerView(true);
+      // Fetch seller's data
+      const fetchSellerData = async () => {
+        try {
+          // Get basic user data
+          const userRef = doc(db, "users", sellerId);
+          const userDoc = await getDoc(userRef);
 
-    // Listen for real-time updates
-    const unsubscribe = onSnapshot(userRef, (userDoc) => {
-      if (userDoc.exists()) {
-        const data = userDoc.data();
-        setProfileImage(data.profileImage || null);
-        setBusinessName(data.businessName || "Galdo Boutique");
-      }
-    });
+          // Get or create seller profile
+          const sellerRef = doc(db, "sellers", sellerId);
+          const sellerDoc = await getDoc(sellerRef);
 
-    return () => unsubscribe();
-  }, [auth.currentUser]);
+          if (userDoc.exists()) {
+            const userData = userDoc.data();
+            
+            // If seller doc doesn't exist, create it
+            if (!sellerDoc.exists() && userData.role === 'seller') {
+              await setDoc(sellerRef, {
+                businessName: userData.businessName || "Galdo Boutique",
+                profileImage: userData.profileImage || null,
+                visitCount: userData.visitCount || 0,
+                rating: "5/5",
+                productCount: 0,
+                dateJoined: userData.createdAt || Timestamp.now(),
+                isVerified: userData.isVerified || false
+              });
+            }
+
+            const sellerData = sellerDoc.exists() ? sellerDoc.data() : userData;
+            setProfileImage(sellerData.profileImage || null);
+            setBusinessName(sellerData.businessName || "Galdo Boutique");
+            setVisitCount(sellerData.visitCount || 0);
+            
+            // Record visit if authenticated user
+            if (auth.currentUser && auth.currentUser.uid !== sellerId) {
+              // Update visit count in sellers collection
+              await updateDoc(sellerRef, {
+                visitCount: increment(1)
+              });
+
+              // Record visit details in visits subcollection
+              const visitsCollectionRef = collection(sellerRef, "visits");
+              await addDoc(visitsCollectionRef, {
+                visitorId: auth.currentUser.uid,
+                timestamp: Timestamp.now()
+              });
+
+              // Update local visit count
+              setVisitCount(prev => prev + 1);
+            }
+            
+            // Fetch seller's products
+            const productsQuery = query(
+              collection(db, "products"),
+              where("sellerId", "==", sellerId)
+            );
+            const productsSnapshot = await getDocs(productsQuery);
+            const fetchedProducts = productsSnapshot.docs.map(doc => ({
+              id: doc.id,
+              ...doc.data()
+            }));
+            setProducts(fetchedProducts);
+
+            // Update product count in seller document
+            await updateDoc(sellerRef, {
+              productCount: fetchedProducts.length
+            });
+          }
+        } catch (error) {
+          console.error('Error fetching seller data:', error);
+        }
+      };
+      fetchSellerData();
+    } else {
+      // We're in seller's own view
+      if (!auth.currentUser) return;
+
+      const userRef = doc(db, "users", auth.currentUser.uid);
+      const sellerRef = doc(db, "sellers", auth.currentUser.uid);
+
+      // Listen for real-time updates from both collections
+      const unsubscribeUser = onSnapshot(userRef, async (userDoc) => {
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          
+          // Create or update seller document if user is a seller
+          if (userData.role === 'seller') {
+            const sellerDoc = await getDoc(sellerRef);
+            if (!sellerDoc.exists()) {
+              await setDoc(sellerRef, {
+                businessName: userData.businessName || "Galdo Boutique",
+                profileImage: userData.profileImage || null,
+                visitCount: userData.visitCount || 0,
+                rating: "5/5",
+                productCount: 0,
+                dateJoined: userData.createdAt || Timestamp.now(),
+                isVerified: userData.isVerified || false
+              });
+            }
+          }
+        }
+      });
+
+      const unsubscribeSeller = onSnapshot(sellerRef, (sellerDoc) => {
+        if (sellerDoc.exists()) {
+          const sellerData = sellerDoc.data();
+          setProfileImage(sellerData.profileImage || null);
+          setBusinessName(sellerData.businessName || "Galdo Boutique");
+          setVisitCount(sellerData.visitCount || 0);
+        }
+      });
+
+      return () => {
+        unsubscribeUser();
+        unsubscribeSeller();
+      };
+    }
+  }, [sellerId, auth.currentUser]);
 
   const collections = [
     {
@@ -125,6 +248,24 @@ const SellerPage: React.FC = () => {
   // Filter products for Collections tab (example: only 'Genevieve Galdo')
   const collectionProducts = products.filter((p) => p.name === 'Genevieve Galdo');
 
+  // Update the business name in both collections
+  const handleBusinessNameUpdate = async (newName: string) => {
+    if (!auth.currentUser) return;
+    
+    const userRef = doc(db, "users", auth.currentUser.uid);
+    const sellerRef = doc(db, "sellers", auth.currentUser.uid);
+    
+    try {
+      await Promise.all([
+        updateDoc(userRef, { businessName: newName }),
+        updateDoc(sellerRef, { businessName: newName })
+      ]);
+      setBusinessName(newName);
+    } catch (error) {
+      console.error('Error updating business name:', error);
+    }
+  };
+
   return (
     <div className="min-h-screen w-full bg-[#FFF3F2]">
       {/* Top bar with back button, flush with card, no white gap above */}
@@ -140,102 +281,114 @@ const SellerPage: React.FC = () => {
           <img src={profileImage || profilePic} alt="Profile" className="w-20 h-20 rounded-full border-4 border-[#F88379] object-cover mb-2" />
           <div className="flex items-center gap-2">
             <div className="text-lg font-bold text-[#F88379] text-center">{businessName}</div>
-            <img
-              src={pencilIcon}
-              alt="Edit"
-              className="w-5 h-5 cursor-pointer hover:opacity-80 transition-opacity mt-[2px]"
-              onClick={() => setShowSellerNameModal(true)}
-            />
+            {!isBuyerView && (
+              <img
+                src={pencilIcon}
+                alt="Edit"
+                className="w-5 h-5 cursor-pointer hover:opacity-80 transition-opacity mt-[2px]"
+                onClick={() => setShowSellerNameModal(true)}
+              />
+            )}
           </div>
           {/* Main Action Buttons */}
-          <div className="flex flex-row gap-3 w-full justify-center mt-4">
-            {/* Only this div is relative, for overlaying above Manage Products */}
-            <div className="relative flex flex-col items-center">
-              {/* Overlay Buttons */}
-              {showOverlay && (
-                <div className="absolute -top-24 left-1/2 -translate-x-1/2 flex flex-row gap-8 z-20 items-end">
-                  <div className="flex flex-col items-center">
-                    <button
-                      className="w-10 h-10 rounded-full bg-[#F88379] flex items-center justify-center shadow-md hover:scale-110 transition hover:bg-white hover:border hover:border-[#F88379] active:bg-white active:border active:border-[#F88379]"
-                      onClick={() => setShowAddProductModal(true)}
-                    >
-                      <img src={addIcon} alt="Add Product" className="w-5 h-5" />
-                    </button>
-                    <span className="text-xs text-[#F88379] font-semibold mt-1 text-center block">
-                      Add<br />Product
-                    </span>
+          {!isBuyerView ? (
+            <div className="flex flex-row gap-3 w-full justify-center mt-4">
+              {/* Only this div is relative, for overlaying above Manage Products */}
+              <div className="relative flex flex-col items-center">
+                {/* Overlay Buttons */}
+                {showOverlay && (
+                  <div className="absolute -top-24 left-1/2 -translate-x-1/2 flex flex-row gap-8 z-20 items-end">
+                    <div className="flex flex-col items-center">
+                      <button
+                        className="w-10 h-10 rounded-full bg-[#F88379] flex items-center justify-center shadow-md hover:scale-110 transition hover:bg-white hover:border hover:border-[#F88379] active:bg-white active:border active:border-[#F88379]"
+                        onClick={() => setShowAddProductModal(true)}
+                      >
+                        <img src={addIcon} alt="Add Product" className="w-5 h-5" />
+                      </button>
+                      <span className="text-xs text-[#F88379] font-semibold mt-1 text-center block">
+                        Add<br />Product
+                      </span>
+                    </div>
+                    <div className="flex flex-col items-center">
+                      <button
+                        className="w-10 h-10 rounded-full bg-[#F88379] flex items-center justify-center shadow-md hover:scale-110 transition hover:bg-white hover:border hover:border-[#F88379] active:bg-white active:border active:border-[#F88379]"
+                        onClick={() => {
+                          setShowOverlay(false);
+                          setDeleteMode(true);
+                        }}
+                      >
+                        <img src={deleteIcon} alt="Delete Product" className="w-5 h-5" />
+                      </button>
+                      <span className="text-xs text-[#F88379] font-semibold mt-1 text-center block">
+                        Delete<br />Product
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex flex-col items-center">
-                    <button
-                      className="w-10 h-10 rounded-full bg-[#F88379] flex items-center justify-center shadow-md hover:scale-110 transition hover:bg-white hover:border hover:border-[#F88379] active:bg-white active:border active:border-[#F88379]"
-                      onClick={() => {
-                        setShowOverlay(false);
-                        setDeleteMode(true);
-                      }}
-                    >
-                      <img src={deleteIcon} alt="Delete Product" className="w-5 h-5" />
-                    </button>
-                    <span className="text-xs text-[#F88379] font-semibold mt-1 text-center block">
-                      Delete<br />Product
-                    </span>
-                  </div>
-                </div>
-              )}
-              {/* Manage Products Button */}
+                )}
+                {/* Manage Products Button */}
+                <button
+                  className={`flex items-center gap-2 px-4 py-2 rounded-full font-bold text-sm shadow hover:scale-105 transition
+                    ${selectedAction === 'manage'
+                      ? 'bg-white text-[#F88379] border border-[#F88379]'
+                      : 'bg-[#F88379] text-white'}
+                    hover:bg-white hover:text-[#F88379] hover:border hover:border-[#F88379]'
+                  `}
+                  onClick={() => {
+                    setShowOverlay((prev) => !prev);
+                    setSelectedAction('manage');
+                  }}
+                  type="button"
+                >
+                  <img src={manageProductsIcon} alt="Manage Products" className="w-5 h-5" />
+                  Manage Products
+                </button>
+              </div>
+              {/* Other buttons */}
               <button
                 className={`flex items-center gap-2 px-4 py-2 rounded-full font-bold text-sm shadow hover:scale-105 transition
-                  ${selectedAction === 'manage'
+                  ${selectedAction === 'orders'
                     ? 'bg-white text-[#F88379] border border-[#F88379]'
                     : 'bg-[#F88379] text-white'}
                   hover:bg-white hover:text-[#F88379] hover:border hover:border-[#F88379]'
                 `}
                 onClick={() => {
-                  setShowOverlay((prev) => !prev);
-                  setSelectedAction('manage');
+                  navigate('/dashboard/seller-orders');
+                  setSelectedAction('orders');
                 }}
-                type="button"
               >
-                <img src={manageProductsIcon} alt="Manage Products" className="w-5 h-5" />
-                Manage Products
+                <img src={productOrdersIcon} alt="Product Orders" className="w-5 h-5" />
+                Product Orders
+              </button>
+              <button
+                className={`flex items-center gap-2 px-4 py-2 rounded-full font-bold text-sm shadow hover:scale-105 transition
+                  ${selectedAction === 'messages'
+                    ? 'bg-white text-[#F88379] border border-[#F88379]'
+                    : 'bg-[#F88379] text-white'}
+                  hover:bg-white hover:text-[#F88379] hover:border hover:border-[#F88379]'
+                `}
+                onClick={() => {
+                  navigate('/dashboard/customer-messages');
+                  setSelectedAction('messages');
+                }}
+              >
+                <img src={customerMessagesIcon} alt="Customer Messages" className="w-5 h-5" />
+                Customer Messages
               </button>
             </div>
-            {/* Other buttons remain unchanged */}
+          ) : (
             <button
-              className={`flex items-center gap-2 px-4 py-2 rounded-full font-bold text-sm shadow hover:scale-105 transition
-                ${selectedAction === 'orders'
-                  ? 'bg-white text-[#F88379] border border-[#F88379]'
-                  : 'bg-[#F88379] text-white'}
-                hover:bg-white hover:text-[#F88379] hover:border hover:border-[#F88379]'
-              `}
-              onClick={() => {
-                navigate('/dashboard/seller-orders');
-                setSelectedAction('orders');
-              }}
+              className="flex items-center gap-2 px-6 py-2 rounded-full font-bold text-sm shadow hover:scale-105 transition bg-[#F88379] text-white hover:bg-[#F88379]/90 mt-4"
+              onClick={() => navigate(`/dashboard/messages/${sellerId}`)}
             >
-              <img src={productOrdersIcon} alt="Product Orders" className="w-5 h-5" />
-              Product Orders
+              <img src={customerMessagesIcon} alt="Contact Seller" className="w-5 h-5" />
+              Contact Seller
             </button>
-            <button
-              className={`flex items-center gap-2 px-4 py-2 rounded-full font-bold text-sm shadow hover:scale-105 transition
-                ${selectedAction === 'messages'
-                  ? 'bg-white text-[#F88379] border border-[#F88379]'
-                  : 'bg-[#F88379] text-white'}
-                hover:bg-white hover:text-[#F88379] hover:border hover:border-[#F88379]'
-              `}
-              onClick={() => {
-                navigate('/dashboard/customer-messages');
-                setSelectedAction('messages');
-              }}
-            >
-              <img src={customerMessagesIcon} alt="Customer Messages" className="w-5 h-5" />
-              Customer Messages
-            </button>
-          </div>
+          )}
         </div>
         {/* Right: Stats card */}
         <div className="flex-1 bg-white rounded-2xl shadow p-8 grid grid-cols-2 gap-y-1 gap-x-1 items-center min-w-[340px]">
           {stats.map((stat, idx) => {
-            if (stat.label === 'Earnings') {
+            if (!isBuyerView && stat.label === 'Earnings') {
               return (
                 <button
                   key={idx}
@@ -248,7 +401,7 @@ const SellerPage: React.FC = () => {
                 </button>
               );
             }
-            if (stat.label === 'Transaction History') {
+            if (!isBuyerView && stat.label === 'Transaction History') {
               return (
                 <button
                   key={idx}
@@ -261,7 +414,10 @@ const SellerPage: React.FC = () => {
                 </button>
               );
             }
-            if (stat.label === 'Product Count' || stat.label === 'Followers' || stat.label === 'Rating' || stat.label === 'Date Joined') {
+            if (isBuyerView && (stat.label === 'Earnings' || stat.label === 'Transaction History')) {
+              return null;
+            }
+            if (stat.label === 'Product Count' || stat.label === 'Visits' || stat.label === 'Rating' || stat.label === 'Date Joined') {
               return (
                 <div key={idx} className="flex items-center gap-4 group relative w-full">
                   <img src={stat.icon} alt={stat.label} className="w-9 h-9" />
@@ -282,7 +438,7 @@ const SellerPage: React.FC = () => {
                         zIndex: 20,
                       }}
                     >
-                      {stat.value}
+                      {stat.label === 'Visits' ? visitCount : stat.value}
                     </span>
                   </div>
                 </div>
@@ -376,7 +532,7 @@ const SellerPage: React.FC = () => {
       {showSellerNameModal && (
         <SellerName
           onClose={() => setShowSellerNameModal(false)}
-          onSave={(newName) => setBusinessName(newName)}
+          onSave={handleBusinessNameUpdate}
           initialName={businessName}
         />
       )}

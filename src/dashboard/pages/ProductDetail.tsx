@@ -144,6 +144,14 @@ export default function ProductDetail({
     }
   };
 
+  const handleViewShop = () => {
+    if (!product.sellerId) {
+      alert('Cannot view shop. Seller information is missing.');
+      return;
+    }
+    navigate(`/dashboard/seller/${product.sellerId}`);
+  };
+
   return (
     <div className="w-full bg-white p-4 md:pl-10 md:pr-16 md:py-10 relative rounded-xl">
       {/* X Button */}
@@ -194,7 +202,12 @@ export default function ProductDetail({
             <h2 className="text-3xl md:text-4xl font-bold mb-4 leading-tight pt-[10px]">{product.name.replace('...', '– Blouse, Skirt, and Necktie')}</h2>
             <div className="flex items-center gap-3 mb-4">
               <span className="text-3xl md:text-4xl font-bold text-[#F88379]">{product.price}</span>
-              <button className="ml-3 text-sm border border-gray-300 rounded px-3 py-1 w-fit hover:bg-gray-50 transition">View Shop</button>
+              <button 
+                onClick={handleViewShop}
+                className="ml-3 text-sm border border-gray-300 rounded px-3 py-1 w-fit hover:bg-gray-50 transition"
+              >
+                View Shop
+              </button>
             </div>
             <div className="flex flex-col mb-4">
               <div className="flex items-center gap-3">

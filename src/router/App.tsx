@@ -43,6 +43,7 @@ function App() {
       <Route path="/dashboard/settings" element={<SettingsContainer />} />
       <Route path="/dashboard/checkout" element={<CheckOutWrapper />} />
       <Route path="/dashboard/seller" element={<SellerPage />} />
+      <Route path="/dashboard/seller/:sellerId" element={<SellerPage />} />
       <Route path="/dashboard/transaction-history" element={<TransactionHistory />} />
       <Route path="/dashboard/earnings" element={<Earnings />} />
       <Route path="/dashboard/customer-messages" element={<CustomerMessages />} />

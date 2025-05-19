@@ -5,6 +5,7 @@ import ustpLogo from '../../assets/ustp-things-logo.png';
 import xIcon from '../../assets/ustp thingS/X button.png';
 import VerificationTerms from './VerificationTerms';
 import { usePreventScroll } from '../../hooks/usePreventScroll';
+import { uploadToCloudinary } from '../../lib/cloudinaryUpload';
 
 interface VerificationModalProps {
   open: boolean;
@@ -14,8 +15,13 @@ interface VerificationModalProps {
 }
 
 export default function VerificationModal({ open, onClose, setVerificationRequested, verificationRequested }: VerificationModalProps) {
-  const [step, setStep] = useState<'select' | 'student'>('select');
-  const [form, setForm] = useState({ name: '', id: '', agree: false });
+  const [step, setStep] = useState<'select' | 'student' | 'company'>('select');
+  const [form, setForm] = useState({ 
+    name: '', 
+    id: '', 
+    email: '',
+    agree: false 
+  });
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -28,7 +34,7 @@ export default function VerificationModal({ open, onClose, setVerificationReques
   useEffect(() => {
     if (!open) {
       setStep('select'); // Reset step when modal closes
-      setForm({ name: '', id: '', agree: false }); // Reset form
+      setForm({ name: '', id: '', email: '', agree: false }); // Reset form
       setSelectedFile(null); // Reset file
     }
     setSuccess(false);
@@ -37,12 +43,24 @@ export default function VerificationModal({ open, onClose, setVerificationReques
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      // Check if file is an image and less than 5MB
-      if (file.type.startsWith('image/') && file.size <= 5 * 1024 * 1024) {
-        setSelectedFile(file);
+      if (step === 'student') {
+        // For students: allow image or PDF
+        const isImage = file.type.startsWith('image/');
+        const isPDF = file.type === 'application/pdf';
+        if ((isImage || isPDF) && file.size <= 5 * 1024 * 1024) {
+          setSelectedFile(file);
+        } else {
+          alert('Please select an image or PDF file less than 5MB');
+          e.target.value = '';
+        }
       } else {
-        alert('Please select an image file less than 5MB');
-        e.target.value = '';
+        // For companies: PDF only
+        if (file.type === 'application/pdf' && file.size <= 5 * 1024 * 1024) {
+          setSelectedFile(file);
+        } else {
+          alert('Please select a PDF file less than 5MB');
+          e.target.value = '';
+        }
       }
     }
   };
@@ -50,7 +68,7 @@ export default function VerificationModal({ open, onClose, setVerificationReques
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedFile) {
-      alert('Please upload your COR or Student ID');
+      alert('Please upload your document');
       return;
     }
     setLoading(true);
@@ -59,15 +77,17 @@ export default function VerificationModal({ open, onClose, setVerificationReques
         throw new Error('No user logged in');
       }
 
-      // TODO: Upload image to storage and get URL
-      // For now, we'll just store the filename
+      // Upload document to Cloudinary and get URL
+      const documentUrl = await uploadToCloudinary(selectedFile, step === 'student' ? 'cor_and_studentid' : 'company_documents');
+
       await addDoc(collection(db, 'verifications'), {
         userId: auth.currentUser.uid,
         name: form.name,
         studentId: form.id,
-        documentFileName: selectedFile.name,
+        email: form.email,
+        documentUrl,
         agreed: form.agree,
-        type: 'student',
+        type: step,
         status: 'pending',
         createdAt: new Date(),
       });
@@ -79,7 +99,7 @@ export default function VerificationModal({ open, onClose, setVerificationReques
         verificationRequestedAt: new Date()
       }, { merge: true });
       setSuccess(true);
-      setForm({ name: '', id: '', agree: false });
+      setForm({ name: '', id: '', email: '', agree: false });
       setSelectedFile(null);
       setVerificationRequested(true);
     } catch (err) {
@@ -128,29 +148,40 @@ export default function VerificationModal({ open, onClose, setVerificationReques
           {step === 'select' && (
             <>
               <button className="w-64 bg-[#F88379] hover:bg-[#F88379]/90 text-white font-bold text-xl py-3 rounded-[23.08px] shadow mb-8 transition mt-8" onClick={() => setStep('student')}>I am a student.</button>
-              <button className="w-64 bg-[#F88379] hover:bg-[#F88379]/90 text-white font-bold text-xl py-3 rounded-[23.08px] shadow transition">I am a company.</button>
+              <button className="w-64 bg-[#F88379] hover:bg-[#F88379]/90 text-white font-bold text-xl py-3 rounded-[23.08px] shadow transition" onClick={() => setStep('company')}>I am a company.</button>
             </>
           )}
-          {step === 'student' && !success && (
+          {(step === 'student' || step === 'company') && !success && (
             <form className="w-full flex flex-col items-center" onSubmit={handleSubmit}>
               <div className="w-full rounded-md mb-6 border border-gray-300">
                 <div className="flex flex-col divide-y divide-gray-300">
                   <input
                     type="text"
-                    placeholder="Name"
+                    placeholder={step === 'student' ? "Name" : "Name of Authorized Representative"}
                     className="px-4 py-4 outline-none border-0 bg-transparent text-lg"
                     value={form.name}
                     onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
                     required
                   />
-                  <input
-                    type="text"
-                    placeholder="Student ID Number"
-                    className="px-4 py-4 outline-none border-0 bg-transparent text-lg"
-                    value={form.id}
-                    onChange={e => setForm(f => ({ ...f, id: e.target.value }))}
-                    required
-                  />
+                  {step === 'student' ? (
+                    <input
+                      type="text"
+                      placeholder="Student ID Number"
+                      className="px-4 py-4 outline-none border-0 bg-transparent text-lg"
+                      value={form.id}
+                      onChange={e => setForm(f => ({ ...f, id: e.target.value }))}
+                      required
+                    />
+                  ) : (
+                    <input
+                      type="email"
+                      placeholder="Official Business Email"
+                      className="px-4 py-4 outline-none border-0 bg-transparent text-lg"
+                      value={form.email}
+                      onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
+                      required
+                    />
+                  )}
                 </div>
               </div>
 
@@ -159,7 +190,7 @@ export default function VerificationModal({ open, onClose, setVerificationReques
                 <input
                   ref={fileInputRef}
                   type="file"
-                  accept="image/*"
+                  accept={step === 'student' ? "image/*,application/pdf" : "application/pdf"}
                   onChange={handleFileChange}
                   className="hidden"
                   required
@@ -175,7 +206,11 @@ export default function VerificationModal({ open, onClose, setVerificationReques
                       <span className="text-xs text-gray-400">(Click to change)</span>
                     </div>
                   ) : (
-                    <div className="text-sm">Upload COR or Student ID (Max: 5MB)</div>
+                    <div className="text-sm">
+                      {step === 'student' 
+                        ? "Upload COR or Student ID (Image or PDF, Max: 5MB)"
+                        : "Upload Business Registration Document (PDF only, Max: 5MB)"}
+                    </div>
                   )}
                 </button>
               </div>
@@ -193,13 +228,13 @@ export default function VerificationModal({ open, onClose, setVerificationReques
               <button
                 type="submit"
                 className="w-full bg-[#F88379] hover:bg-[#F88379]/90 text-white font-bold text-lg py-4 rounded-2xl shadow transition disabled:opacity-50"
-                disabled={!form.name || !form.id || !form.agree || !selectedFile || loading}
+                disabled={!form.name || !form.agree || !selectedFile || loading || (step === 'student' ? !form.id : !form.email)}
               >
                 {loading ? 'Submitting...' : 'Confirm Verification'}
               </button>
             </form>
           )}
-          {step === 'student' && success && (
+          {(step === 'student' || step === 'company') && success && (
             <div className="text-green-600 font-bold text-lg mt-8">Verification submitted successfully!</div>
           )}
         </div>

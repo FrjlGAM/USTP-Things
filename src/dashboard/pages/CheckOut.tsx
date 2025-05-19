@@ -81,11 +81,15 @@ export default function CheckOut({ product, onClose }: CheckOutProps) {
   };
 
   const handleConfirmOrder = async () => {
+<<<<<<< HEAD
     if (!orderingEnabled) {
       alert("Ordering is currently disabled.");
       setShowConfirmModal(false);
       return;
     }
+=======
+    // Place order logic goes here
+>>>>>>> 08f715b543881d5fd977fda4edd2903253c5329c
     setShowConfirmModal(false);
   };
 

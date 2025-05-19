@@ -28,7 +28,7 @@ export default function CheckOut({ product, onClose }: CheckOutProps) {
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedTime, setSelectedTime] = useState('');
   const [quantity, setQuantity] = useState(1);
-  const orderingEnabled = true; // <-- Enable ordering
+  const orderingDisabled = false; // or from props/config
 
   // Validate product data on mount
   useEffect(() => {
@@ -82,16 +82,32 @@ export default function CheckOut({ product, onClose }: CheckOutProps) {
   };
 
   const handleConfirmOrder = async () => {
-<<<<<<< HEAD
-    if (!orderingEnabled) {
-      alert("Ordering is currently disabled.");
+    setLoading(true);
+    try {
+      const orderData = {
+        userId: auth.currentUser?.uid,
+        sellerId: product.sellerId,
+        productId: product.id,
+        status: 'Processing',
+        schoolLocation: product.campusLocation || '',
+        pickupDate: selectedDate,
+        pickupTime: selectedTime,
+        paymentMethod: selectedPaymentMethod,
+        quantity,
+        totalAmount: calculateSubtotal(),
+        createdAt: serverTimestamp(),
+        productName: product.name,
+        productImage: product.image,
+      };
+      await addDoc(collection(db, 'orders'), orderData);
       setShowConfirmModal(false);
-      return;
+      navigate('/dashboard/orders');
+    } catch (error) {
+      alert('Failed to place order. Please try again.');
+      console.error(error);
+    } finally {
+      setLoading(false);
     }
-=======
-    // Place order logic goes here
->>>>>>> 08f715b543881d5fd977fda4edd2903253c5329c
-    setShowConfirmModal(false);
   };
 
   return (

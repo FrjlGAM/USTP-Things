@@ -59,9 +59,30 @@ export default function Orders() {
   const isStandalone = location.pathname === '/dashboard/orders';
 
   useEffect(() => {
-    // Removed pickupOrders fetching logic
-    setLoading(false);
-    setOrders([]);
+    const fetchOrders = async () => {
+      setLoading(true);
+      try {
+        const q = query(
+          collection(db, 'orders'),
+          where('userId', '==', auth.currentUser?.uid)
+        );
+        const querySnapshot = await getDocs(q);
+        const ordersList: Order[] = [];
+        querySnapshot.forEach(docSnap => {
+          const data = docSnap.data();
+          ordersList.push({
+            id: docSnap.id,
+            ...data,
+            createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(),
+          } as Order);
+        });
+        setOrders(ordersList);
+      } catch (error) {
+        console.error('Error fetching orders:', error);
+      }
+      setLoading(false);
+    };
+    fetchOrders();
   }, []);
 
   const handlePickupNow = async (orderId: string) => {
@@ -71,8 +92,6 @@ export default function Orders() {
         status: 'Completed',
         completedAt: new Date()
       });
-      
-      // Update local state
       setOrders(prevOrders => 
         prevOrders.filter(order => order.id !== orderId)
       );
@@ -85,7 +104,6 @@ export default function Orders() {
     if (!window.confirm('Are you sure you want to cancel this order?')) {
       return;
     }
-
     setCancellingOrder(orderId);
     try {
       const orderRef = doc(db, 'orders', orderId);
@@ -93,8 +111,6 @@ export default function Orders() {
         status: 'Cancelled',
         cancelledAt: new Date()
       });
-      
-      // Update local state
       setOrders(prevOrders => 
         prevOrders.filter(order => order.id !== orderId)
       );
@@ -111,7 +127,6 @@ export default function Orders() {
     navigate(`/dashboard/messages/${sellerId}`);
   };
 
-  // Sidebar navigation handler
   const handleSidebarNav = (view: 'home' | 'likes' | 'recently' | 'orders' | 'rate' | 'message') => {
     switch (view) {
       case 'home':
@@ -144,7 +159,6 @@ export default function Orders() {
 
   const renderOrderCard = (order: Order) => {
     const canCancel = order.status === 'Processing' && isWithinCancellationWindow(order.createdAt);
-    
     return (
       <div key={order.id} className="bg-white rounded-2xl shadow p-6">
         <div className="flex items-center gap-4">
@@ -237,18 +251,34 @@ export default function Orders() {
         </header>
         {/* Orders List */}
         <div className="flex-1 p-10">
-          <div className="text-center text-gray-500 mt-8">
-            No orders found. Items you purchase will appear here.
-          </div>
+          {loading ? (
+            <div className="text-center text-gray-500 mt-8">Loading orders...</div>
+          ) : orders.length === 0 ? (
+            <div className="text-center text-gray-500 mt-8">
+              No orders found. Items you purchase will appear here.
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {orders.map(order => renderOrderCard(order))}
+            </div>
+          )}
         </div>
       </main>
     </div>
   ) : (
     // Embedded version (when used inside Dashboard)
     <div className="space-y-6">
-      <div className="text-center text-gray-500 mt-8">
-        No orders found. Items you purchase will appear here.
-      </div>
+      {loading ? (
+        <div className="text-center text-gray-500 mt-8">Loading orders...</div>
+      ) : orders.length === 0 ? (
+        <div className="text-center text-gray-500 mt-8">
+          No orders found. Items you purchase will appear here.
+        </div>
+      ) : (
+        <div className="space-y-6">
+          {orders.map(order => renderOrderCard(order))}
+        </div>
+      )}
     </div>
   );
 } 

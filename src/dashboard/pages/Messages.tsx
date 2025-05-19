@@ -4,7 +4,7 @@ import userAvatar from '../../assets/ustp thingS/Person.png';
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import homeLogo from "../../assets/ustp thingS/Home.png";
-import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, where, getDocs, doc, setDoc, increment } from 'firebase/firestore';
+import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, where, getDocs, doc, setDoc, increment, getDoc } from 'firebase/firestore';
 import { auth, db } from '../../lib/firebase';
 import React from 'react';
 
@@ -46,14 +46,39 @@ function ChatWindow({ userId }: { userId: string }) {
   const [loading, setLoading] = useState(true);
   const [isTyping, setIsTyping] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [otherUserName, setOtherUserName] = useState<string>('');
   const messagesEndRef = React.useRef<HTMLDivElement>(null);
   const typingTimeoutRef = React.useRef<NodeJS.Timeout>();
+
+  // Debugging logs
+  React.useEffect(() => {
+    console.log('[ChatWindow] Current user UID:', auth.currentUser?.uid);
+    console.log('[ChatWindow] userId from URL:', userId);
+  }, [userId, auth.currentUser]);
+
+  // Fetch other user's username
+  React.useEffect(() => {
+    if (!userId) return;
+    const fetchUsername = async () => {
+      try {
+        const userDoc = await getDoc(doc(db, 'users', userId));
+        if (userDoc.exists()) {
+          setOtherUserName(userDoc.data().username || userDoc.data().name || 'Unknown User');
+        } else {
+          setOtherUserName('Unknown User');
+        }
+      } catch (err) {
+        setOtherUserName('Unknown User');
+      }
+    };
+    fetchUsername();
+  }, [userId]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  useEffect(() => {
+  React.useEffect(() => {
     scrollToBottom();
   }, [messages]);
 
@@ -107,6 +132,7 @@ function ChatWindow({ userId }: { userId: string }) {
             } as Message);
           }
         });
+        console.log('[ChatWindow] Fetched messages:', fetchedMessages);
         setMessages(fetchedMessages);
         setLoading(false);
         scrollToBottom();
@@ -132,6 +158,13 @@ function ChatWindow({ userId }: { userId: string }) {
       console.error('Error in message listener:', err);
       setError('Failed to load messages. Please try again.');
       setLoading(false);
+    }
+  }, [userId]);
+
+  // Warn if userId is not a UID (simple check: UIDs are usually 28 chars, not all lowercase)
+  React.useEffect(() => {
+    if (userId && userId.length < 20) {
+      console.warn('[ChatWindow] WARNING: userId from URL does not look like a Firebase UID:', userId);
     }
   }, [userId]);
 
@@ -198,6 +231,11 @@ function ChatWindow({ userId }: { userId: string }) {
 
   return (
     <div className="flex flex-col h-full">
+      {/* Chat header with username */}
+      <div className="flex items-center gap-4 px-8 py-4 bg-white shadow-md">
+        <h2 className="text-xl font-bold text-[#F88379]">Chat with</h2>
+        <span className="ml-2 text-lg text-gray-700 font-semibold">{otherUserName}</span>
+      </div>
       {/* Chat messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {loading ? (
@@ -337,37 +375,22 @@ export function MessagesContent() {
           where('participants', 'array-contains', auth.currentUser.uid)
         );
 
-        // First, check if there are any existing chat rooms
-        const snapshot = await getDocs(q);
-        console.log("Found chat rooms:", snapshot.size);
-
-        if (snapshot.empty && !chatRooms.some(room => room.participants.includes(DUMMY_SELLER.id))) {
-          // If no chat rooms exist, create one with the dummy seller
-          console.log("Creating initial chat room with dummy seller");
-          const newChatRoom = {
-            participants: [auth.currentUser.uid, DUMMY_SELLER.id],
-            lastMessage: "Start a conversation!",
-            lastMessageTime: serverTimestamp(),
-            sellerName: DUMMY_SELLER.name,
-            sellerAvatar: DUMMY_SELLER.avatar
-          };
-
-          await addDoc(chatRoomsRef, newChatRoom);
-        }
-
         // Set up real-time listener
         const unsubscribe = onSnapshot(q, (snapshot) => {
           const rooms: ChatRoom[] = [];
           snapshot.forEach((doc) => {
             const data = doc.data();
-            rooms.push({
-              id: doc.id,
-              participants: data.participants || [],
-              lastMessage: data.lastMessage || "",
-              lastMessageTime: data.lastMessageTime,
-              sellerName: data.sellerName || "Unknown Seller",
-              sellerAvatar: data.sellerAvatar || userAvatar
-            } as ChatRoom);
+            // Only include rooms where the current user is the customer
+            if (data.sellerId && data.sellerId !== auth.currentUser?.uid) {
+              rooms.push({
+                id: doc.id,
+                participants: data.participants || [],
+                lastMessage: data.lastMessage || "",
+                lastMessageTime: data.lastMessageTime,
+                sellerName: data.sellerName || "Unknown Seller",
+                sellerAvatar: data.sellerAvatar || userAvatar
+              } as ChatRoom);
+            }
           });
           console.log("Updated chat rooms:", rooms);
           setChatRooms(rooms);
@@ -388,35 +411,6 @@ export function MessagesContent() {
 
     fetchChatRooms();
   }, []);
-
-  // Start new chat with dummy seller
-  const startDummyChat = async () => {
-    if (!auth.currentUser) {
-      console.log("No authenticated user found");
-      return;
-    }
-
-    try {
-      setLoading(true);
-      
-      // Create a new chat room
-      const chatRoomRef = collection(db, 'chatRooms');
-      await addDoc(chatRoomRef, {
-        participants: [auth.currentUser.uid, DUMMY_SELLER.id],
-        lastMessage: "Start a conversation!",
-        lastMessageTime: serverTimestamp(),
-        sellerName: DUMMY_SELLER.name,
-        sellerAvatar: DUMMY_SELLER.avatar
-      });
-
-      navigate(`/dashboard/messages/${DUMMY_SELLER.name.replace(/\s+/g, '-').toLowerCase()}`);
-    } catch (err) {
-      console.error("Error starting dummy chat:", err);
-      setError("Failed to start conversation. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   if (error) {
     return (
@@ -440,39 +434,35 @@ export function MessagesContent() {
         </div>
       ) : chatRooms.length === 0 ? (
         <div className="text-center">
-          <p className="text-gray-500 mb-4">No conversations yet</p>
-          <button
-            onClick={startDummyChat}
-            className="bg-[#F88379] text-white px-4 py-2 rounded-lg hover:bg-[#f96d62] transition"
-          >
-            Start Chat with {DUMMY_SELLER.name}
-          </button>
+          <p className="text-gray-500 mb-4">No messages from sellers yet</p>
         </div>
       ) : (
-        chatRooms.map((room) => (
-          <div 
-            key={room.id} 
-            className="bg-white rounded-xl p-4 shadow cursor-pointer hover:shadow-md transition"
-            onClick={() => {
-              // Find the other participant
-              const otherUserId = room.participants.find((id) => id !== auth.currentUser?.uid);
-              if (otherUserId) navigate(`/dashboard/messages/${otherUserId}`);
-            }}
-          >
-            <div className="flex items-center gap-4">
-              <img src={room.sellerAvatar} alt={room.sellerName} className="w-16 h-16 rounded-full object-cover" />
-              <div className="flex-1">
-                <div className="flex justify-between items-start">
-                  <h3 className="text-lg font-semibold text-gray-800">{room.sellerName}</h3>
-                  <span className="text-sm text-gray-500">
-                    {room.lastMessageTime?.toDate()?.toLocaleString() || 'Just now'}
-                  </span>
+        chatRooms
+          .filter(room => room.participants.every(id => typeof id === 'string' && id.length >= 20 && !id.includes(' ')))
+          .map((room) => (
+            <div 
+              key={room.id} 
+              className="bg-white rounded-xl p-4 shadow cursor-pointer hover:shadow-md transition"
+              onClick={() => {
+                // Find the seller's ID
+                const sellerId = room.participants.find((id) => id !== auth.currentUser?.uid);
+                if (sellerId) navigate(`/dashboard/messages/${sellerId}`);
+              }}
+            >
+              <div className="flex items-center gap-4">
+                <img src={room.sellerAvatar} alt={room.sellerName} className="w-16 h-16 rounded-full object-cover" />
+                <div className="flex-1">
+                  <div className="flex justify-between items-start">
+                    <h3 className="text-lg font-semibold text-gray-800">{room.sellerName}</h3>
+                    <span className="text-sm text-gray-500">
+                      {room.lastMessageTime?.toDate()?.toLocaleString() || 'Just now'}
+                    </span>
+                  </div>
+                  <p className="text-gray-600 mt-1">{room.lastMessage}</p>
                 </div>
-                <p className="text-gray-600 mt-1">{room.lastMessage}</p>
               </div>
             </div>
-          </div>
-        ))
+          ))
       )}
     </div>
   );

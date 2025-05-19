@@ -258,11 +258,12 @@ const AddProductModal: React.FC<AddProductModalProps> = ({ open, onClose, onProd
                 </div>
               ))}
             </div>
-            <select className="border-b-2 border-gray-300 py-2 focus:outline-none font-semibold text-gray-400" value={campusLocation} onChange={e => setCampusLocation(e.target.value)}>
-              <option value="">Choose Campus Location (optional)</option>
-              <option value="Main">Main</option>
-              <option value="Annex">Annex</option>
-            </select>
+            <input
+              className="border-b-2 border-gray-300 py-2 focus:outline-none font-semibold"
+              placeholder="Enter Campus Location (optional)"
+              value={campusLocation}
+              onChange={e => setCampusLocation(e.target.value)}
+            />
             <select className="border-b-2 border-gray-300 py-2 focus:outline-none font-semibold text-gray-400" value={paymentMethod} onChange={e => setPaymentMethod(e.target.value)}>
               <option value="">Choose Payment Method (optional)</option>
               <option value="Cash">Cash</option>

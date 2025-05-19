@@ -79,17 +79,16 @@ export default function MyLikes({ onProductClick, isStandalone = false }: MyLike
             }
           });
 
-          const fetchedProducts = (await Promise.all(productsPromises))
+          const productsList = (await Promise.all(productsPromises))
             .filter(Boolean)
-            .map(product => ({
-              ...product,
-              liked: true // Ensure liked state is set
-            }));
-
-          // Sort products to match the order in likedProductIds
-          const sortedProducts = likedProductIds
-            .map((id: string) => fetchedProducts.find(p => p.id === id))
-            .filter(Boolean);
+            .filter(product => (product.stock ?? 0) > 0); // Only show products with stock > 0
+          
+          // Sort products by when they were liked (most recent first)
+          const sortedProducts = productsList.sort((a, b) => {
+            const aLiked = a.liked ? 1 : 0;
+            const bLiked = b.liked ? 1 : 0;
+            return bLiked - aLiked;
+          });
 
           console.log('Fetched liked products:', sortedProducts);
           setProducts(sortedProducts);

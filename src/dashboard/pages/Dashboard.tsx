@@ -1,7 +1,6 @@
 import Sidebar from '../components/Sidebar';
 import ustpLogo from '../../assets/ustp-things-logo.png';
 import uniformImg from '../../assets/ustp thingS/Product.png';
-import xIcon from '../../assets/ustp thingS/X button.png';
 import cartIcon from '../../assets/ustp thingS/Shopping cart.png';
 import searchIcon from '../../assets/ustp thingS/search.png';
 import React, { useState, useEffect } from 'react';
@@ -25,24 +24,6 @@ const categories = [
   'Uniform',
   'Gel pens',
   'Graph paper',
-];
-
-const pickups = [
-  {
-    boutique: 'Galdo Boutique',
-    product: 'Uniform Set USTP (Female) – Blouse, Skirt, and Necktie',
-    image: uniformImg,
-  },
-  {
-    boutique: 'Galdo Boutique',
-    product: 'Uniform Set USTP (Female) – Blouse, Skirt, and Necktie',
-    image: uniformImg,
-  },
-  {
-    boutique: 'Galdo Boutique',
-    product: 'Uniform Set USTP (Female) – Blouse, Skirt, and Necktie',
-    image: uniformImg,
-  },
 ];
 
 export default function Dashboard() {
@@ -106,33 +87,38 @@ export default function Dashboard() {
 
   // Fetch products from Firebase
   useEffect(() => {
-    setIsLoading(true);
-    const productsCollection = collection(db, 'products');
-    // Real-time listener for products
-    const unsubscribe = onSnapshot(productsCollection, async (productsSnapshot) => {
-      let productsList = productsSnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-      if (auth.currentUser) {
-        const userRef = doc(db, 'users', auth.currentUser.uid);
-        const userDoc = await getDoc(userRef);
-        if (userDoc.exists()) {
-          const userData = userDoc.data();
-          const likedProducts = userData.likedProducts || [];
-          productsList = productsList.map(product => ({
-            ...product,
-            liked: likedProducts.includes(product.id)
+    const fetchProducts = async () => {
+      setIsLoading(true);
+      try {
+        const productsCollection = collection(db, 'products');
+        const productsSnapshot = await getDocs(productsCollection);
+          const productsList = productsSnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
           }));
-        }
+        
+          if (auth.currentUser) {
+            const userRef = doc(db, 'users', auth.currentUser.uid);
+            const userDoc = await getDoc(userRef);
+            if (userDoc.exists()) {
+              const userData = userDoc.data();
+              const likedProducts = userData.likedProducts || [];
+              const productsWithLikes = productsList.map(product => ({
+                ...product,
+                liked: likedProducts.includes(product.id)
+              }));
+              setProducts(productsWithLikes);
+              return;
+            }
+          }
+          setProducts(productsList);
+      } catch (error) {
+        console.error('Error fetching products:', error);
+      } finally {
+        setIsLoading(false);
       }
-      setProducts(productsList);
-      setIsLoading(false);
-    }, (error) => {
-      console.error('Error fetching products:', error);
-      setIsLoading(false);
-    });
-    return () => unsubscribe();
+    };
+    fetchProducts();
   }, []);
 
   useEffect(() => {
@@ -193,7 +179,8 @@ export default function Dashboard() {
   const filteredProducts = products.filter(
     (p) =>
       (selectedCategory === 'For You' || p.name.toLowerCase().includes(selectedCategory.toLowerCase())) &&
-      (search === '' || p.name.toLowerCase().includes(search.toLowerCase()))
+      (search === '' || p.name.toLowerCase().includes(search.toLowerCase())) &&
+      (p.stock ?? 0) > 0  // Only show products with stock > 0
   );
 
   const handleAddToCart = async (product: any) => {

@@ -65,74 +65,8 @@ export default function CheckOut({ product, onClose }: CheckOutProps) {
   };
 
   const handleConfirmOrder = async () => {
-    if (!auth.currentUser) {
-      alert('Please sign in to place an order.');
-      return;
-    }
-
-    if (!schoolLocation || !pickupDate || !pickupTime) {
-      alert('Please fill in all required fields.');
-      return;
-    }
-
-    // Validate product data
-    if (!product || !product.id || !product.sellerId) {
-      console.error('Invalid product data:', product);
-      alert('Invalid product data. Please try again.');
-      return;
-    }
-
-    console.log('Product data:', {
-      id: product.id,
-      sellerId: product.sellerId,
-      name: product.name,
-      price: product.price
-    });
-
-    setLoading(true);
-    try {
-      // Create order in pickupOrders collection
-      const orderData = {
-        userId: auth.currentUser.uid,
-        productId: product.id,
-        sellerId: product.sellerId,
-        status: 'Processing',
-        schoolLocation,
-        pickupDate,
-        pickupTime,
-        paymentMethod,
-        quantity,
-        totalAmount: calculateSubtotal(),
-        createdAt: serverTimestamp(),
-        productName: product.name,
-        productImage: product.image
-      };
-
-      console.log('Creating order with data:', orderData);
-
-      try {
-        const orderRef = await addDoc(collection(db, 'pickupOrders'), orderData);
-        console.log('Order created with ID:', orderRef.id);
-        
-        if (orderRef.id) {
-          alert('Order placed successfully!');
-          navigate('/dashboard/orders');
-        } else {
-          throw new Error('Failed to get order ID');
-        }
-      } catch (dbError) {
-        const error = dbError as FirebaseError;
-        console.error('Database error:', error);
-        throw new Error(`Failed to create order in database: ${error.message}`);
-      }
-    } catch (error) {
-      const firebaseError = error as Error;
-      console.error('Error creating order:', firebaseError);
-      alert(`Failed to create order: ${firebaseError.message}. Please try again.`);
-    } finally {
-      setLoading(false);
-      setShowConfirmModal(false);
-    }
+    alert('Ordering is currently disabled.');
+    setShowConfirmModal(false);
   };
 
   return (

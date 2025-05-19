@@ -151,41 +151,8 @@ export default function ProductDetail({
 
   // Confirm checkout
   const handleConfirmCheckout = async () => {
-    setCheckoutLoading(true);
-    setCheckoutError('');
-    try {
-      await runTransaction(db, async (transaction) => {
-        const productRef = doc(db, 'products', product.id);
-        const productSnap = await transaction.get(productRef);
-        if (!productSnap.exists()) throw new Error('Product not found');
-        const data = productSnap.data();
-        if ((data.stock ?? 0) < checkoutQty) throw new Error('Not enough stock');
-        // Update product
-        transaction.update(productRef, {
-          sold: (data.sold ?? 0) + checkoutQty,
-          stock: (data.stock ?? 0) - checkoutQty
-        });
-        // Create order
-        const orderRef = doc(collection(db, 'purchaseOrders'));
-        transaction.set(orderRef, {
-          productId: product.id,
-          productName: product.name,
-          productImage: product.image,
-          sellerId: product.sellerId,
-          buyerId: auth.currentUser?.uid ?? '',
-          quantity: checkoutQty,
-          price: product.price,
-          status: 'pending',
-          createdAt: new Date(),
-        });
-      });
-      setCheckoutSuccess(true);
-      setShowCheckout(false);
-      setShowRatingModal(!hasRated); // Show rating if not already rated
-    } catch (err: any) {
-      setCheckoutError(err.message || 'Failed to complete purchase.');
-    }
     setCheckoutLoading(false);
+    setCheckoutError('Checkout is currently disabled.');
   };
 
   // Rating submission logic
@@ -328,16 +295,22 @@ export default function ProductDetail({
               <div className="flex items-center gap-3">
                 <span className="text-xl text-blue-400 font-bold">{product.sold ?? 0}</span> <span className="text-xl text-gray-500">Sold</span>
               </div>
-              <div className="flex items-center gap-3 mt-2">
-                <span className="text-xl text-blue-400 font-bold">{product.stock === 0 ? 1 : 0}</span> <span className="text-xl text-gray-500">Sold Out</span>
-              </div>
             </div>
             <div className="flex items-center gap-3 mb-3">
               <HeartButton initialLiked={isLiked} onLikeChange={handleLikeChange} productId={product.id} />
               <span className="text-xl text-gray-500">Add to Favorites</span>
             </div>
             <div className="flex items-center gap-3 mb-8">
-              <span className="text-[#F88379] text-2xl">{'★'.repeat(Math.floor(localRating))}</span>
+              <div className="flex">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <span 
+                    key={star} 
+                    className={`text-2xl ${star <= Math.floor(localRating) ? 'text-[#F88379]' : 'text-gray-300'}`}
+                  >
+                    ★
+                  </span>
+                ))}
+              </div>
               <span className="text-xl text-gray-600 font-semibold">{(localRating).toFixed(1)}/5.0</span>
             </div>
           </div>

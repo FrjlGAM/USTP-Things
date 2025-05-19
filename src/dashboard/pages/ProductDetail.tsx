@@ -5,7 +5,8 @@ import cartIcon from '../../assets/ustp thingS/Shopping cart.png';
 import greenCartIcon from '../../assets/ustp thingS/Shopping green.png';
 import xIcon from '../../assets/ustp thingS/X button.png';
 import { db, auth } from '../../lib/firebase';
-import { doc, getDoc, setDoc, arrayUnion, arrayRemove, onSnapshot } from 'firebase/firestore';
+import { doc, getDoc, setDoc, arrayUnion, arrayRemove, onSnapshot, updateDoc } from 'firebase/firestore';
+import React from 'react';
 
 const productDetails = {
   description: [
@@ -30,6 +31,9 @@ interface ProductDetailProps {
     description: string;
     category: string;
     sellerId: string;
+    sold?: number;
+    stock?: number;
+    rating?: number;
   };
   onClose: () => void;
   onAddToCart?: () => void;
@@ -47,6 +51,11 @@ export default function ProductDetail({
   const [isLiked, setIsLiked] = useState(false);
   const [isInCart, setIsInCart] = useState(false);
   const navigate = useNavigate();
+  const [showRatingModal, setShowRatingModal] = useState(false);
+  const [userRating, setUserRating] = useState<number>(0);
+  const [submittingRating, setSubmittingRating] = useState(false);
+  const [localRating, setLocalRating] = useState(product.rating ?? 0);
+  const [hasRated, setHasRated] = useState(false);
 
   // Scroll to top when component mounts or when product changes
   useEffect(() => {
@@ -86,6 +95,20 @@ export default function ProductDetail({
     return () => unsubscribe();
   }, [product.id, auth.currentUser]);
 
+  // Check if user has already rated this product
+  useEffect(() => {
+    const checkUserRated = async () => {
+      if (!auth.currentUser) return;
+      const productRef = doc(db, 'products', product.id);
+      const productSnap = await getDoc(productRef);
+      if (productSnap.exists()) {
+        const ratingsMap = productSnap.data().ratingsMap || {};
+        setHasRated(!!ratingsMap[auth.currentUser.uid]);
+      }
+    };
+    checkUserRated();
+  }, [product.id]);
+
   const handleLikeChange = async (liked: boolean) => {
     if (!auth.currentUser) return;
     
@@ -105,18 +128,65 @@ export default function ProductDetail({
     }
   };
 
-  const handleBuyNow = () => {
+  const handleBuyNow = async () => {
     if (!isVerified && onVerifyClick) {
       onVerifyClick();
       return;
     }
-
     if (!product.sellerId) {
       alert('Cannot proceed with purchase. Product seller information is missing.');
       return;
     }
+    try {
+      const productRef = doc(db, 'products', product.id);
+      await updateDoc(productRef, {
+        sold: (product.sold ?? 0) + 1,
+        stock: (product.stock ?? 1) - 1
+      });
+      // Only show rating modal if user hasn't rated yet
+      if (!hasRated) setShowRatingModal(true);
+    } catch (err) {
+      alert('Failed to update product after purchase.');
+      console.error(err);
+    }
+  };
 
-    navigate('/dashboard/checkout', { state: { product } });
+  // Rating submission logic
+  const handleSubmitRating = async () => {
+    if (!userRating || userRating < 1 || userRating > 5) return;
+    setSubmittingRating(true);
+    try {
+      const productRef = doc(db, 'products', product.id);
+      // Fetch current ratings map
+      const productSnap = await getDoc(productRef);
+      let ratingsMap: Record<string, number> = {};
+      if (productSnap.exists()) {
+        ratingsMap = productSnap.data().ratingsMap || {};
+      }
+      // Prevent double rating
+      if (auth.currentUser && ratingsMap[auth.currentUser.uid]) {
+        setShowRatingModal(false);
+        setSubmittingRating(false);
+        return;
+      }
+      if (auth.currentUser) {
+        ratingsMap[auth.currentUser.uid] = userRating;
+      }
+      const ratingsArr = Object.values(ratingsMap);
+      const avgRating = ratingsArr.length > 0 ? ratingsArr.reduce((a, b) => a + b, 0) / ratingsArr.length : 0;
+      await updateDoc(productRef, {
+        ratingsMap,
+        rating: avgRating
+      });
+      setLocalRating(avgRating);
+      setShowRatingModal(false);
+      setUserRating(0);
+      setHasRated(true);
+    } catch (err) {
+      alert('Failed to submit rating.');
+      console.error(err);
+    }
+    setSubmittingRating(false);
   };
 
   const handleAddToCart = async () => {
@@ -211,10 +281,10 @@ export default function ProductDetail({
             </div>
             <div className="flex flex-col mb-4">
               <div className="flex items-center gap-3">
-                <span className="text-xl text-blue-400 font-bold">{productDetails.sold}</span> <span className="text-xl text-gray-500">Sold</span>
+                <span className="text-xl text-blue-400 font-bold">{product.sold ?? 0}</span> <span className="text-xl text-gray-500">Sold</span>
               </div>
               <div className="flex items-center gap-3 mt-2">
-                <span className="text-xl text-blue-400 font-bold">{productDetails.soldOut}</span> <span className="text-xl text-gray-500">Sold Out</span>
+                <span className="text-xl text-blue-400 font-bold">{product.stock === 0 ? 1 : 0}</span> <span className="text-xl text-gray-500">Sold Out</span>
               </div>
             </div>
             <div className="flex items-center gap-3 mb-3">
@@ -222,8 +292,8 @@ export default function ProductDetail({
               <span className="text-xl text-gray-500">Add to Favorites</span>
             </div>
             <div className="flex items-center gap-3 mb-8">
-              <span className="text-[#F88379] text-2xl">{'★'.repeat(Math.floor(productDetails.rating))}</span>
-              <span className="text-xl text-gray-600 font-semibold">{productDetails.rating.toFixed(1)}/5.0</span>
+              <span className="text-[#F88379] text-2xl">{'★'.repeat(Math.floor(localRating))}</span>
+              <span className="text-xl text-gray-600 font-semibold">{(localRating).toFixed(1)}/5.0</span>
             </div>
           </div>
           {/* Buy Now button */}
@@ -246,22 +316,44 @@ export default function ProductDetail({
       <div className="mt-8">
         <div className="text-md font-semibold mb-2">Product Description:</div>
         <div className="bg-blue-50 rounded-xl p-6 text-gray-700 text-sm">
-          <ul className="list-disc pl-5 space-y-1">
-            <li><span className="font-semibold">Complete USTP college uniform set for female students, includes:</span></li>
-            {productDetails.description.slice(0,3).map((line, idx) => (
-              <li key={idx}>{line}</li>
-            ))}
-          </ul>
-          <ul className="mt-3 space-y-1">
-            {productDetails.description.slice(3).map((line, idx) => (
-              <li key={idx} className="flex items-center gap-2">
-                <span className="text-green-500 text-lg">✔️</span>
-                <span>{line}</span>
-              </li>
-            ))}
-          </ul>
+          {Array.isArray(product.description) ? (
+            <ul className="list-disc pl-5 space-y-1">
+              {product.description.map((line: string, idx: number) => (
+                <li key={idx}>{line}</li>
+              ))}
+            </ul>
+          ) : product.description && typeof product.description === 'string' ? (
+            <span>{product.description}</span>
+          ) : (
+            <span className="italic text-gray-400">No description provided.</span>
+          )}
         </div>
       </div>
+      {/* Rating Modal */}
+      {showRatingModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
+          <div className="bg-white rounded-2xl shadow-lg p-8 w-full max-w-xs flex flex-col items-center">
+            <h2 className="text-2xl font-bold mb-4 text-[#F88379]">Rate this Product</h2>
+            <div className="flex gap-2 mb-4">
+              {[1,2,3,4,5].map(star => (
+                <button
+                  key={star}
+                  className={`text-3xl ${userRating >= star ? 'text-yellow-400' : 'text-gray-300'}`}
+                  onClick={() => setUserRating(star)}
+                  disabled={submittingRating}
+                >★</button>
+              ))}
+            </div>
+            <button
+              className="bg-[#F88379] text-white px-6 py-2 rounded-full font-bold text-lg hover:bg-[#F88379]/90 transition disabled:opacity-60"
+              onClick={handleSubmitRating}
+              disabled={submittingRating || !userRating}
+            >
+              {submittingRating ? 'Submitting...' : 'Submit Rating'}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 } 

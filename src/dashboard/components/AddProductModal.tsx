@@ -22,8 +22,10 @@ const AddProductModal: React.FC<AddProductModalProps> = ({ open, onClose, onProd
   const [tagInput, setTagInput] = useState('');
   const [tags, setTags] = useState<string[]>([]);
   const [description, setDescription] = useState('');
-  const [dateSlot, setDateSlot] = useState('');
-  const [timeSlot, setTimeSlot] = useState('');
+  const [dateSlotInput, setDateSlotInput] = useState('');
+  const [dateSlots, setDateSlots] = useState<{date: string, times: string[]}[]>([]);
+  const [timeSlotInput, setTimeSlotInput] = useState('');
+  const [activeDateForTime, setActiveDateForTime] = useState<string | null>(null);
   const [campusLocation, setCampusLocation] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('');
   const [saving, setSaving] = useState(false);
@@ -71,6 +73,37 @@ const AddProductModal: React.FC<AddProductModalProps> = ({ open, onClose, onProd
     setTags(tags.filter(t => t !== tag));
   };
 
+  // Date slot logic
+  const handleDateSlotAdd = () => {
+    const val = dateSlotInput.trim();
+    if (val && !dateSlots.some(ds => ds.date === val)) {
+      setDateSlots([...dateSlots, { date: val, times: [] }]);
+      setDateSlotInput('');
+      setActiveDateForTime(val);
+    }
+  };
+  const handleDateSlotRemove = (date: string) => {
+    setDateSlots(dateSlots.filter(ds => ds.date !== date));
+    if (activeDateForTime === date) setActiveDateForTime(null);
+  };
+  // Timeslot logic per date
+  const handleTimeSlotAdd = (date: string) => {
+    if (!timeSlotInput.trim()) return;
+    setDateSlots(dateSlots.map(ds =>
+      ds.date === date && !ds.times.includes(timeSlotInput.trim())
+        ? { ...ds, times: [...ds.times, timeSlotInput.trim()] }
+        : ds
+    ));
+    setTimeSlotInput('');
+  };
+  const handleTimeSlotRemove = (date: string, time: string) => {
+    setDateSlots(dateSlots.map(ds =>
+      ds.date === date
+        ? { ...ds, times: ds.times.filter(t => t !== time) }
+        : ds
+    ));
+  };
+
   // Validation
   const validate = () => {
     const newErrors: {[key:string]: string} = {};
@@ -89,8 +122,10 @@ const AddProductModal: React.FC<AddProductModalProps> = ({ open, onClose, onProd
     setTags([]);
     setTagInput('');
     setDescription('');
-    setDateSlot('');
-    setTimeSlot('');
+    setDateSlotInput('');
+    setDateSlots([]);
+    setTimeSlotInput('');
+    setActiveDateForTime(null);
     setCampusLocation('');
     setPaymentMethod('');
     setProductImage(null);
@@ -111,8 +146,7 @@ const AddProductModal: React.FC<AddProductModalProps> = ({ open, onClose, onProd
         tags,
         image: productImage,
         description,
-        dateSlot,
-        timeSlot,
+        dateSlots,
         campusLocation,
         paymentMethod,
         sellerId: auth.currentUser?.uid || null,
@@ -157,16 +191,73 @@ const AddProductModal: React.FC<AddProductModalProps> = ({ open, onClose, onProd
           {/* Left Side */}
           <div className="flex-1 flex flex-col gap-6 pr-2">
             <h2 className="text-4xl font-bold mb-2 text-black italic">Delivery Details</h2>
-            <select className="border-b-2 border-gray-300 py-2 focus:outline-none font-semibold" value={dateSlot} onChange={e => setDateSlot(e.target.value)}>
-              <option value="">Enter Date Slots (optional)</option>
-              <option value="Today">Today</option>
-              <option value="Tomorrow">Tomorrow</option>
-            </select>
-            <select className="border-b-2 border-gray-300 py-2 focus:outline-none font-semibold" value={timeSlot} onChange={e => setTimeSlot(e.target.value)}>
-              <option value="">Enter Time Slots (optional)</option>
-              <option value="Morning">Morning</option>
-              <option value="Afternoon">Afternoon</option>
-            </select>
+            {/* Date Slots Input */}
+            <label className="font-semibold">Date Slots <span className="text-gray-400">(multiple allowed, each with timeslots)</span></label>
+            <div className="flex gap-2 items-center mb-2">
+              <input
+                className="border-b-2 border-gray-300 py-2 focus:outline-none font-semibold flex-1"
+                placeholder="Add a date (e.g. 2024-06-01) and press Enter"
+                value={dateSlotInput}
+                onChange={e => setDateSlotInput(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleDateSlotAdd(); } }}
+                type="date"
+              />
+              <button
+                type="button"
+                className="bg-[#F88379] text-white px-3 py-1 rounded-full text-sm font-bold"
+                onClick={handleDateSlotAdd}
+                disabled={!dateSlotInput.trim()}
+              >Add</button>
+            </div>
+            <div className="flex flex-col gap-2 mt-1">
+              {dateSlots.map(ds => (
+                <div key={ds.date} className="bg-[#F88379]/10 rounded p-2 flex flex-col gap-1">
+                  <div className="flex items-center gap-2">
+                    <span className="bg-[#F88379] text-white px-3 py-1 rounded-full text-xs flex items-center gap-1">
+                      {ds.date}
+                      <button type="button" className="ml-1 text-white hover:text-gray-200" onClick={() => handleDateSlotRemove(ds.date)}>&times;</button>
+                    </span>
+                    <button
+                      className="ml-2 text-xs text-[#F88379] underline"
+                      type="button"
+                      onClick={() => setActiveDateForTime(ds.date)}
+                    >{activeDateForTime === ds.date ? 'Adding times...' : 'Add timeslot'}</button>
+                  </div>
+                  {/* Times for this date */}
+                  <div className="flex flex-wrap gap-2 ml-6">
+                    {ds.times.map(time => (
+                      <span key={time} className="bg-[#F88379] text-white px-2 py-1 rounded-full text-xs flex items-center gap-1">
+                        {time}
+                        <button type="button" className="ml-1 text-white hover:text-gray-200" onClick={() => handleTimeSlotRemove(ds.date, time)}>&times;</button>
+                      </span>
+                    ))}
+                  </div>
+                  {/* Add timeslot input for this date */}
+                  {activeDateForTime === ds.date && (
+                    <div className="flex gap-2 items-center mt-1 ml-6">
+                      <input
+                        className="border-b-2 border-gray-300 py-1 focus:outline-none font-semibold flex-1"
+                        placeholder="Add a timeslot (e.g. 10:00 AM)"
+                        value={timeSlotInput}
+                        onChange={e => setTimeSlotInput(e.target.value)}
+                        onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleTimeSlotAdd(ds.date); } }}
+                      />
+                      <button
+                        type="button"
+                        className="bg-[#F88379] text-white px-2 py-1 rounded-full text-xs font-bold"
+                        onClick={() => handleTimeSlotAdd(ds.date)}
+                        disabled={!timeSlotInput.trim()}
+                      >Add</button>
+                      <button
+                        type="button"
+                        className="text-xs text-gray-400 ml-2"
+                        onClick={() => setActiveDateForTime(null)}
+                      >Done</button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
             <select className="border-b-2 border-gray-300 py-2 focus:outline-none font-semibold text-gray-400" value={campusLocation} onChange={e => setCampusLocation(e.target.value)}>
               <option value="">Choose Campus Location (optional)</option>
               <option value="Main">Main</option>

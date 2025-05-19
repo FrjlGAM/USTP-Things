@@ -13,6 +13,8 @@ interface CheckOutProps {
     price: string;
     image: string;
     sellerId: string;
+    dateSlots: { date: string; times: string[] }[];
+    paymentMethod?: string | string[];
   };
   onClose?: () => void;
 }
@@ -22,9 +24,8 @@ export default function CheckOut({ product, onClose }: CheckOutProps) {
   const [loading, setLoading] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [schoolLocation, setSchoolLocation] = useState('');
-  const [pickupDate, setPickupDate] = useState('');
-  const [pickupTime, setPickupTime] = useState('');
-  const [paymentMethod] = useState('GCash');
+  const [selectedDate, setSelectedDate] = useState('');
+  const [selectedTime, setSelectedTime] = useState('');
   const [quantity, setQuantity] = useState(1);
 
   // Validate product data on mount
@@ -53,14 +54,28 @@ export default function CheckOut({ product, onClose }: CheckOutProps) {
     return `₱${amount.toLocaleString()}`;
   };
 
+  // Get available date slots from product
+  const dateSlots = Array.isArray(product.dateSlots) ? product.dateSlots : [];
+  const availableTimes = dateSlots.find(ds => ds.date === selectedDate)?.times || [];
+
+  // Payment method logic
+  const paymentMethods = Array.isArray(product.paymentMethod)
+    ? product.paymentMethod
+    : product.paymentMethod
+      ? [product.paymentMethod]
+      : ['Cash', 'GCash']; // fallback if not set
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState(paymentMethods[0]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Form submitted with values:', {
-      schoolLocation,
-      pickupDate,
-      pickupTime,
-      quantity
-    });
+    if (!selectedDate || !selectedTime) {
+      alert('Please select a date and time slot.');
+      return;
+    }
+    if (!selectedPaymentMethod) {
+      alert('Please select a payment method.');
+      return;
+    }
     setShowConfirmModal(true);
   };
 
@@ -120,75 +135,63 @@ export default function CheckOut({ product, onClose }: CheckOutProps) {
             </div>
           </div>
 
-          {/* Pick Up Section */}
+          {/* Delivery Slot Section */}
           <div className="bg-white p-6 rounded-2xl mb-6">
-            <div className="flex items-center gap-2 mb-4">
-              <div className="w-6 h-6 bg-[#FF9B8B] rounded-full flex items-center justify-center text-white">
-                <span>📍</span>
-              </div>
-              <h2 className="font-semibold text-lg">Pick Up</h2>
+            <div className="mb-4">
+              <label className="block text-gray-600 mb-1 font-semibold">Select Delivery Date</label>
+              <select
+                className="w-full p-2 border rounded-lg bg-white"
+                value={selectedDate}
+                onChange={e => {
+                  setSelectedDate(e.target.value);
+                  setSelectedTime('');
+                }}
+                required
+              >
+                <option value="">Select a date</option>
+                {dateSlots.map(ds => (
+                  <option key={ds.date} value={ds.date}>{ds.date}</option>
+                ))}
+              </select>
             </div>
-
-            <div className="space-y-4">
-              <div>
-                <label className="block text-gray-600 mb-1">School Location:</label>
-                <select 
+            {selectedDate && (
+              <div className="mb-4">
+                <label className="block text-gray-600 mb-1 font-semibold">Select Time Slot</label>
+                <select
                   className="w-full p-2 border rounded-lg bg-white"
-                  value={schoolLocation}
-                  onChange={(e) => setSchoolLocation(e.target.value)}
+                  value={selectedTime}
+                  onChange={e => setSelectedTime(e.target.value)}
                   required
                 >
-                  <option value="">Select location</option>
-                  <option value="Cafeteria">USTP Cafeteria</option>
-                  <option value="Building 43">Building 43 (Engineering Complex Left Wing)</option>
-                  <option value="Building 44">Building 44 (ICT Building)</option>
-                  <option value="Building 41">Building 41 (Science Complex)</option>
-                  <option value="DRER Hall">DRER Hall</option>
+                  <option value="">Select a time slot</option>
+                  {availableTimes.map(time => (
+                    <option key={time} value={time}>{time}</option>
+                  ))}
                 </select>
               </div>
-
-              <div className="flex gap-4">
-                <div className="flex-1">
-                  <label className="block text-gray-600 mb-1">Date:</label>
-                  <input 
-                    type="date" 
-                    className="w-full p-2 border rounded-lg bg-white"
-                    value={pickupDate}
-                    onChange={(e) => setPickupDate(e.target.value)}
-                    required
-                  />
-                </div>
-                <div className="flex-1">
-                  <label className="block text-gray-600 mb-1">Time:</label>
-                  <input 
-                    type="time" 
-                    className="w-full p-2 border rounded-lg bg-white"
-                    value={pickupTime}
-                    onChange={(e) => setPickupTime(e.target.value)}
-                    required
-                  />
-                </div>
-              </div>
-            </div>
+            )}
           </div>
 
           {/* Payment Method Section */}
           <div className="bg-white p-6 rounded-2xl mb-6">
             <h2 className="font-semibold text-lg mb-4">Payment Method</h2>
-            <div className="w-full p-2 border rounded-lg bg-gray-100 text-gray-700 cursor-not-allowed">
-              GCash
-            </div>
-
-            <div className="mt-6 space-y-2">
-              <div className="flex justify-between">
-                <span className="text-gray-600">Item Subtotal</span>
-                <span>{formatPrice(calculateSubtotal())}</span>
+            {paymentMethods.length > 1 ? (
+              <select
+                className="w-full p-2 border rounded-lg bg-white text-gray-700"
+                value={selectedPaymentMethod}
+                onChange={e => setSelectedPaymentMethod(e.target.value)}
+                required
+              >
+                <option value="">Select payment method</option>
+                {paymentMethods.map(method => (
+                  <option key={method} value={method}>{method}</option>
+                ))}
+              </select>
+            ) : (
+              <div className="w-full p-2 border rounded-lg bg-gray-100 text-gray-700 cursor-not-allowed">
+                {paymentMethods[0]}
               </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Total Payment</span>
-                <span className="text-xl font-bold text-[#F88379]">{formatPrice(calculateSubtotal())}</span>
-              </div>
-            </div>
+            )}
           </div>
 
           {/* Buttons */}

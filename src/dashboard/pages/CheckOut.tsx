@@ -27,6 +27,7 @@ export default function CheckOut({ product, onClose }: CheckOutProps) {
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedTime, setSelectedTime] = useState('');
   const [quantity, setQuantity] = useState(1);
+  const orderingEnabled = true; // <-- Enable ordering
 
   // Validate product data on mount
   useEffect(() => {
@@ -80,7 +81,11 @@ export default function CheckOut({ product, onClose }: CheckOutProps) {
   };
 
   const handleConfirmOrder = async () => {
-    alert('Ordering is currently disabled.');
+    if (!orderingEnabled) {
+      alert("Ordering is currently disabled.");
+      setShowConfirmModal(false);
+      return;
+    }
     setShowConfirmModal(false);
   };
 

@@ -15,6 +15,7 @@ interface CheckOutProps {
     sellerId: string;
     dateSlots: { date: string; times: string[] }[];
     paymentMethod?: string | string[];
+    campusLocation?: string;
   };
   onClose?: () => void;
 }
@@ -143,6 +144,16 @@ export default function CheckOut({ product, onClose }: CheckOutProps) {
               </div>
             </div>
           </div>
+
+          {/* Campus Location Section */}
+          {product.campusLocation && (
+            <div className="bg-white p-6 rounded-2xl mb-6">
+              <h2 className="font-semibold text-lg mb-4">Campus Location</h2>
+              <div className="w-full p-2 border rounded-lg bg-gray-100 text-gray-700">
+                {product.campusLocation}
+              </div>
+            </div>
+          )}
 
           {/* Delivery Slot Section */}
           <div className="bg-white p-6 rounded-2xl mb-6">

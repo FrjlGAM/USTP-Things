@@ -231,32 +231,30 @@ export default function ProductDetail({
           <div className="bg-[#f7f6fd] rounded-2xl p-4 flex items-center justify-center w-full mb-4">
             <img src={product.image} alt={product.name} className="w-[320px] h-[320px] object-cover rounded-xl" />
           </div>
-          {onAddToCart && (
-            <button 
-              onClick={handleAddToCart}
-              className={`flex items-center justify-center gap-2 w-full font-bold py-3 rounded-xl shadow transition text-lg mt-2 ${
-                !isVerified
-                ? 'bg-gray-100 text-gray-500 cursor-help border border-gray-300'
-                : isInCart 
-                  ? 'bg-white text-green-500 border border-green-500 shadow-md hover:shadow-lg' 
-                  : 'bg-white text-[#F88379] border border-[#F88379] hover:shadow-lg'
-              }`}
-              title={!isVerified ? "Account verification required to add items to cart" : ""}
-            >
-              <img 
-                src={!isVerified ? cartIcon : (isInCart ? greenCartIcon : cartIcon)} 
-                alt="Add to Cart" 
-                className={isInCart ? "w-8 h-7" : "w-6 h-6"}
-                style={!isVerified ? { opacity: 0.5 } : undefined}
-              />
-              {!isVerified 
-                ? 'Verify Account to Add to Cart'
-                : isInCart 
-                  ? 'Added to Cart' 
-                  : 'Add to Cart'
-              }
-            </button>
-          )}
+          <button 
+            onClick={handleAddToCart}
+            className={`flex items-center justify-center gap-2 w-full font-bold py-3 rounded-xl shadow transition text-lg mt-2 ${
+              !isVerified
+              ? 'bg-gray-100 text-gray-500 cursor-help border border-gray-300'
+              : isInCart 
+                ? 'bg-white text-green-500 border border-green-500 shadow-md hover:shadow-lg' 
+                : 'bg-white text-[#F88379] border border-[#F88379] hover:shadow-lg'
+            }`}
+            title={!isVerified ? "Account verification required to add items to cart" : ""}
+          >
+            <img 
+              src={!isVerified ? cartIcon : (isInCart ? greenCartIcon : cartIcon)} 
+              alt="Add to Cart" 
+              className={isInCart ? "w-8 h-7" : "w-6 h-6"}
+              style={!isVerified ? { opacity: 0.5 } : undefined}
+            />
+            {!isVerified 
+              ? 'Verify Account to Add to Cart'
+              : isInCart 
+                ? 'Added to Cart' 
+                : 'Add to Cart'
+            }
+          </button>
         </div>
         {/* Product Details Section */}
         <div className="flex-1 flex flex-col justify-between pr-0 md:pr-6">

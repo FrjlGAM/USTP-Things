@@ -22,54 +22,40 @@ export default function RequestAccountDeletion({ onClose }: RequestAccountDeleti
 
       const user = auth.currentUser;
       if (!user) throw new Error("No user is currently signed in");
-
       const userId = user.uid;
 
-      // Delete from users collection
-      try {
-        await deleteDoc(doc(db, "users", userId));
-        console.log("Deleted from users:", userId);
-      } catch (err) {
-        console.log("No user document found to delete", err);
-      }
+      // Delete from users collection (by UID)
+      await deleteDoc(doc(db, "users", userId));
 
-      // Delete from verifiedAccounts collection by doc ID (userId)
-      try {
-        await deleteDoc(doc(db, "verifiedAccounts", userId));
-        console.log("Deleted from verifiedAccounts by doc ID:", userId);
-      } catch (err) {
-        console.log("No verifiedAccounts doc with userId as ID", err);
-      }
+      // Delete from verifiedAccounts collection (by UID)
+      await deleteDoc(doc(db, "verifiedAccounts", userId));
 
-      // Delete from verifiedAccounts collection by userId field (in case doc ID is not userId)
-      try {
-        const q = query(collection(db, "verifiedAccounts"), where("userId", "==", userId));
-        const snapshot = await getDocs(q);
-        for (const docSnap of snapshot.docs) {
-          await deleteDoc(doc(db, "verifiedAccounts", docSnap.id));
-          console.log("Deleted from verifiedAccounts by userId field:", docSnap.id);
-        }
-      } catch (err) {
-        console.log("No verifiedAccounts doc with userId field", err);
+      // In case the document ID is not the UID, search by userId field
+      // (for legacy or inconsistent data)
+      const vAccQuery = query(
+        collection(db, "verifiedAccounts"),
+        where("userId", "==", userId)
+      );
+      const vAccSnap = await getDocs(vAccQuery);
+      for (const docSnap of vAccSnap.docs) {
+        await deleteDoc(doc(db, "verifiedAccounts", docSnap.id));
       }
 
       // Delete from admin collection if exists
-      try {
-        await deleteDoc(doc(db, "admin", userId));
-        console.log("Deleted from admin:", userId);
-      } catch (err) {
-        console.log("No admin document found to delete", err);
-      }
+      await deleteDoc(doc(db, "admin", userId));
 
-      // Delete the Firebase Auth account
+      // Finally delete the Firebase Auth account
       await deleteUser(user);
-      console.log("Deleted user from Auth:", userId);
 
-      // Redirect to home
+      // After successful deletion, navigate to home page
       navigate("/");
     } catch (err) {
       console.error("Error deleting account:", err);
-      setError(err instanceof Error ? err.message : "Failed to delete account. Please try again.");
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to delete account. Please try again."
+      );
     } finally {
       setIsDeleting(false);
     }
@@ -106,7 +92,15 @@ export default function RequestAccountDeletion({ onClose }: RequestAccountDeleti
       >
         <button
           onClick={onClose}
-          style={{ position: "absolute", top: 18, right: 18, background: "none", border: "none", padding: 0, cursor: "pointer" }}
+          style={{
+            position: "absolute",
+            top: 18,
+            right: 18,
+            background: "none",
+            border: "none",
+            padding: 0,
+            cursor: "pointer",
+          }}
           aria-label="Close"
         >
           <img src={closeIcon} alt="Close" style={{ width: 32, height: 32 }} />
@@ -170,15 +164,18 @@ export default function RequestAccountDeletion({ onClose }: RequestAccountDeleti
         >
           {isDeleting ? (
             <>
-              <span className="loader" style={{
-                display: "inline-block",
-                width: 18,
-                height: 18,
-                border: "3px solid #F88379",
-                borderTop: "3px solid transparent",
-                borderRadius: "50%",
-                animation: "spin 1s linear infinite",
-              }} />
+              <span
+                className="loader"
+                style={{
+                  display: "inline-block",
+                  width: 18,
+                  height: 18,
+                  border: "3px solid #F88379",
+                  borderTop: "3px solid transparent",
+                  borderRadius: "50%",
+                  animation: "spin 1s linear infinite",
+                }}
+              />
               Deleting...
             </>
           ) : (

@@ -6,6 +6,7 @@ import xIcon from '../../assets/ustp thingS/X button.png';
 import VerificationTerms from './VerificationTerms';
 import { usePreventScroll } from '../../hooks/usePreventScroll';
 import { uploadToCloudinary } from '../../lib/cloudinaryUpload';
+import { sendEmailVerification } from "firebase/auth";
 
 interface VerificationModalProps {
   open: boolean;
@@ -27,6 +28,11 @@ export default function VerificationModal({ open, onClose, setVerificationReques
   const [success, setSuccess] = useState(false);
   const [termsOpen, setTermsOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [showEmailVerificationOverlay, setShowEmailVerificationOverlay] = useState(false);
+  const [emailSent, setEmailSent] = useState(false);
+  const [checkingVerification, setCheckingVerification] = useState(false);
+  const [emailVerified, setEmailVerified] = useState(false);
+  const [canSubmitVerification, setCanSubmitVerification] = useState(false);
 
   // Prevent background scrolling when modal is open
   usePreventScroll(open || termsOpen);
@@ -63,6 +69,44 @@ export default function VerificationModal({ open, onClose, setVerificationReques
         }
       }
     }
+  };
+
+  // New: Check if user's email is verified
+  const checkEmailVerified = async () => {
+    setCheckingVerification(true);
+    await auth.currentUser?.reload();
+    if (auth.currentUser?.emailVerified) {
+      setEmailVerified(true);
+      setShowEmailVerificationOverlay(false);
+      setCanSubmitVerification(true);
+      // Automatically submit the form after email is verified
+      setTimeout(() => {
+        document.getElementById('verification-form')?.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+      }, 0);
+    } else {
+      setEmailVerified(false);
+      alert("Your email is not verified yet. Please check your inbox and click the verification link.");
+    }
+    setCheckingVerification(false);
+  };
+
+  // New: Handle confirm verification button
+  const handleConfirmVerificationClick = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!auth.currentUser) {
+      alert("No user logged in");
+      return;
+    }
+    if (!auth.currentUser.emailVerified) {
+      setShowEmailVerificationOverlay(true);
+      if (!emailSent) {
+        await sendEmailVerification(auth.currentUser);
+        setEmailSent(true);
+      }
+      return;
+    }
+    // If email is verified, proceed to handleSubmit
+    handleSubmit(e);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -152,7 +196,11 @@ export default function VerificationModal({ open, onClose, setVerificationReques
             </>
           )}
           {(step === 'student' || step === 'company') && !success && (
-            <form className="w-full flex flex-col items-center" onSubmit={handleSubmit}>
+            <form
+              id="verification-form"
+              className="w-full flex flex-col items-center"
+              onSubmit={canSubmitVerification ? handleSubmit : handleConfirmVerificationClick}
+            >
               <div className="w-full rounded-md mb-6 border border-gray-300">
                 <div className="flex flex-col divide-y divide-gray-300">
                   <input
@@ -248,6 +296,34 @@ export default function VerificationModal({ open, onClose, setVerificationReques
           setTermsOpen(false);
         }}
       />
+
+      {/* Email Verification Overlay */}
+      {showEmailVerificationOverlay && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur" />
+          <div className="relative bg-white rounded-3xl shadow-2xl px-8 py-8 flex flex-col items-center w-[400px] border-4 border-[#ECB3A8]">
+            <img src={ustpLogo} alt="USTP Things Logo" className="h-20 mb-2" />
+            <h2 className="text-2xl font-bold text-[#F88379] mb-4 text-center">Verify Your Email</h2>
+            <p className="text-center text-gray-600 mb-4">
+              We sent a verification link to your email.<br />
+              Please check your inbox and click the link to verify your email address.
+            </p>
+            <button
+              onClick={checkEmailVerified}
+              className="w-full bg-[#F88379] hover:bg-[#F88379]/90 text-white font-bold text-lg py-3 rounded-2xl shadow transition mb-2"
+              disabled={checkingVerification}
+            >
+              {checkingVerification ? "Checking..." : "I have verified my email"}
+            </button>
+            <button
+              onClick={() => setShowEmailVerificationOverlay(false)}
+              className="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold text-lg py-3 rounded-2xl shadow transition"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
     </>
   );
 }

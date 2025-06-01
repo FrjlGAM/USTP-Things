@@ -1,19 +1,35 @@
-import Sidebar from '../components/Sidebar';
-import ustpLogo from '../../assets/ustp-things-logo.png';
-import userAvatar from '../../assets/ustp thingS/Person.png';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import homeLogo from "../../assets/ustp thingS/Home.png";
-import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, where, getDocs, doc, setDoc, increment, getDoc } from 'firebase/firestore';
+import { 
+  collection, 
+  query, 
+  orderBy, 
+  onSnapshot, 
+  addDoc, 
+  serverTimestamp, 
+  getDoc,
+  getDocs, 
+  doc, 
+  setDoc, 
+  where, 
+  increment,
+  DocumentData,
+  DocumentSnapshot,
+  QuerySnapshot,
+  Unsubscribe,
+  updateDoc,
+  Timestamp, 
+  FieldValue
+} from 'firebase/firestore';
 import { auth, db } from '../../lib/firebase';
-import React from 'react';
+import userAvatar from '../../assets/ustp thingS/Person.png';
 
 interface Message {
   id: string;
   senderId: string;
   receiverId: string;
   text: string;
-  timestamp: any;
+  timestamp: Timestamp;
   sender: string;
   status: 'sent' | 'delivered' | 'read';
   type: 'text' | 'image' | 'file';
@@ -25,45 +41,65 @@ interface ChatRoom {
   id: string;
   participants: string[];
   lastMessage: string;
-  lastMessageTime: any;
+  lastMessageTime: Timestamp;
   sellerName: string;
   sellerAvatar: string;
   isTyping?: boolean;
   unreadCount?: number;
+  sellerId?: string;
 }
 
-// Dummy seller data
-const DUMMY_SELLER = {
-  id: 'seller123',
-  name: 'Galdo Boutique',
-  avatar: userAvatar
+// Helper function to safely format timestamp
+const formatTimestamp = (timestamp: Timestamp | FieldValue | undefined, timeOnly: boolean = false): string => {
+  if (!timestamp) return timeOnly ? 'Now' : 'Just now';
+  
+  try {
+    // If it's a server timestamp that hasn't been resolved yet
+    if (typeof timestamp === 'object' && timestamp !== null && 'isEqual' in timestamp) {
+      const ts = timestamp as Timestamp;
+      const date = ts.toDate();
+      return timeOnly ? date.toLocaleTimeString() : date.toLocaleString();
+    }
+    
+    // If it's a FieldValue (like serverTimestamp())
+    if (typeof timestamp === 'object' && timestamp !== null) {
+      return timeOnly ? 'Now' : 'Just now';
+    }
+    
+    return timeOnly ? 'Now' : 'Just now';
+  } catch (error) {
+    console.error('Error formatting timestamp:', error);
+    return timeOnly ? 'Now' : 'Just now';
+  }
 };
 
 // Chat component for individual conversations
 function ChatWindow({ userId }: { userId: string }) {
   const [messages, setMessages] = useState<Message[]>([]);
+  const unsubscribeRef = useRef<Unsubscribe>();
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
   const [isTyping, setIsTyping] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [otherUserName, setOtherUserName] = useState<string>('');
-  const messagesEndRef = React.useRef<HTMLDivElement>(null);
-  const typingTimeoutRef = React.useRef<NodeJS.Timeout>();
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
 
   // Debugging logs
-  React.useEffect(() => {
+  useEffect(() => {
     console.log('[ChatWindow] Current user UID:', auth.currentUser?.uid);
     console.log('[ChatWindow] userId from URL:', userId);
   }, [userId, auth.currentUser]);
 
   // Fetch other user's username
-  React.useEffect(() => {
+  useEffect(() => {
     if (!userId) return;
-    const fetchUsername = async () => {
+    const fetchUsername = async (): Promise<void> => {
       try {
         const userDoc = await getDoc(doc(db, 'users', userId));
         if (userDoc.exists()) {
-          setOtherUserName(userDoc.data().username || userDoc.data().name || 'Unknown User');
+          const userData = userDoc.data();
+          setOtherUserName(userData.username || userData.name || 'Unknown User');
         } else {
           setOtherUserName('Unknown User');
         }
@@ -74,34 +110,54 @@ function ChatWindow({ userId }: { userId: string }) {
     fetchUsername();
   }, [userId]);
 
-  const scrollToBottom = () => {
+  const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
+  }, []);
 
-  React.useEffect(() => {
+  useEffect(() => {
     scrollToBottom();
   }, [messages]);
 
   // Handle typing indicator
-  const handleTyping = () => {
-    if (!auth.currentUser) return;
+  const handleTyping = useCallback((): void => {
+    // Clear any existing timeout
+    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
     
-    // Clear existing timeout
-    if (typingTimeoutRef.current) {
-      clearTimeout(typingTimeoutRef.current);
-    }
-
-    // Set typing status
-    setIsTyping(true);
-    const chatRoomRef = doc(db, 'chatRooms', `${auth.currentUser.uid}_${userId}`);
-    setDoc(chatRoomRef, { isTyping: true }, { merge: true });
-
-    // Clear typing status after 3 seconds
-    typingTimeoutRef.current = setTimeout(() => {
+    // Set a new timeout to indicate typing has stopped
+    const timeout = setTimeout(() => {
+      // Update typing status in Firestore
+      const chatRoomRef = collection(db, 'chatRooms');
+      const q = query(
+        chatRoomRef,
+        where('participants', 'array-contains', auth.currentUser?.uid)
+      );
+      
+      getDocs(q).then((snapshot) => {
+        snapshot.forEach((doc) => {
+          updateDoc(doc.ref, { isTyping: false });
+        });
+      });
+      
       setIsTyping(false);
-      setDoc(chatRoomRef, { isTyping: false }, { merge: true });
-    }, 3000);
-  };
+    }, 1500);
+    
+    typingTimeoutRef.current = timeout;
+    
+    // Update typing status in Firestore
+    const chatRoomRef = collection(db, 'chatRooms');
+    const q = query(
+      chatRoomRef,
+      where('participants', 'array-contains', auth.currentUser?.uid)
+    );
+    
+    getDocs(q).then((snapshot) => {
+      snapshot.forEach((doc) => {
+        updateDoc(doc.ref, { isTyping: true });
+      });
+    });
+    
+    setIsTyping(true);
+  }, [typingTimeoutRef]);
 
   useEffect(() => {
     if (!auth.currentUser) return;
@@ -153,7 +209,7 @@ function ChatWindow({ userId }: { userId: string }) {
         setLoading(false);
       });
 
-      return () => unsubscribe();
+      unsubscribeRef.current = unsubscribe;
     } catch (err) {
       console.error('Error in message listener:', err);
       setError('Failed to load messages. Please try again.');
@@ -161,25 +217,36 @@ function ChatWindow({ userId }: { userId: string }) {
     }
   }, [userId]);
 
+  useEffect(() => {
+    return () => {
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+      if (unsubscribeRef.current) unsubscribeRef.current();
+    };
+  }, [typingTimeoutRef]);
+
   // Warn if userId is not a UID (simple check: UIDs are usually 28 chars, not all lowercase)
-  React.useEffect(() => {
+  useEffect(() => {
     if (userId && userId.length < 20) {
       console.warn('[ChatWindow] WARNING: userId from URL does not look like a Firebase UID:', userId);
     }
   }, [userId]);
+  
+  // Scroll to bottom when messages change
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
 
-  const sendMessage = async (e: React.FormEvent<HTMLFormElement>) => {
+  const sendMessage = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
     if (!newMessage.trim() || !auth.currentUser) return;
 
     try {
-      const messageData = {
-        text: newMessage,
+      const messageData: Omit<Message, 'id'> = {
         senderId: auth.currentUser.uid,
         receiverId: userId,
-        sender: auth.currentUser.email,
-        timestamp: serverTimestamp(),
-        participants: [auth.currentUser.uid, userId],
+        text: newMessage,
+        timestamp: serverTimestampFn() as unknown as Timestamp, // Type assertion needed
+        sender: auth.currentUser.displayName || 'Anonymous',
         status: 'sent',
         type: 'text'
       };
@@ -283,7 +350,7 @@ function ChatWindow({ userId }: { userId: string }) {
                   )}
                   <div className="flex items-center justify-end gap-1 mt-1">
                     <span className="text-xs opacity-75">
-                      {message.timestamp?.toDate().toLocaleTimeString()}
+                      {formatTimestamp(message.timestamp, true)}
                     </span>
                     {message.senderId === auth.currentUser?.uid && (
                       <span className="text-xs">
@@ -352,7 +419,9 @@ function ChatWindow({ userId }: { userId: string }) {
 export function MessagesContent() {
   const navigate = useNavigate();
   const [chatRooms, setChatRooms] = useState<ChatRoom[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [showModal, setShowModal] = useState<boolean>(false);
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -376,10 +445,10 @@ export function MessagesContent() {
         );
 
         // Set up real-time listener
-        const unsubscribe = onSnapshot(q, (snapshot) => {
+        const unsubscribe: Unsubscribe = onSnapshot(q, (snapshot: QuerySnapshot<DocumentData>) => {
           const rooms: ChatRoom[] = [];
           snapshot.forEach((doc) => {
-            const data = doc.data();
+            const data = doc.data() as DocumentData;
             // Only include rooms where the current user is the customer
             if (data.sellerId && data.sellerId !== auth.currentUser?.uid) {
               rooms.push({
@@ -455,7 +524,7 @@ export function MessagesContent() {
                   <div className="flex justify-between items-start">
                     <h3 className="text-lg font-semibold text-gray-800">{room.sellerName}</h3>
                     <span className="text-sm text-gray-500">
-                      {room.lastMessageTime?.toDate()?.toLocaleString() || 'Just now'}
+                      {formatTimestamp(room.lastMessageTime, false)}
                     </span>
                   </div>
                   <p className="text-gray-600 mt-1">{room.lastMessage}</p>
@@ -542,77 +611,174 @@ export default function Messages() {
   );
 }
 
+interface BlockedUser {
+  id: string;
+  name: string;
+  email: string;
+  avatar?: string;
+  blockedAt: Date;
+  reason?: string;
+}
+
 type BlockedUsersProps = {
   onSettingsClick: () => void;
 };
 
 export function BlockedUsers({ onSettingsClick }: BlockedUsersProps) {
   const navigate = useNavigate();
+  const [blockedUsers, setBlockedUsers] = useState<BlockedUser[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Fetch blocked users
+  useEffect(() => {
+    const fetchBlockedUsers = async () => {
+      try {
+        setLoading(true);
+        // TODO: Replace with actual API call
+        // const response = await fetch('/api/blocked-users');
+        // const data = await response.json();
+        // setBlockedUsers(data);
+        
+        // Mock empty data
+        setTimeout(() => {
+          setBlockedUsers([]);
+          setLoading(false);
+        }, 500);
+      } catch (err) {
+        console.error('Error fetching blocked users:', err);
+        setError('Failed to load blocked users');
+        setLoading(false);
+      }
+    };
+
+    fetchBlockedUsers();
+  }, []);
+
+  const handleUnblockUser = async (userId: string) => {
+    try {
+      // TODO: Replace with actual API call
+      // await fetch(`/api/blocked-users/${userId}`, { method: 'DELETE' });
+      setBlockedUsers(prev => prev.filter(user => user.id !== userId));
+    } catch (err) {
+      console.error('Error unblocking user:', err);
+      // Show error toast
+    }
+  };
+
+  // Handle image loading errors
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    const target = e.target as HTMLImageElement;
+    target.src = userAvatar;
+  };
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#F88379]"></div>
+        <p className="mt-4 text-gray-600">Loading blocked users...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-12">
+        <div className="text-red-500 mb-4">{error}</div>
+        <button 
+          onClick={() => window.location.reload()}
+          className="px-4 py-2 bg-[#F88379] text-white rounded-md hover:bg-[#e57373] transition-colors"
+        >
+          Try Again
+        </button>
+      </div>
+    );
+  }
 
   return (
-    <div style={{ minHeight: "100vh", background: "#fff" }}>
-      {/* Header */}
-      <div
-        style={{
-          background: "#fff",
-          display: "flex",
-          alignItems: "center",
-          height: 72,
-          paddingLeft: 55,
-          paddingRight: 24,
-          gap: 18,
-          borderBottom: "1px solid #ccc",
-          boxShadow: "0 2px 4px 0 rgba(0,0,0,0.04)",
-        }}
-      >
-        <img
-          src={homeLogo}
-          alt="Home Icon"
-          className="h-7 w-auto"
-          style={{ cursor: "pointer" }}
-          onClick={() => navigate('/dashboard')}
-        />
-        <div
-          style={{
-            width: 2,
-            height: 36,
-            background: "#F48C8C",
-            marginLeft: 18,
-            marginRight: 18,
-          }}
-        />
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <span
-            className="text-3xl font-bold"
-            style={{ color: "#F88379", opacity: 0.63, cursor: "pointer" }}
+    <div className="max-w-4xl mx-auto p-6">
+      <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center space-x-4">
+          <button 
             onClick={onSettingsClick}
+            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+            aria-label="Back to settings"
           >
-            Settings
-          </span>
-          <span
-            className="text-3xl font-bold"
-            style={{ color: "#F88379", opacity: 0.63 }}
-          >
-            &gt;
-          </span>
-          <span className="text-3xl font-bold" style={{ color: "#F88379" }}>
-            Blocked Users
-          </span>
+            <svg 
+              width="20" 
+              height="20" 
+              viewBox="0 0 24 24" 
+              fill="none" 
+              xmlns="http://www.w3.org/2000/svg"
+              className="text-[#F88379]"
+            >
+              <path d="M15 18L9 12L15 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </button>
+          <h1 className="text-2xl font-bold text-gray-800">Blocked Users</h1>
         </div>
       </div>
-      {/* Main content */}
-      <div style={{ paddingTop: 32, paddingLeft: 24, paddingRight: 24, display: "flex", flexDirection: "column", alignItems: "center" }}>
-        <div style={{ marginTop: 60, textAlign: "center" }}>
-          <img
-            src={require("../../assets/ustp thingS/BlockedUsers.png")}
-            alt="Blocked Users"
-            style={{ width: 60, height: 60, margin: "0 auto", opacity: 0.5 }}
-          />
-          <div style={{ color: "#F88379", fontWeight: 600, marginTop: 8 }}>
-            No blocked user yet
+
+      {blockedUsers.length === 0 ? (
+        <div className="text-center py-16 bg-white rounded-xl shadow-sm">
+          <div className="mx-auto w-20 h-20 bg-[#FEE2E2] rounded-full flex items-center justify-center mb-4">
+            <svg 
+              width="32" 
+              height="32" 
+              viewBox="0 0 24 24" 
+              fill="none" 
+              xmlns="http://www.w3.org/2000/svg"
+              className="text-[#F88379]"
+            >
+              <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M18 6L6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
           </div>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">No blocked users</h3>
+          <p className="text-gray-500 max-w-md mx-auto">
+            You haven't blocked any users. Blocked users won't be able to message you or see your profile.
+          </p>
         </div>
-      </div>
+      ) : (
+        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+          <ul className="divide-y divide-gray-200">
+            {blockedUsers.map((user) => (
+              <li key={user.id} className="p-4 hover:bg-gray-50 transition-colors">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-4">
+                    <img
+                      src={user.avatar || userAvatar}
+                      alt={user.name}
+                      className="w-12 h-12 rounded-full object-cover"
+                      onError={handleImageError}
+                      crossOrigin="anonymous"
+                    />
+                    <div>
+                      <h3 className="font-medium text-gray-900">{user.name}</h3>
+                      <p className="text-sm text-gray-500">{user.email}</p>
+                      {user.reason && (
+                        <p className="text-xs text-gray-400 mt-1">Reason: {user.reason}</p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <span className="text-sm text-gray-400">
+                      Blocked {new Date(user.blockedAt).toLocaleDateString()}
+                    </span>
+                    <button
+                      onClick={() => handleUnblockUser(user.id)}
+                      className="px-3 py-1.5 text-sm text-white bg-[#F88379] rounded-md hover:bg-[#e57373] transition-colors"
+                    >
+                      Unblock
+                    </button>
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
   );
-} 
+}

@@ -1,21 +1,62 @@
-import Sidebar from '../components/Sidebar';
-import ustpLogo from '../../assets/ustp-things-logo.png';
-import uniformImg from '../../assets/ustp thingS/Product.png';
-import cartIcon from '../../assets/ustp thingS/Shopping cart.png';
-import searchIcon from '../../assets/ustp thingS/search.png';
-import React, { useState, useEffect } from 'react';
+// React and Hooks
+import { useState, useEffect, useCallback } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+
+// Firebase
 import { db, auth } from '../../lib/firebase';
-import { collection, addDoc, getDocs, doc, setDoc, arrayUnion, arrayRemove, getDoc, query, where, onSnapshot } from 'firebase/firestore';
+import { 
+  collection, 
+  getDocs, 
+  doc, 
+  getDoc, 
+  setDoc, 
+  updateDoc, 
+  arrayUnion, 
+  arrayRemove 
+} from 'firebase/firestore';
+
+// Components
+import Sidebar from '../components/Sidebar';
+import VerificationModal from '../components/VerificationModal';
+import StartSellingModal from '../components/StartSellingModal';
+import ProductDetail from './ProductDetail';
+import ProductCard from '../components/ProductCard';
 import MyLikes from './MyLikes';
 import RecentlyViewed from './RecentlyViewed';
+import ToRateContent from './ToRate';
+import MessagesContent from './Messages';
 import MyCart from './MyCart';
-import StartSellingModal from '../components/StartSellingModal';
-import { useLocation, useNavigate } from 'react-router-dom';
-import ProductCard from '../components/ProductCard';
-import ProductDetail from './ProductDetail';
-import { MessagesContent } from './Messages';
-import { ToRateContent } from './ToRate';
-import VerificationModal from '../components/VerificationModal';
+
+// Assets
+import ustpLogo from '../../assets/ustp-things-logo.png';
+import searchIcon from '../../assets/search-icon.png';
+import cartIcon from '../../assets/cart-icon.png';
+
+// Types
+type MainViewType = 'home' | 'likes' | 'recently' | 'orders' | 'to-rate' | 'messages' | 'product' | 'cart' | 'verify' | 'seller' | 'settings';
+
+// Base product interface that matches our database schema
+interface ProductBase {
+  id: string;
+  name: string;
+  price: number;
+  stock: number;
+  description: string;
+  image: string;
+  category: string;
+  sellerId: string;
+  sold?: number;
+  rating?: number;
+}
+
+// Extended product with UI-specific fields
+interface Product extends ProductBase {
+  liked?: boolean;
+}
+
+// Utility type to convert Product to ProductDetail format
+// This is only used when passing to the ProductDetail component
+type ToProductDetail<T> = Omit<T, 'price'> & { price: string };
 
 const categories = [
   'For You',
@@ -27,18 +68,25 @@ const categories = [
 ];
 
 export default function Dashboard() {
-  const [showModal, setShowModal] = useState(false);
-  const [mainView, setMainView] = useState<'home' | 'likes' | 'recently' | 'orders' | 'to-rate' | 'messages' | 'product' | 'cart' | 'verify' | 'seller' | 'settings'>();
-  const [selectedCategory, setSelectedCategory] = useState('For You');
+  // State management
+  const [mainView, setMainView] = useState<MainViewType>('home');
   const [search, setSearch] = useState('');
-  const [selectedProduct, setSelectedProduct] = useState<any>(null);
-  const [cartItems, setCartItems] = useState<any[]>([]);
-  const [products, setProducts] = useState<any[]>([]);
+  // Store the actual product (with number price)
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  
+  // Convert to ProductDetail format only when needed
+  const productForDetail = selectedProduct ? {
+    ...selectedProduct,
+    price: selectedProduct.price.toString()
+  } : null;
+  const [products, setProducts] = useState<(Product & { liked?: boolean })[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isVerified, setIsVerified] = useState(false);
+  const [showModal, setShowModal] = useState(false);
   const [showStartSellingModal, setShowStartSellingModal] = useState(false);
-  const location = useLocation();
+  const [selectedCategory, setSelectedCategory] = useState<string>('For You');
   const [verificationRequested, setVerificationRequested] = useState(false);
+  const location = useLocation();
   const navigate = useNavigate();
 
   // Check if user is verified
@@ -92,26 +140,40 @@ export default function Dashboard() {
       try {
         const productsCollection = collection(db, 'products');
         const productsSnapshot = await getDocs(productsCollection);
-          const productsList = productsSnapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-          }));
         
-          if (auth.currentUser) {
-            const userRef = doc(db, 'users', auth.currentUser.uid);
-            const userDoc = await getDoc(userRef);
-            if (userDoc.exists()) {
-              const userData = userDoc.data();
-              const likedProducts = userData.likedProducts || [];
-              const productsWithLikes = productsList.map(product => ({
-                ...product,
-                liked: likedProducts.includes(product.id)
-              }));
-              setProducts(productsWithLikes);
-              return;
-            }
+        // Type assertion for Firestore data
+        const productsList = productsSnapshot.docs.map(doc => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            name: data.name || 'Unnamed Product',
+            price: Number(data.price) || 0,
+            stock: Number(data.stock) || 0,
+            description: data.description || 'No description available',
+            image: data.image || '',
+            category: data.category || 'Uncategorized',
+            sellerId: data.sellerId || 'unknown-seller',
+            sold: Number(data.sold) || 0,
+            rating: Number(data.rating) || 0
+          } as ProductBase;
+        });
+        
+        if (auth.currentUser) {
+          const userRef = doc(db, 'users', auth.currentUser.uid);
+          const userDoc = await getDoc(userRef);
+          if (userDoc.exists()) {
+            const userData = userDoc.data();
+            const likedProducts: string[] = userData.likedProducts || [];
+            const productsWithLikes = productsList.map(product => ({
+              ...product,
+              liked: likedProducts.includes(product.id)
+            }));
+            setProducts(productsWithLikes);
+            return;
           }
-          setProducts(productsList);
+        }
+        // If no user or user doc doesn't exist, set products without likes
+        setProducts(productsList);
       } catch (error) {
         console.error('Error fetching products:', error);
       } finally {
@@ -184,33 +246,49 @@ export default function Dashboard() {
   };
 
   // Filtered products
-  const filteredProducts = products.filter(
-    (p) =>
-      (selectedCategory === 'For You' || p.name.toLowerCase().includes(selectedCategory.toLowerCase())) &&
-      (search === '' || p.name.toLowerCase().includes(search.toLowerCase())) &&
-      (p.stock ?? 0) > 0  // Only show products with stock > 0
-  );
+  const filteredProducts = products.filter((p: Product) => {
+    const matchesCategory = selectedCategory === 'For You' || 
+      (p.category?.toLowerCase().includes(selectedCategory.toLowerCase()) ?? false);
+    const matchesSearch = search === '' || 
+      p.name.toLowerCase().includes(search.toLowerCase()) ||
+      (p.description?.toLowerCase().includes(search.toLowerCase()) ?? false);
+    const inStock = (p.stock ?? 0) > 0;
+    
+    return matchesCategory && matchesSearch && inStock;
+  });
 
-  const handleAddToCart = async (product: any) => {
-    if (auth.currentUser) {
+  const handleAddToCart = async (product: Product) => {
+    if (!auth.currentUser) {
+      setShowModal(true);
+      return;
+    }
+    
+    try {
       const userRef = doc(db, 'users', auth.currentUser.uid);
       const userDoc = await getDoc(userRef);
+      
       if (!userDoc.exists()) {
         await setDoc(userRef, {
-          cartProducts: [],
+          cartProducts: [product.id],
           likedProducts: [],
           recentlyViewed: []
         });
+      } else {
+        await updateDoc(userRef, {
+          cartProducts: arrayUnion(product.id)
+        });
       }
-      await setDoc(userRef, {
-        cartProducts: arrayUnion(product.id)
-      }, { merge: true });
+      
+      // Show success message or update UI
       console.log('Added to cart:', product.id);
+    } catch (error) {
+      console.error('Error adding to cart:', error);
+      // Handle error (e.g., show error message to user)
     }
   };
 
   // Add function to track product views
-  const handleProductView = async (product: any) => {
+  const handleProductView = async (product: Product) => {
     setSelectedProduct(product);
     if (auth.currentUser) {
       try {
@@ -245,18 +323,34 @@ export default function Dashboard() {
     }
   };
 
-  const handleLikeChange = async (item: any, liked: boolean) => {
-    if (auth.currentUser) {
+  const handleLikeChange = async (item: Product, liked: boolean) => {
+    if (!auth.currentUser) {
+      setShowModal(true);
+      return;
+    }
+    
+    try {
       const userRef = doc(db, 'users', auth.currentUser.uid);
+      
       if (liked) {
-        await setDoc(userRef, {
+        await updateDoc(userRef, {
           likedProducts: arrayUnion(item.id)
-        }, { merge: true });
+        });
       } else {
-        await setDoc(userRef, {
+        await updateDoc(userRef, {
           likedProducts: arrayRemove(item.id)
-        }, { merge: true });
+        });
       }
+      
+      // Update local state to reflect the change
+      setProducts(prevProducts =>
+        prevProducts.map(p =>
+          p.id === item.id ? { ...p, liked } : p
+        )
+      );
+    } catch (error) {
+      console.error('Error updating likes:', error);
+      // Handle error (e.g., show error message to user)
     }
   };
 
@@ -338,19 +432,23 @@ export default function Dashboard() {
         <div className={`flex-1 px-10 pt-4 pb-10`}>
           {mainView === 'home' ? (
             selectedProduct ? (
-              <ProductDetail 
-                product={selectedProduct} 
-                onClose={() => setSelectedProduct(null)} 
-                onAddToCart={() => {
-                  if (!isVerified) {
-                    setShowModal(true);
-                    return;
-                  }
-                  handleAddToCart(selectedProduct);
-                }}
-                isVerified={isVerified}
-                onVerifyClick={() => setShowModal(true)}
-              />
+              productForDetail && (
+                <ProductDetail 
+                  product={productForDetail} 
+                  onClose={() => setSelectedProduct(null)} 
+                  onAddToCart={() => {
+                    if (!isVerified) {
+                      setShowModal(true);
+                      return;
+                    }
+                    if (selectedProduct) {
+                      handleAddToCart(selectedProduct);
+                    }
+                  }}
+                  isVerified={isVerified}
+                  onVerifyClick={() => setShowModal(true)}
+                />
+              )
             ) : (
               <>
                 {isLoading ? (

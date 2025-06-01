@@ -5,8 +5,9 @@ import AdminLogin from '../admin/components/AdminLogin';
 import AdminSignup from '../admin/components/AdminSignup';
 import AdminDashboard from '../admin/components/AdminDashboard';
 import SettingsContainer from "../dashboard/pages/SettingsContainer";
-import Messages from '../dashboard/pages/Messages';
+import MessagesPage from '../dashboard/pages/MessagesPage';
 import ToRate from '../dashboard/pages/ToRate';
+import RateProduct from '../dashboard/pages/RateProduct';
 import Orders from '../dashboard/pages/Orders';
 import CheckOut from '../dashboard/pages/CheckOut';
 import { useLocation, Navigate } from 'react-router-dom';
@@ -37,8 +38,9 @@ function App() {
       <Route path="/dashboard/recently-viewed" element={<Dashboard />} />
       <Route path="/dashboard/orders" element={<Orders />} />
       <Route path="/dashboard/to-rate" element={<ToRate />} />
-      <Route path="/dashboard/messages" element={<Messages />} />
-      <Route path="/dashboard/messages/:userId" element={<Messages />} />
+      <Route path="/dashboard/rate/:orderId" element={<RateProduct />} />
+      <Route path="/dashboard/messages" element={<MessagesPage />} />
+      <Route path="/dashboard/messages/:chatRoomId" element={<MessagesPage />} />
       <Route path="/dashboard/settings" element={<SettingsContainer />} />
       <Route path="/dashboard/checkout" element={<CheckOutWrapper />} />
       <Route path="/dashboard/seller" element={<SellerPage />} />

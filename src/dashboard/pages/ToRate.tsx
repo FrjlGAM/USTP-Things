@@ -1,33 +1,9 @@
 import Sidebar from '../components/Sidebar';
 import ustpLogo from '../../assets/ustp-things-logo.png';
-import userAvatar from '../../assets/ustp thingS/Person.png';
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { db, auth } from '../../lib/firebase';
-import { collection, query, where, getDocs, doc, getDoc, updateDoc } from 'firebase/firestore';
-
-interface SellerData {
-  businessName: string;
-  avatar?: string;
-}
-
-interface OrderData {
-  userId: string;
-  sellerId: string;
-  productId: string;
-  status: 'Completed';
-  schoolLocation: string;
-  pickupDate: string;
-  pickupTime: string;
-  paymentMethod: string;
-  quantity: number;
-  totalAmount: number;
-  createdAt: { toDate: () => Date };
-  completedAt: { toDate: () => Date };
-  productName: string;
-  productImage: string;
-  isRated?: boolean;
-}
+import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
 
 interface Order {
   id: string;
@@ -108,10 +84,25 @@ export function ToRateContent({ orders, onRateNow, loading }: ToRateContentProps
 
 // Full page component with header and sidebar
 export default function ToRate() {
-  const [showModal, setShowModal] = useState(false);
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [successMessage, setSuccessMessage] = useState('');
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Check for success message in location state
+  useEffect(() => {
+    if (location.state?.message) {
+      setSuccessMessage(location.state.message);
+      // Clear the message after 5 seconds
+      const timer = setTimeout(() => {
+        setSuccessMessage('');
+        // Clear the location state to prevent showing the message again on refresh
+        window.history.replaceState({}, document.title);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [location.state]);
 
   useEffect(() => {
     const fetchToRateOrders = async () => {
@@ -156,9 +147,15 @@ export default function ToRate() {
     fetchToRateOrders();
   }, []);
 
-  const handleRateNow = async (order: Order) => {
+  const handleRateNow = (order: Order) => {
     // Navigate to rating page with order details
-    navigate(`/dashboard/rate/${order.id}`, { state: { order } });
+    navigate(`/dashboard/rate/${order.id}`, { 
+      state: { 
+        order,
+        // Include current path for potential back navigation
+        from: location.pathname 
+      } 
+    });
   };
 
   // Sidebar navigation handler
@@ -192,7 +189,6 @@ export default function ToRate() {
       {/* Sidebar */}
       <div className="w-[348px] flex-shrink-0">
         <Sidebar
-          onVerifyClick={() => setShowModal(true)}
           onHomeClick={() => handleSidebarNav('home')}
           onLikesClick={() => handleSidebarNav('likes')}
           onRecentlyClick={() => handleSidebarNav('recently')}
@@ -212,6 +208,11 @@ export default function ToRate() {
           </div>
         </header>
         <div className="p-10">
+          {successMessage && (
+            <div className="mb-6 p-4 bg-green-100 border border-green-400 text-green-700 rounded">
+              {successMessage}
+            </div>
+          )}
           <ToRateContent 
             orders={orders}
             onRateNow={handleRateNow}
@@ -221,4 +222,4 @@ export default function ToRate() {
       </main>
     </div>
   );
-} 
+}

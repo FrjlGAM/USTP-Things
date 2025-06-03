@@ -1,12 +1,11 @@
 import Sidebar from '../components/Sidebar';
-import ustpLogo from '../../assets/ustp-things-logo.png';
-import userAvatar from '../../assets/ustp thingS/Person.png';
-import { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
 import homeLogo from "../../assets/ustp thingS/Home.png";
+import userAvatar from '../../assets/ustp thingS/Person.png';
+import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, where, getDocs, doc, setDoc, increment, getDoc } from 'firebase/firestore';
 import { auth, db } from '../../lib/firebase';
-import React from 'react';
+import { MessageInput } from '../components/MessageInput';
 
 interface Message {
   id: string;
@@ -32,13 +31,6 @@ interface ChatRoom {
   unreadCount?: number;
 }
 
-// Dummy seller data
-const DUMMY_SELLER = {
-  id: 'seller123',
-  name: 'Galdo Boutique',
-  avatar: userAvatar
-};
-
 // Chat component for individual conversations
 function ChatWindow({ userId }: { userId: string }) {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -47,17 +39,17 @@ function ChatWindow({ userId }: { userId: string }) {
   const [isTyping, setIsTyping] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [otherUserName, setOtherUserName] = useState<string>('');
-  const messagesEndRef = React.useRef<HTMLDivElement>(null);
-  const typingTimeoutRef = React.useRef<NodeJS.Timeout>();
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Debugging logs
-  React.useEffect(() => {
+  useEffect(() => {
     console.log('[ChatWindow] Current user UID:', auth.currentUser?.uid);
     console.log('[ChatWindow] userId from URL:', userId);
   }, [userId, auth.currentUser]);
 
   // Fetch other user's username
-  React.useEffect(() => {
+  useEffect(() => {
     if (!userId) return;
     const fetchUsername = async () => {
       try {
@@ -78,7 +70,7 @@ function ChatWindow({ userId }: { userId: string }) {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  React.useEffect(() => {
+  useEffect(() => {
     scrollToBottom();
   }, [messages]);
 
@@ -310,40 +302,15 @@ function ChatWindow({ userId }: { userId: string }) {
         )}
       </div>
 
-      {/* Message input */}
-      <form onSubmit={sendMessage} className="p-4 border-t bg-white">
-        <div className="flex gap-2">
-          <input
-            type="text"
-            value={newMessage}
-            onChange={(e) => {
-              setNewMessage(e.target.value);
-              handleTyping();
-            }}
-            placeholder="Type a message..."
-            className="flex-1 p-2 border rounded-lg focus:outline-none focus:border-[#F88379]"
-            onKeyPress={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                if (newMessage.trim()) {
-                  sendMessage(e);
-                }
-              }
-            }}
-          />
-          <button
-            type="submit"
-            disabled={!newMessage.trim()}
-            className={`px-4 py-2 rounded-lg transition ${
-              newMessage.trim()
-                ? 'bg-[#F88379] text-white hover:bg-[#f96d62]'
-                : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-            }`}
-          >
-            Send
-          </button>
-        </div>
-      </form>
+      <MessageInput
+        message={newMessage}
+        onMessageChange={(e) => {
+          setNewMessage(e.target.value);
+          handleTyping();
+        }}
+        onSend={sendMessage}
+        disabled={!newMessage.trim()}
+      />
     </div>
   );
 }
@@ -507,7 +474,6 @@ function ChatPage() {
 
 // Main Messages page component
 export default function Messages() {
-  const [showModal, setShowModal] = useState(false);
   const navigate = useNavigate();
   const { userId } = useParams();
 
@@ -519,7 +485,7 @@ export default function Messages() {
     <div className="flex min-h-screen bg-[#f7f6fd]">
       <div className="w-[348px] flex-shrink-0">
         <Sidebar
-          onVerifyClick={() => setShowModal(true)}
+          onVerifyClick={() => navigate('/dashboard/verify')}
           onHomeClick={() => navigate('/dashboard')}
           onLikesClick={() => navigate('/dashboard/likes')}
           onRecentlyClick={() => navigate('/dashboard/recently')}
@@ -532,7 +498,7 @@ export default function Messages() {
       <main className="flex-1 flex flex-col">
         <header className="flex items-center justify-between px-8 pr-[47px] py-4 bg-white h-[70px] w-full shadow-[0_4px_4px_0_rgba(0,0,0,0.1)]">
           <div className="flex items-center gap-4">
-            <img src={ustpLogo} alt="USTP Things Logo" className="w-[117px] h-[63px] object-contain" />
+            <img src={homeLogo} alt="USTP Things Logo" className="w-[117px] h-[63px] object-contain" />
             <h1 className="text-3xl font-bold text-[#F88379] pb-1">Messages</h1>
           </div>
         </header>

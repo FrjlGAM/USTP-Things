@@ -106,8 +106,11 @@ function ChatWindow({ userId }: { userId: string }) {
       const q = query(
         messagesRef,
         where('participants', 'array-contains', auth.currentUser.uid),
+        where('participants', 'array-contains', userId),
         orderBy('timestamp', 'asc')
       );
+      
+      console.log('[ChatWindow] Querying messages between', auth.currentUser.uid, 'and', userId);
 
       const unsubscribe = onSnapshot(q, (snapshot) => {
         const fetchedMessages: Message[] = [];
